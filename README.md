@@ -1,413 +1,176 @@
-# TanStack Start on Cloudflare
+# Wspólniak
 
-A production-ready **template** for building full-stack React apps on Cloudflare Workers. Ships with TanStack Start (SSR + file-based routing), a Hono API layer, Neon Postgres via Drizzle ORM, Zod validation, Shadcn/UI, and a strict Biome + Vitest toolchain.
+**Prywatny rodzinny serwis do dzielenia się zdjęciami — self-hostowany na Cloudflare.**
 
-Use it as the starting point for your next project — clone it, rename it, wire up your database, and start shipping.
+Wspólniak to prosta, otwarta alternatywa dla Facebooka, Google Photos i iCloud Shared Albums — zaprojektowana dla jednej rodziny, jednej instancji i jednego admina. Bez haseł, bez reklam, bez śledzenia. Babcia dostaje link, klika, instaluje PWA na telefonie i już jest w środku.
 
-[![TanStack Start on Cloudflare](https://img.youtube.com/vi/TWWS_lo4kOA/0.jpg)](https://www.youtube.com/watch?v=TWWS_lo4kOA)
+> **Status:** MVP in development. Zobacz [`docs/002-prd.md`](docs/002-prd.md) oraz [`plans/wspolniak-mvp.md`](plans/wspolniak-mvp.md).
 
-## Why this template
+---
 
-- **Edge-first** — single `src/server.ts` entrypoint that routes `/api/*` to Hono and everything else to TanStack Start, all running on Cloudflare Workers.
-- **Type-safe end-to-end** — strict TypeScript, Zod at every boundary, Drizzle-inferred DB types, typed Cloudflare `Env` via `wrangler types`.
-- **Deep modules** — domain-oriented layout (`src/db/{domain}/`, `src/hono/api/{name}.ts`) with narrow public APIs. See `.claude/rules/deep-modules.md`.
-- **Batteries included** — error infrastructure, Neon + Drizzle migrations, Shadcn/UI, TanStack Query SSR hydration, Vitest, Biome, knip, semantic-release, taze.
-- **Agent-friendly** — project rules in `.claude/rules/` activate automatically based on the files you touch.
+## About
 
-## Quick Start
+### Dla kogo
 
-```bash
-# Install dependencies
-pnpm install
+Dla rodzin, które chcą prywatnej przestrzeni na zdjęcia, bez:
 
-# Copy env template and fill in your Neon credentials
-cp .example.vars .dev.vars
+- **Rejestracji i haseł** — starsze osoby w rodzinie (babcia, dziadek) nie radzą sobie z logowaniem, captchami i weryfikacją email. Każda bariera = nieużywany serwis.
+- **Algorytmicznego feedu** — chcesz widzieć zdjęcia chronologicznie, nie wg tego co AI uzna za "angażujące".
+- **Reklam i trackingu** — zdjęcia rodzinne nie powinny karmić cudzych modeli ML.
+- **Centralnego dostawcy** — jedna rodzina = jedna instancja = osobne dane. Zero shared infrastructure.
 
-# Generate Cloudflare Env types
-pnpm cf-typegen
+### Jak to działa
 
-# Run migrations against your dev database
-pnpm db:migrate:dev
+1. **Admin** (głowa rodziny) wdraża swoją instancję Wspólniaka jednym kliknięciem "Deploy to Cloudflare".
+2. Admin tworzy konta dla członków rodziny i dostaje dla każdego unikalny **magic link**.
+3. Admin dystrybuuje linki poza systemem — SMS, WhatsApp, email.
+4. Członek rodziny klika link → zostaje zalogowany na zawsze (long-lived cookie).
+5. Członek instaluje PWA na telefonie ("Dodaj do ekranu głównego"), robi zdjęcie, wrzuca.
+6. Reszta rodziny dostaje natychmiastowe **push notification** i widzi zdjęcie w chronologicznym feedzie.
 
-# Start the dev server
-pnpm dev
-```
+### Funkcjonalności MVP
 
-The app runs on http://localhost:3000. API endpoints are served under `/api/*`.
+- Posty z opisem i 1-10 zdjęciami (JPEG, PNG, WebP, **HEIC z iPhone'a** — automatyczna konwersja)
+- Chronologiczny feed z infinite scroll
+- Komentarze pod postami
+- Push notifications (Android, iOS 16.4+, desktop)
+- PWA — instalowalna na ekranie głównym telefonu
+- Offline reading ostatnio załadowanego feedu
+- Jeden admin per instancja, dowolna liczba członków
 
-## Scripts
+### Czego **nie** ma i nie będzie
 
-| Script | Purpose |
-|--------|---------|
-| `pnpm dev` | Dev server on port 3000 (Vite + Cloudflare plugin) |
-| `pnpm build` | Production build |
-| `pnpm serve` | Preview the production build locally |
-| `pnpm deploy` | Build and deploy to Cloudflare Workers |
-| `pnpm cf-typegen` | Generate `Env` types from `wrangler.jsonc` |
-| `pnpm test` / `pnpm test:watch` / `pnpm test:coverage` | Vitest |
-| `pnpm types` | `tsc --noEmit` type-check |
-| `pnpm lint` / `pnpm lint:fix` | Biome check / auto-fix |
-| `pnpm knip` | Detect unused files, deps, and exports |
-| `pnpm db:generate` | Generate Drizzle migrations from schema |
-| `pnpm db:migrate:{dev,staging,production}` | Apply migrations to each env |
-| `pnpm db:studio` | Open Drizzle Studio against dev |
-| `pnpm db:seed:dev` | Run `scripts/seed.ts` |
-| `pnpm deps` / `pnpm deps:update` | Check / apply dependency updates via taze |
-| `pnpm release` | semantic-release |
+- Multi-tenancy (jeden Worker = jedna rodzina)
+- Publicznych profili
+- Reakcji / lajków (post-MVP)
+- Algorytmicznego rankingu
+- Reklam
+- Hostowanej wersji SaaS
 
-All `db:*` scripts load secrets via `@dotenvx/dotenvx` from `.dev.vars`, `.staging.vars`, or `.production.vars`.
-
-## Project Structure
-
-```
-src/
-├── server.ts                  # CF Workers entry — routes /api/* → Hono, rest → TanStack Start
-├── router.tsx                 # TanStack Router instance
-├── routes/                    # File-based routes (auto-generates routeTree.gen.ts)
-│   ├── __root.tsx
-│   ├── index.tsx
-│   └── clients.tsx
-├── components/
-│   ├── ui/                    # Shadcn primitives (do not edit manually)
-│   ├── landing/               # Landing page sections
-│   ├── navigation/            # App navigation
-│   ├── theme/                 # Theme provider / toggle
-│   └── clients/               # Feature components
-├── core/
-│   ├── errors.ts              # AppError, Result<T>, isUniqueViolation
-│   ├── functions/             # TanStack server functions
-│   └── middleware/            # Server-function middleware
-├── db/
-│   ├── setup.ts               # initDatabase / getDb singleton
-│   ├── index.ts               # Public DB module API
-│   ├── schema.ts              # Re-exports all tables
-│   ├── migrations/            # Drizzle-generated SQL
-│   ├── client/                # Domain: clients (table, queries, zod schema)
-│   └── health/                # Domain: health check query
-├── hono/
-│   ├── factory.ts             # Typed Hono factory with CF Bindings
-│   ├── api.ts                 # Router mounting /api/health, /api/clients
-│   └── api/
-│       ├── health.ts
-│       └── clients.ts         # REST CRUD for clients
-├── integrations/tanstack-query/
-├── lib/
-├── utils/
-└── styles.css                 # Tailwind v4 entry
-```
-
-Path alias `@/*` resolves to `src/*`.
-
-## Tech Stack
+### Stack
 
 | Layer | Technology |
-|-------|------------|
-| Framework | TanStack Start (Router + Query SSR) |
-| UI | React 19, Shadcn/UI (new-york, Zinc), Tailwind CSS v4, Lucide |
-| API | Hono on Cloudflare Workers |
-| Runtime | Cloudflare Workers (`nodejs_compat`) |
-| Database | Neon Postgres + Drizzle ORM (`neon-http`) |
-| Validation | Zod 4 |
-| Forms | TanStack Form |
-| Language | TypeScript (strict) |
-| Linter | Biome 2 |
-| Testing | Vitest + Testing Library + jsdom |
-| Dead-code detection | knip |
-| Release | semantic-release |
-| Package manager | pnpm 10 |
+|---|---|
+| Framework | TanStack Start (SSR + Router + Query) |
+| Styling | Tailwind CSS v4 + Shadcn/UI |
+| API | Hono na Cloudflare Workers |
+| Database | Cloudflare D1 (SQLite) |
+| Image storage | Cloudflare Images (automatyczna konwersja HEIC, warianty) |
+| Push | Web Push VAPID |
+| Language | TypeScript strict, Polish UI |
+| License | AGPL-3.0-or-later |
 
-## Cloudflare Integration
+---
 
-### `wrangler.jsonc`
+## Self-host
 
-```jsonc
-{
-  "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "tanstack-start-app",
-  "compatibility_date": "2025-09-02",
-  "compatibility_flags": ["nodejs_compat"],
-  "main": "./src/server.ts",
-  "vars": {
-    "CLOUDFLARE_ENV": "dev",
-    "DATABASE_HOST": "",
-    "DATABASE_USERNAME": "",
-    "DATABASE_PASSWORD": ""
-  }
-}
-```
+Wspólniak jest projektowany jako **self-hosted first**. Chcesz uruchomić własną instancję dla swojej rodziny? Potrzebujesz:
 
-- Use `wrangler.jsonc` (not `.toml`) for configuration.
-- Prefer `custom_domain: true` over routes with `zone_name` — see `.claude/rules/cloudflare-deployment.md`.
-- Run `pnpm cf-typegen` whenever you add bindings to regenerate `worker-configuration.d.ts`.
+### Wymagania
 
-### Custom Server Entry (`src/server.ts`)
+- **Konto Cloudflare** (free tier wystarcza dla Workers + D1)
+- **Subskrypcja Cloudflare Images** (~$5/mies, 100k obrazów + 100k delivery) — wymagana dla automatycznej konwersji HEIC i generacji wariantów (thumbnail/full/avif)
+- **Domena** — własna (custom domain w CF) albo darmowa `*.workers.dev`
+- **~10 minut** na pierwszy deploy
 
-One fetch handler owns the entire worker: it boots the DB once per isolate, then dispatches to Hono or TanStack Start.
-
-```ts
-import handler from "@tanstack/react-start/server-entry";
-import { initDatabase } from "@/db";
-import { apiHono } from "@/hono/api";
-
-export default {
-  fetch(request: Request, env: Env, ctx: ExecutionContext) {
-    initDatabase({
-      host: env.DATABASE_HOST,
-      username: env.DATABASE_USERNAME,
-      password: env.DATABASE_PASSWORD,
-    });
-
-    const url = new URL(request.url);
-
-    if (url.pathname.startsWith("/api/")) {
-      return apiHono.fetch(request, env, ctx);
-    }
-
-    return handler.fetch(request, { context: { fromFetch: true } });
-  },
-};
-```
-
-You can extend this handler with Queue consumers, scheduled events, or Durable Object bindings as your project grows.
-
-### Secrets & Environments
-
-Secrets live in per-environment `.vars` files, never committed:
+### Quick start
 
 ```bash
-# .dev.vars
-CLOUDFLARE_ENV=dev
-DATABASE_HOST="ep-xxx.region.aws.neon.tech/neondb?sslmode=require"
-DATABASE_USERNAME="neondb_owner"
-DATABASE_PASSWORD="npg_xxx"
+# Klonuj repo
+git clone https://github.com/CrystalGamesStudio/wspolniak.git
+cd wspolniak
+
+# Zainstaluj zależności
+pnpm install
+
+# Skonfiguruj wrangler.jsonc (D1, CF Images bindings, custom domain)
+# Zobacz docs/ dla szczegółów
+
+# Uruchom lokalnie
+pnpm dev
+
+# Deploy na Cloudflare
+pnpm deploy
 ```
 
-For staging/production, create `.staging.vars` / `.production.vars` and set the same keys as Cloudflare secrets via `wrangler secret put`.
+Po pierwszym deploy wejdź na swoją domenę i kliknij `/setup` — pierwsza osoba która wejdzie zostanie adminem swojej instancji i dostanie magic link do skopiowania.
 
-## Database (Neon + Drizzle)
+### Scripts
 
-The DB module follows the **deep-modules** pattern: every domain has its own folder with a narrow public API.
+| Script | Purpose |
+|---|---|
+| `pnpm dev` | Dev server na porcie 3000 |
+| `pnpm build` | Production build |
+| `pnpm deploy` | Build + `wrangler deploy` |
+| `pnpm test` / `test:watch` / `test:coverage` | Vitest |
+| `pnpm types` | Type-check (`tsc --noEmit`) |
+| `pnpm lint` / `lint:fix` | Biome |
+| `pnpm knip` | Detect unused files, deps, exports |
 
-```
-src/db/client/
-├── table.ts      # pgTable definition
-├── schema.ts     # Zod schemas for input/output
-├── queries.ts    # getClients, getClient, createClient, updateClient, deleteClient
-└── index.ts      # Public re-exports
-```
+Pełna lista scripts i dev workflow — zobacz [`.claude/CLAUDE.md`](.claude/CLAUDE.md).
 
-- `initDatabase()` is called once per Worker isolate from `src/server.ts`.
-- Every query calls `getDb()` — never pass the DB as a parameter.
-- Inputs are validated with Zod at the API boundary; mutations use `.returning()` to avoid extra round trips.
+### Licencja i Twoje obowiązki
 
-### Migration Workflow
+Wspólniak jest objęty licencją **AGPL-3.0-or-later**. To oznacza, że możesz:
 
-```bash
-# 1. Edit your table definition in src/db/{domain}/table.ts
-# 2. Generate a migration
-pnpm db:generate
+✅ Uruchomić instancję dla siebie i swojej rodziny
+✅ Modyfikować kod pod swoje potrzeby
+✅ Udostępniać zmodyfikowaną wersję innym
 
-# 3. Apply it to your chosen environment
-pnpm db:migrate:dev
-pnpm db:migrate:staging
-pnpm db:migrate:production
+Ale **musisz**:
 
-# Inspect data
-pnpm db:studio
-```
+- Udostępnić swoje modyfikacje na tej samej licencji, jeśli jakkolwiek publicznie serwujesz instancję (nawet bez komercjalizacji — AGPL pokrywa "network use")
+- Zachować nagłówki autorskie i SPDX
 
-`drizzle.config.ts` points at `src/db/schema.ts` (which re-exports all tables) and writes migrations to `src/db/migrations/`.
+Pełny tekst licencji: [`LICENSE`](LICENSE).
 
-## REST API with Hono
+### Prywatność i RODO
 
-All `/api/*` routes are handled by Hono. Endpoints live in `src/hono/api/` and are mounted in `src/hono/api.ts`.
+Hostując Wspólniaka dla własnej rodziny, zazwyczaj mieścisz się w wyłączeniu "wyłącznie osobistych/domowych celów" (art. 2 ust. 2 lit. c RODO). Wspólniak jest zaprojektowany z myślą o prywatności:
 
-### Example: `GET /api/clients`
+- Zero analytics, zero telemetry
+- Żadnych persistent identyfikatorów poza family session cookie
+- Zdjęcia są za auth wallem, widoczne tylko dla członków Twojej instancji
+- Soft delete (post-MVP: export + full delete)
 
-```ts
-// src/hono/api/clients.ts
-import { isUniqueViolation } from "@/core/errors";
-import {
-  ClientCreateRequestSchema,
-  createClient,
-  getClients,
-  PaginationRequestSchema,
-} from "@/db/client";
-import { createHono } from "@/hono/factory";
+**Uwaga**: Jeśli planujesz hostować Wspólniaka dla kogoś spoza swojego gospodarstwa domowego, skonsultuj się z prawnikiem — wychodzisz wtedy poza wyłączenie "domowe" w RODO.
 
-const clientsEndpoint = createHono();
+---
 
-clientsEndpoint.get("/", async (c) => {
-  const parsed = PaginationRequestSchema.safeParse({
-    limit: c.req.query("limit"),
-    offset: c.req.query("offset"),
-  });
-  if (!parsed.success) return c.json({ error: parsed.error.message }, 400);
-  return c.json(await getClients(parsed.data));
-});
+## Deploy to Cloudflare
 
-clientsEndpoint.post("/", async (c) => {
-  const parsed = ClientCreateRequestSchema.safeParse(await c.req.json());
-  if (!parsed.success) return c.json({ error: parsed.error.message }, 400);
+> **Note:** "Deploy to Cloudflare" button wymaga publicznego repo i działającego `wrangler.jsonc` — będzie dodany w Phase 9 (Release Polish). Do tego czasu używaj manualnego quick startu powyżej.
 
-  try {
-    return c.json(await createClient(parsed.data), 201);
-  } catch (err) {
-    if (isUniqueViolation(err)) return c.json({ error: "Email already exists" }, 409);
-    throw err;
-  }
-});
+<!--
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/CrystalGamesStudio/wspolniak)
+-->
 
-export default clientsEndpoint;
-```
+Planowany flow dla self-hosterów:
 
-### Mounting a New Endpoint
+1. Klikasz **Deploy to Cloudflare** button (powyżej)
+2. Cloudflare fork'uje repo na Twoje konto GitHub, tworzy Worker, D1 database i binding
+3. **Aktywujesz Cloudflare Images** w dashboard ($5/mies subscription)
+4. Ustawiasz custom domain (opcjonalnie) lub używasz `*.workers.dev`
+5. Wchodzisz na swoją domenę → `/setup` → tworzysz konto admina
+6. Dostajesz swój pierwszy magic link → instalujesz PWA → zapraszasz rodzinę
 
-```ts
-// src/hono/api.ts
-import { createHono } from "./factory";
-import clientsEndpoint from "@/hono/api/clients";
-import healthEndpoint from "@/hono/api/health";
+---
 
-export const apiHono = createHono().basePath("/api");
+## Contributing
 
-apiHono.route("/health", healthEndpoint);
-apiHono.route("/clients", clientsEndpoint);
-```
+Wspólniak jest open-source i chętnie przyjmuje PR-y. Zanim zaczniesz pracę:
 
-The `createHono()` factory types `Bindings: Env` so `c.env` is fully typed against your Cloudflare configuration.
+1. Zajrzyj do [`plans/wspolniak-mvp.md`](plans/wspolniak-mvp.md) żeby zobaczyć phase plan
+2. Sprawdź [GitHub issues](https://github.com/CrystalGamesStudio/wspolniak/issues) — każda faza ma swoją issue z acceptance criteria
+3. Przeczytaj [`.claude/CLAUDE.md`](.claude/CLAUDE.md) i [`.claude/rules/`](.claude/rules/) — projekt ma formalne konwencje (deep modules, error handling, atomic imports)
+4. Quality gates przed PR: `pnpm types && pnpm lint && pnpm test`
 
-### Hono vs TanStack Server Functions
-
-| Use Hono REST APIs | Use TanStack Server Functions |
-|--------------------|-------------------------------|
-| Public APIs for external clients | Server logic called from React |
-| Webhooks | Form submissions |
-| Third-party integrations | Data fetching for UI |
-| Anything with a URL contract | Type-safe client↔server calls |
-
-## Error Handling
-
-Error infrastructure lives in `src/core/errors.ts`:
-
-```ts
-export class AppError extends Error {
-  constructor(
-    message: string,
-    public code: ErrorCode,
-    public status: number = 500,
-    public field?: string,
-  ) { super(message); this.name = "AppError"; }
-}
-
-export type Result<T> = { ok: true; data: T } | { ok: false; error: AppError };
-
-export function isUniqueViolation(error: unknown): boolean { /* ... */ }
-```
-
-- Use `AppError` for known, recoverable failures.
-- Use `Result<T>` when a caller needs to branch on success/failure without throwing.
-- Check `error.cause.code` (not `error.message`) when inspecting Drizzle errors — the raw Postgres code lives on `cause`. `isUniqueViolation()` is the idiomatic way to detect `23505` conflicts.
-- Unexpected errors propagate to the Hono global `onError` handler.
-
-See `.claude/rules/error-handling.md` for the full convention.
-
-## Server Functions & TanStack Query
-
-Server functions run exclusively on the server with full type safety across the boundary:
-
-```ts
-// src/core/middleware/example-middleware.ts
-export const exampleMiddleware = createMiddleware({ type: "function" }).server(
-  async ({ next }) => next({ context: { data: "Context from middleware" } }),
-);
-
-// src/core/functions/example-functions.ts
-const ExampleInputSchema = z.object({ exampleKey: z.string().min(1) });
-
-export const exampleFunction = createServerFn()
-  .middleware([exampleMiddleware])
-  .inputValidator((data: z.infer<typeof ExampleInputSchema>) =>
-    ExampleInputSchema.parse(data),
-  )
-  .handler(async (ctx) => {
-    // ctx.data — validated input
-    // ctx.context — middleware context
-    return "Server response";
-  });
-```
-
-Call them from components via TanStack Query:
-
-```tsx
-import { useMutation } from "@tanstack/react-query";
-import { exampleFunction } from "@/core/functions/example-functions";
-
-function MyComponent() {
-  const mutation = useMutation({ mutationFn: exampleFunction });
-  return (
-    <button
-      onClick={() => mutation.mutate({ exampleKey: "Hello Server!" })}
-      disabled={mutation.isPending}
-    >
-      {mutation.isPending ? "Loading..." : "Call Server Function"}
-    </button>
-  );
-}
-```
-
-SSR hydration is wired up in `src/integrations/tanstack-query/` — loaders can prefetch into the query cache and it streams down with the HTML.
-
-## Routing & UI
-
-- **File-based routing** — add files to `src/routes/`, the tree auto-generates to `routeTree.gen.ts` on dev/build. Never edit the generated file.
-- **Root layout** — `src/routes/__root.tsx`.
-- **Shadcn/UI** — add components with `pnpx shadcn@latest add <component>`. Configured via `components.json` (new-york style, Zinc base, CSS variables).
-- **Tailwind v4** — configured through the `@tailwindcss/vite` plugin, no separate config file. Styles entrypoint: `src/styles.css`.
-
-## Testing
-
-```bash
-pnpm test           # run once
-pnpm test:watch     # watch mode
-pnpm test:coverage  # v8 coverage
-```
-
-- Tests live next to source as `*.test.ts` / `*.test.tsx`.
-- Vitest globals are enabled — no need to import `describe` / `it` / `expect`.
-- Route files (`src/routes/**`) are excluded from test discovery.
-- Test at module boundaries (exported queries, HTTP requests, user interactions), not internals. See `.claude/rules/deep-modules.md`.
-
-## Agent Rules & Design Docs
-
-This template is set up for agent-assisted development:
-
-- `.claude/CLAUDE.md` — project-wide instructions.
-- `.claude/rules/` — topic rules (`general.md`, `deep-modules.md`, `error-handling.md`, `atomic-imports.md`, `cloudflare-deployment.md`, plus stack-specific rules under `db/` and `frontend/`) that activate automatically based on the files being edited.
-- `AGENTS.md` — agent workflow guide.
-- `/docs` — single source of truth for business requirements / design docs.
-
-## Using this Template
-
-1. Click **Use this template** on GitHub (or `gh repo create --template`).
-2. Rename the worker in `wrangler.jsonc` (`name`) and `package.json` (`name`).
-3. Provision a Neon database and fill in `.dev.vars`.
-4. Run `pnpm cf-typegen && pnpm db:migrate:dev && pnpm dev`.
-5. Delete `src/db/client/` and `src/hono/api/clients.ts` when you no longer need the example CRUD, and start modelling your own domain.
-
-## Learn More
-
-- **[TanStack Start](https://tanstack.com/start)** — full-stack React framework
-- **[TanStack Router](https://tanstack.com/router)** — type-safe routing
-- **[TanStack Query](https://tanstack.com/query)** — server state management
-- **[Hono](https://hono.dev/)** — fast web framework for APIs
-- **[Drizzle ORM](https://orm.drizzle.team/)** — type-safe SQL
-- **[Neon](https://neon.tech/)** — serverless Postgres
-- **[Cloudflare Workers](https://workers.cloudflare.com/)** — edge computing platform
-- **[Shadcn/UI](https://ui.shadcn.com/)** — component library
-- **[Tailwind CSS](https://tailwindcss.com/)** — utility-first CSS
-- **[Biome](https://biomejs.dev/)** — fast formatter and linter
+---
 
 ## License
 
-Open source under the [MIT License](LICENSE).
+Copyright © 2026 Crystal Games Studio
+
+Wspólniak is free software: you can redistribute it and/or modify it under the terms of the **GNU Affero General Public License** as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful, but **WITHOUT ANY WARRANTY**; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the [GNU AGPL License](LICENSE) for more details.
