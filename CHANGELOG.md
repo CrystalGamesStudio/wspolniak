@@ -1,3 +1,10 @@
+# [1.4.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.3.0...v1.4.0) (2026-04-11)
+
+
+### Features
+
+* UI routes — landing, setup, auth error, app shell ([#15](https://github.com/CrystalGamesStudio/wspolniak/issues/15)) ([65c852e](https://github.com/CrystalGamesStudio/wspolniak/commit/65c852e24f5e80152c61bbb5cc50030ea036d5d0))
+
 # [1.3.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.2.0...v1.3.0) (2026-04-11)
 
 
