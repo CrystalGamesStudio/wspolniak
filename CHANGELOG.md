@@ -1,3 +1,10 @@
+# [1.2.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.1.0...v1.2.0) (2026-04-11)
+
+
+### Features
+
+* GET /app/u/:token magic link verification + session cookie ([#13](https://github.com/CrystalGamesStudio/wspolniak/issues/13)) ([21051e9](https://github.com/CrystalGamesStudio/wspolniak/commit/21051e98ed6965818fca0c59cebe0311ce775aee))
+
 # [1.1.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.0.0...v1.1.0) (2026-04-11)
 
 
