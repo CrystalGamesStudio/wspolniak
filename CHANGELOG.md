@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.0.0...v1.1.0) (2026-04-11)
+
+
+### Features
+
+* POST /api/setup endpoint for instance bootstrap ([#12](https://github.com/CrystalGamesStudio/wspolniak/issues/12)) ([43a5425](https://github.com/CrystalGamesStudio/wspolniak/commit/43a5425c8ef67bff2cf4dcd2188b0ef3418d9a4b))
+
 # 1.0.0 (2026-04-11)
 
 
