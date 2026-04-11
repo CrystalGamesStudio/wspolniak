@@ -1,3 +1,9 @@
 import { Hono } from "hono";
+import type { SessionPayload } from "@/db/identity/session";
 
-export const createHono = () => new Hono<{ Bindings: Env }>();
+export type AppEnv = {
+	Bindings: Env;
+	Variables: { user: SessionPayload };
+};
+
+export const createHono = () => new Hono<AppEnv>();
