@@ -1,3 +1,10 @@
+# 1.0.0 (2026-04-11)
+
+
+### Features
+
+* add users and instance_config schema, remove scaffolding client domain ([#11](https://github.com/CrystalGamesStudio/wspolniak/issues/11)) ([311393d](https://github.com/CrystalGamesStudio/wspolniak/commit/311393d6ab34780d4aed12402b0cc2b1c6410918))
+
 # [1.1.0](https://github.com/auditmos/tstack-on-cf/compare/v1.0.0...v1.1.0) (2026-04-09)
 
 
