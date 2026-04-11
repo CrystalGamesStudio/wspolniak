@@ -1,1 +1,2 @@
-export { clients } from "./client/table";
+export { users } from "./identity/table";
+export { instanceConfig } from "./instance/table";
