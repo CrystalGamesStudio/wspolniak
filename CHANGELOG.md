@@ -1,3 +1,10 @@
+# [1.3.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.2.0...v1.3.0) (2026-04-11)
+
+
+### Features
+
+* session middleware + route protection ([#14](https://github.com/CrystalGamesStudio/wspolniak/issues/14)) ([bd0d6d7](https://github.com/CrystalGamesStudio/wspolniak/commit/bd0d6d7a99af867c11a8389b2fdd67476243d348))
+
 # [1.2.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.1.0...v1.2.0) (2026-04-11)
 
 
