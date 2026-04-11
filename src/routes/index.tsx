@@ -1,24 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { MiddlewareDemo } from "@/components/demo";
-import { FeaturesSection } from "@/components/landing/features-section";
-import { Footer } from "@/components/landing/footer";
-import { HeroSection } from "@/components/landing/hero-section";
-import { NavigationBar } from "@/components/navigation";
+import { LandingPage } from "@/components/landing/landing-page";
+import { getSession } from "@/core/functions/session";
 
 export const Route = createFileRoute("/")({
-	component: LandingPage,
+	loader: async () => {
+		const session = await getSession();
+		return { isAuthenticated: !!session };
+	},
+	component: () => {
+		const { isAuthenticated } = Route.useLoaderData();
+		return <LandingPage isAuthenticated={isAuthenticated} />;
+	},
 });
-
-function LandingPage() {
-	return (
-		<div className="min-h-screen bg-background">
-			<NavigationBar />
-			<main>
-				<HeroSection />
-				<FeaturesSection />
-				<MiddlewareDemo />
-			</main>
-			<Footer />
-		</div>
-	);
-}
