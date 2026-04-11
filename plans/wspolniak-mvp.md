@@ -9,12 +9,12 @@ Durable decisions that apply across all phases:
 - **Architecture style**: Single Cloudflare Worker serving TanStack Start SSR + Hono API under one domain. One Worker = one family instance. No multi-tenancy.
 - **Frontend**: TanStack Start (SSR + Router + Query), Tailwind v4, Shadcn. Polish-only UI, no i18n infrastructure.
 - **Backend**: Hono routes mounted under `/api/*`, TanStack server functions for SSR-tied flows.
-- **Database**: Cloudflare D1 (SQLite). Single DB per instance. Soft deletes via nullable `deleted_at` on all user-generated content.
+- **Database**: Neon PostgreSQL (serverless). Per-environment configs (dev/production). Soft deletes via nullable `deleted_at` on all user-generated content.
 - **Image storage**: Cloudflare Images (paid ~$5/mo). Direct upload from client (bypasses Worker CPU). Automatic HEIC→JPEG conversion and variant generation.
 - **Key entities**: `users` (admin + members), `posts`, `post_images`, `comments`, `push_subscriptions`, `instance_config`.
 - **Auth model**: Passwordless magic links. Token hash in DB, long-lived signed cookie for session. No passwords, no registration, no email/SMS. Link = identity.
 - **Authorization**: Two roles (`admin`, `member`). Pure-function rule engine. Admin override on all edit/delete operations.
-- **Deployment model**: Self-hostable via "Deploy to Cloudflare" button. Per-instance D1 + CF Images binding. Zero shared infrastructure.
+- **Deployment model**: Self-hostable via "Deploy to Cloudflare" button. Per-instance Neon DB + CF Images binding. Zero shared infrastructure.
 - **PWA**: `vite-plugin-pwa` with Workbox. Service Worker, manifest, Web Push (VAPID). iOS 16.4+ requires "Add to Home Screen" before push permission.
 - **License**: AGPL-3.0-or-later. SPDX headers in all source files.
 - **Quality gates per phase**: `pnpm types`, `pnpm lint`, `pnpm test` must pass. Max 500 lines per source file. Tests at module boundaries, not internals.
@@ -33,7 +33,7 @@ The public landing renders at the root domain and describes the project with a l
 
 ### Acceptance criteria
 
-- [ ] Fresh deploy of the Worker with empty D1 serves a public landing page at `/` with project description and GitHub link
+- [ ] Fresh deploy of the Worker with empty DB serves a public landing page at `/` with project description and GitHub link
 - [ ] Visiting `/setup` on an empty instance shows a form; submitting it creates an admin user and displays a magic link for copying
 - [ ] Visiting `/setup` after setup is complete returns 404
 - [ ] Clicking a magic link sets a session cookie and redirects to the authenticated area showing the user's name
@@ -41,8 +41,8 @@ The public landing renders at the root domain and describes the project with a l
 - [ ] Session survives for at least 30 days
 - [ ] Clicking a magic link with an invalid or unknown token shows a friendly error page in Polish
 - [ ] Authenticated users visiting `/` are redirected to the authenticated area, not the landing page
-- [ ] Tokens are stored as hashes in D1, never plaintext
-- [ ] D1 schema migration for `users` and `instance_config` is versioned and reproducible
+- [ ] Tokens are stored as hashes in DB, never plaintext
+- [ ] DB schema migration for `users` and `instance_config` is versioned and reproducible
 - [ ] `pnpm types && pnpm lint && pnpm test` pass
 
 ---
@@ -67,7 +67,7 @@ New members added by the admin receive a token and appear in the member list imm
 - [ ] A member with a new valid link successfully logs in and sees their own name
 - [ ] A member with a revoked token sees the "link nieaktywny" error from Phase 1
 - [ ] Member cannot self-delete or self-revoke (admin-only operation)
-- [ ] D1 schema supports soft delete via nullable timestamp
+- [ ] DB schema supports soft delete via nullable timestamp
 - [ ] `pnpm types && pnpm lint && pnpm test` pass
 
 ---
@@ -93,13 +93,13 @@ The feed at `/app` shows all posts chronologically (newest first), with author n
 - [ ] Upload progress is visible per file during upload
 - [ ] Uploads go directly to Cloudflare Images via pre-signed URLs (not through the Worker)
 - [ ] HEIC files uploaded from an iPhone are viewable as JPEG/WebP by all family members
-- [ ] Submitting the post creates the post and its image associations atomically in D1
+- [ ] Submitting the post creates the post and its image associations atomically in DB
 - [ ] Server enforces the 50-posts-per-day-per-user limit and returns a clear error if exceeded
 - [ ] Feed at `/app` shows posts in reverse chronological order with author, timestamp, description, and image thumbnails
 - [ ] Clicking a thumbnail opens the full-resolution image
 - [ ] Single post view route renders a single post by ID
 - [ ] Thumbnails load quickly using the CF Images small variant
-- [ ] D1 schema for `posts` and `post_images` is migrated and versioned
+- [ ] DB schema for `posts` and `post_images` is migrated and versioned
 - [ ] `pnpm types && pnpm lint && pnpm test` pass
 
 ---
@@ -173,7 +173,7 @@ Comments are rendered inline in the single post view. The feed shows a comment c
 - [ ] Non-author non-admin member attempting edit or delete gets 403
 - [ ] Comments are limited to 1000 characters server-side with clear validation error
 - [ ] Soft-deleted comments disappear from the UI but remain in the DB
-- [ ] D1 schema for `comments` is migrated and versioned
+- [ ] DB schema for `comments` is migrated and versioned
 - [ ] Authorization uses the same module from Phase 5
 - [ ] `pnpm types && pnpm lint && pnpm test` pass
 
@@ -223,21 +223,21 @@ Triggers:
 
 Push payload includes title ("{author} dodał zdjęcie" or "{author} skomentował Twoje zdjęcie"), body (short snippet), icon, and click URL pointing to the relevant post. Clicking a notification opens (or focuses) the PWA on the post.
 
-Fan-out happens synchronously after the write transaction commits, using `waitUntil` so the response returns fast. Each push request is signed with VAPID JWT. If a push endpoint returns 410 Gone, the subscription is deleted from D1. Failed sends (non-410) are logged but don't retry in MVP.
+Fan-out happens synchronously after the write transaction commits, using `waitUntil` so the response returns fast. Each push request is signed with VAPID JWT. If a push endpoint returns 410 Gone, the subscription is deleted from DB. Failed sends (non-410) are logged but don't retry in MVP.
 
 ### Acceptance criteria
 
 - [ ] VAPID key pair generated; public key in client, private key in Worker secret
 - [ ] After PWA install, app requests notification permission appropriately (Android immediately, iOS only after home-screen confirmation)
-- [ ] Granted permission stores a push subscription in D1 linked to the user
+- [ ] Granted permission stores a push subscription in DB linked to the user
 - [ ] Creating a new post triggers a push to every other member with an active subscription
 - [ ] Creating a comment triggers a push to the post's author (only if commenter is not the author)
 - [ ] Notifications include title, body, icon, and open the correct post when clicked
-- [ ] Subscriptions returning 410 Gone are automatically removed from D1
+- [ ] Subscriptions returning 410 Gone are automatically removed from DB
 - [ ] Authors do not receive notifications for their own actions
 - [ ] Manual test on real iPhone 16.4+ PWA and real Android PWA passes
 - [ ] Fan-out does not delay the API response (verified via timing)
-- [ ] D1 schema for `push_subscriptions` is migrated and versioned
+- [ ] DB schema for `push_subscriptions` is migrated and versioned
 - [ ] `pnpm types && pnpm lint && pnpm test` pass
 
 ---

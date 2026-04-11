@@ -54,7 +54,7 @@ const user = await db.query.users.findFirst({
 ## Migrations
 
 - Never manually edit generated migration files
-- Run `pnpm db:generate` then `pnpm db:migrate:dev` (or `:staging` / `:production`)
+- Run `pnpm db:dev:generate` then `pnpm db:dev:migrate` (or `db:production:generate` / `db:production:migrate`)
 - Test migrations on dev/staging before production
 
 ## Domain Module Pattern

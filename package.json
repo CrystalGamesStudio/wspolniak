@@ -23,12 +23,14 @@
 		"deps:update": "taze -w",
 		"deps:major": "taze major",
 		"deps:major:update": "taze major -w",
-		"db:generate": "dotenvx run -f .dev.vars -- drizzle-kit generate",
-		"db:migrate:dev": "dotenvx run -f .dev.vars -- drizzle-kit migrate",
-		"db:migrate:staging": "dotenvx run -f .staging.vars -- drizzle-kit migrate",
-		"db:migrate:production": "dotenvx run -f .production.vars -- drizzle-kit migrate",
-		"db:studio": "dotenvx run -f .dev.vars -- drizzle-kit studio",
-		"db:seed:dev": "dotenvx run -f .dev.vars -- tsx scripts/seed.ts"
+		"db:dev:generate": "dotenvx run -f .dev.vars -- drizzle-kit generate --config drizzle-dev.config.ts",
+		"db:dev:migrate": "dotenvx run -f .dev.vars -- drizzle-kit migrate --config drizzle-dev.config.ts",
+		"db:dev:pull": "dotenvx run -f .dev.vars -- drizzle-kit pull --config drizzle-dev.config.ts",
+		"db:dev:studio": "dotenvx run -f .dev.vars -- drizzle-kit studio --config drizzle-dev.config.ts",
+		"db:dev:seed": "dotenvx run -f .dev.vars -- tsx scripts/seed.ts",
+		"db:production:generate": "dotenvx run -f .production.vars -- drizzle-kit generate --config drizzle-production.config.ts",
+		"db:production:migrate": "dotenvx run -f .production.vars -- drizzle-kit migrate --config drizzle-production.config.ts",
+		"db:production:pull": "dotenvx run -f .production.vars -- drizzle-kit pull --config drizzle-production.config.ts"
 	},
 	"dependencies": {
 		"@neondatabase/serverless": "^1.0.2",
