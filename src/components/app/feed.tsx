@@ -1,0 +1,90 @@
+import { getImageUrl } from "@/images/client";
+
+interface FeedImage {
+	id: string;
+	postId: string;
+	cfImageId: string;
+	displayOrder: number;
+	createdAt: string;
+}
+
+interface FeedPost {
+	id: string;
+	authorId: string;
+	description: string | null;
+	createdAt: string;
+	updatedAt: string;
+	author: { id: string; name: string };
+	images: FeedImage[];
+}
+
+interface FeedProps {
+	posts: FeedPost[];
+	imageAccountHash: string;
+}
+
+export function Feed({ posts, imageAccountHash }: FeedProps) {
+	if (posts.length === 0) {
+		return (
+			<div className="py-12 text-center">
+				<p className="text-muted-foreground">Brak postów — bądź pierwszy!</p>
+			</div>
+		);
+	}
+
+	return (
+		<div className="space-y-6">
+			{posts.map((post) => (
+				<article key={post.id} className="rounded-lg border border-border bg-card p-4">
+					<div className="mb-2 flex items-center gap-2">
+						<span className="font-semibold text-foreground">{post.author.name}</span>
+						<time className="text-sm text-muted-foreground" dateTime={post.createdAt}>
+							{formatRelativeTime(post.createdAt)}
+						</time>
+					</div>
+
+					{post.description && <p className="mb-3 text-foreground">{post.description}</p>}
+
+					<div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+						{post.images.map((image) => (
+							<a
+								key={image.id}
+								href={`/app/post/${post.id}`}
+								className="overflow-hidden rounded-md"
+							>
+								<img
+									src={getImageUrl({
+										accountHash: imageAccountHash,
+										cfImageId: image.cfImageId,
+										variant: "thumbnail",
+									})}
+									alt={`Zdjęcie ${image.displayOrder + 1}`}
+									className="aspect-square w-full object-cover transition-transform hover:scale-105"
+									loading="lazy"
+								/>
+							</a>
+						))}
+					</div>
+				</article>
+			))}
+		</div>
+	);
+}
+
+function formatRelativeTime(isoDate: string): string {
+	const date = new Date(isoDate);
+	const now = new Date();
+	const diffMs = now.getTime() - date.getTime();
+	const diffMin = Math.floor(diffMs / 60_000);
+
+	if (diffMin < 1) return "przed chwilą";
+	if (diffMin < 60) return `${diffMin} min temu`;
+
+	const diffHours = Math.floor(diffMin / 60);
+	if (diffHours < 24) return `${diffHours} godz. temu`;
+
+	const diffDays = Math.floor(diffHours / 24);
+	if (diffDays < 7) return `${diffDays} dn. temu`;
+
+	return date.toLocaleDateString("pl-PL");
+}
