@@ -1,3 +1,10 @@
+# [1.6.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.5.0...v1.6.0) (2026-04-12)
+
+
+### Features
+
+* posts with image upload — create, feed, single post view ([#4](https://github.com/CrystalGamesStudio/wspolniak/issues/4)) ([da2c312](https://github.com/CrystalGamesStudio/wspolniak/commit/da2c3124084cffd6f1b05fd1d29af87e18514670))
+
 # [1.5.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.4.1...v1.5.0) (2026-04-12)
 
 
