@@ -1,14 +1,15 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { LandingPage } from "@/components/landing/landing-page";
 import { getSession } from "@/core/functions/session";
 
 export const Route = createFileRoute("/")({
-	loader: async () => {
+	beforeLoad: async () => {
 		const session = await getSession();
-		return { isAuthenticated: !!session };
+		if (session) {
+			throw redirect({ to: "/app" });
+		}
 	},
 	component: () => {
-		const { isAuthenticated } = Route.useLoaderData();
-		return <LandingPage isAuthenticated={isAuthenticated} />;
+		return <LandingPage isAuthenticated={false} />;
 	},
 });
