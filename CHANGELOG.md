@@ -1,3 +1,10 @@
+## [1.6.1](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.6.0...v1.6.1) (2026-04-12)
+
+
+### Bug Fixes
+
+* remove deprecated baseUrl from tsconfig ([6bb2aeb](https://github.com/CrystalGamesStudio/wspolniak/commit/6bb2aebe8696a1c39b42eb63a5b67863aa6ebefb))
+
 # [1.6.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.5.0...v1.6.0) (2026-04-12)
 
 
