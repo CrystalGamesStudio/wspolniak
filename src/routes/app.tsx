@@ -1,5 +1,4 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
-import { AppPage } from "@/components/app/app-page";
+import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { getSession } from "@/core/functions/session";
 
 export const Route = createFileRoute("/app")({
@@ -10,8 +9,5 @@ export const Route = createFileRoute("/app")({
 		}
 		return { session };
 	},
-	component: () => {
-		const { session } = Route.useRouteContext();
-		return <AppPage name={session.name} />;
-	},
+	component: () => <Outlet />,
 });
