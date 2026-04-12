@@ -1,3 +1,10 @@
+# [1.5.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.4.1...v1.5.0) (2026-04-12)
+
+
+### Features
+
+* member management API — create, list, regenerate, soft-delete ([#3](https://github.com/CrystalGamesStudio/wspolniak/issues/3)) ([34f77b9](https://github.com/CrystalGamesStudio/wspolniak/commit/34f77b91b2d11c15467e71ff2107e211de46acbb))
+
 ## [1.4.1](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.4.0...v1.4.1) (2026-04-12)
 
 
