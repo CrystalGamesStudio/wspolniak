@@ -67,4 +67,69 @@ describe("Feed", () => {
 		expect(images[0]?.getAttribute("src")).toContain("cf-aaa");
 		expect(images[1]?.getAttribute("src")).toContain("cf-bbb");
 	});
+
+	it("shows 'koniec' message when hasNextPage is false and posts exist", () => {
+		const now = new Date().toISOString();
+		const posts = [
+			{
+				id: "post-1",
+				authorId: "u1",
+				description: "Test",
+				createdAt: now,
+				updatedAt: now,
+				author: { id: "u1", name: "Tomek" },
+				images: [
+					{ id: "img-1", postId: "post-1", cfImageId: "cf-aaa", displayOrder: 0, createdAt: now },
+				],
+			},
+		];
+
+		render(<Feed posts={posts} imageAccountHash="hash-1" hasNextPage={false} />);
+
+		expect(screen.getByText(/koniec/i)).toBeDefined();
+	});
+
+	it("does not show 'koniec' when there are more pages", () => {
+		const now = new Date().toISOString();
+		const posts = [
+			{
+				id: "post-1",
+				authorId: "u1",
+				description: "Test",
+				createdAt: now,
+				updatedAt: now,
+				author: { id: "u1", name: "Tomek" },
+				images: [
+					{ id: "img-1", postId: "post-1", cfImageId: "cf-aaa", displayOrder: 0, createdAt: now },
+				],
+			},
+		];
+
+		render(<Feed posts={posts} imageAccountHash="hash-1" hasNextPage={true} />);
+
+		expect(screen.queryByText(/koniec/i)).toBeNull();
+	});
+
+	it("shows loading indicator when fetching next page", () => {
+		const now = new Date().toISOString();
+		const posts = [
+			{
+				id: "post-1",
+				authorId: "u1",
+				description: "Test",
+				createdAt: now,
+				updatedAt: now,
+				author: { id: "u1", name: "Tomek" },
+				images: [
+					{ id: "img-1", postId: "post-1", cfImageId: "cf-aaa", displayOrder: 0, createdAt: now },
+				],
+			},
+		];
+
+		render(
+			<Feed posts={posts} imageAccountHash="hash-1" hasNextPage={true} isFetchingNextPage={true} />,
+		);
+
+		expect(screen.getByText(/ładowanie/i)).toBeDefined();
+	});
 });

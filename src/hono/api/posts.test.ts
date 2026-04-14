@@ -8,18 +8,24 @@ vi.mock("@/db/identity/session", () => ({
 vi.mock("@/db/posts/queries", () => ({
 	createPost: vi.fn(),
 	listRecentPosts: vi.fn(),
+	listPaginatedPosts: vi.fn(),
 	getPostById: vi.fn(),
 	countUserPostsToday: vi.fn(),
 }));
 
 import { verifySessionCookie } from "@/db/identity/session";
-import { countUserPostsToday, createPost, getPostById, listRecentPosts } from "@/db/posts/queries";
+import {
+	countUserPostsToday,
+	createPost,
+	getPostById,
+	listPaginatedPosts,
+} from "@/db/posts/queries";
 import postsEndpoint from "./posts";
 
 const mockVerify = vi.mocked(verifySessionCookie);
 const mockCreatePost = vi.mocked(createPost);
 const mockCountToday = vi.mocked(countUserPostsToday);
-const mockListPosts = vi.mocked(listRecentPosts);
+const mockListPaginated = vi.mocked(listPaginatedPosts);
 const mockGetPost = vi.mocked(getPostById);
 
 function createApi() {
@@ -170,30 +176,6 @@ describe("GET /api/app/posts", () => {
 		mockVerify.mockResolvedValue({ userId: "u1", name: "Tomek", role: "member" });
 	});
 
-	it("returns feed with posts", async () => {
-		const now = new Date();
-		mockListPosts.mockResolvedValue([
-			{
-				id: "post-1",
-				authorId: "u1",
-				description: "First",
-				createdAt: now,
-				updatedAt: now,
-				author: { id: "u1", name: "Tomek" },
-				images: [
-					{ id: "img-1", postId: "post-1", cfImageId: "cf-aaa", displayOrder: 0, createdAt: now },
-				],
-			},
-		]);
-
-		const api = createApi();
-		const res = await api.request("/api/app/posts", authedRequest("/api/app/posts"), env);
-
-		expect(res.status).toBe(200);
-		const body = (await res.json()) as { data: unknown[] };
-		expect(body.data).toHaveLength(1);
-	});
-
 	it("returns 401 without session", async () => {
 		mockVerify.mockResolvedValue(null);
 		const api = createApi();
@@ -244,5 +226,71 @@ describe("GET /api/app/posts/:id", () => {
 		);
 
 		expect(res.status).toBe(404);
+	});
+});
+
+describe("GET /api/app/posts (paginated)", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		mockVerify.mockResolvedValue({ userId: "u1", name: "Tomek", role: "member" });
+	});
+
+	it("returns first page with nextCursor", async () => {
+		const now = new Date();
+		mockListPaginated.mockResolvedValue({
+			posts: [
+				{
+					id: "post-1",
+					authorId: "u1",
+					description: "First",
+					createdAt: now,
+					updatedAt: now,
+					author: { id: "u1", name: "Tomek" },
+					images: [],
+				},
+			],
+			nextCursor: { createdAt: now.toISOString(), id: "post-1" },
+		});
+
+		const api = createApi();
+		const res = await api.request("/api/app/posts", authedRequest("/api/app/posts"), env);
+
+		expect(res.status).toBe(200);
+		const body = (await res.json()) as {
+			data: unknown[];
+			meta: { nextCursor: { createdAt: string; id: string } | null };
+		};
+		expect(body.data).toHaveLength(1);
+		expect(body.meta.nextCursor).not.toBeNull();
+		expect(body.meta.nextCursor?.id).toBe("post-1");
+		expect(mockListPaginated).toHaveBeenCalledWith({ limit: 20, cursor: undefined });
+	});
+
+	it("passes cursor from query params to listPaginatedPosts", async () => {
+		mockListPaginated.mockResolvedValue({ posts: [], nextCursor: null });
+
+		const api = createApi();
+		const res = await api.request(
+			"/api/app/posts?cursor=2026-01-01T12:00:00.000Z_post-5",
+			authedRequest("/api/app/posts?cursor=2026-01-01T12:00:00.000Z_post-5"),
+			env,
+		);
+
+		expect(res.status).toBe(200);
+		expect(mockListPaginated).toHaveBeenCalledWith({
+			limit: 20,
+			cursor: { createdAt: "2026-01-01T12:00:00.000Z", id: "post-5" },
+		});
+	});
+
+	it("returns null nextCursor at end of feed", async () => {
+		mockListPaginated.mockResolvedValue({ posts: [], nextCursor: null });
+
+		const api = createApi();
+		const res = await api.request("/api/app/posts", authedRequest("/api/app/posts"), env);
+
+		expect(res.status).toBe(200);
+		const body = (await res.json()) as { meta: { nextCursor: null } };
+		expect(body.meta.nextCursor).toBeNull();
 	});
 });
