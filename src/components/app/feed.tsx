@@ -1,3 +1,4 @@
+import { MessageCircleIcon } from "lucide-react";
 import { PostActions } from "@/components/app/post-actions";
 import { getImageUrl } from "@/images/client";
 
@@ -17,6 +18,7 @@ interface FeedPost {
 	updatedAt: string;
 	author: { id: string; name: string };
 	images: FeedImage[];
+	commentCount?: number;
 }
 
 interface FeedProps {
@@ -84,6 +86,14 @@ export function Feed({
 							</a>
 						))}
 					</div>
+
+					<a
+						href={`/app/post/${post.id}`}
+						className="mt-3 flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+					>
+						<MessageCircleIcon className="size-4" />
+						{post.commentCount ?? 0}
+					</a>
 				</article>
 			))}
 

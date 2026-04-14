@@ -1,4 +1,5 @@
 import { canDeletePost, canEditPost } from "@/core/authorization";
+import { countCommentsByPosts } from "@/db/comments/queries";
 import {
 	countUserPostsToday,
 	createPost,
@@ -52,8 +53,15 @@ postsEndpoint.get("/", async (c) => {
 	}
 
 	const result = await listPaginatedPosts({ limit: 20, cursor });
+	const postIds = result.posts.map((p) => p.id);
+	const commentCounts = await countCommentsByPosts(postIds);
+	const postsWithComments = result.posts.map((p) => ({
+		...p,
+		commentCount: commentCounts.get(p.id) ?? 0,
+	}));
+
 	return c.json({
-		data: result.posts,
+		data: postsWithComments,
 		meta: { nextCursor: result.nextCursor, imageAccountHash: c.env.CLOUDFLARE_IMAGES_ACCOUNT_HASH },
 	});
 });

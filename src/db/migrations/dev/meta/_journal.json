@@ -15,6 +15,13 @@
       "when": 1775989232680,
       "tag": "0001_certain_trauma",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1776173729342,
+      "tag": "0002_spicy_bullseye",
+      "breakpoints": true
     }
   ]
 }
