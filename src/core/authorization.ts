@@ -18,3 +18,15 @@ export function canEditPost(actor: Actor, post: PostTarget): boolean {
 export function canDeletePost(actor: Actor, post: PostTarget): boolean {
 	return isOwnerOrAdmin(actor, post.authorId);
 }
+
+export interface CommentTarget {
+	authorId: string;
+}
+
+export function canEditComment(actor: Actor, comment: CommentTarget): boolean {
+	return isOwnerOrAdmin(actor, comment.authorId);
+}
+
+export function canDeleteComment(actor: Actor, comment: CommentTarget): boolean {
+	return isOwnerOrAdmin(actor, comment.authorId);
+}

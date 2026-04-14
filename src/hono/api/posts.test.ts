@@ -15,6 +15,11 @@ vi.mock("@/db/posts/queries", () => ({
 	softDeletePost: vi.fn(),
 }));
 
+vi.mock("@/db/comments/queries", () => ({
+	countCommentsByPosts: vi.fn(),
+}));
+
+import { countCommentsByPosts } from "@/db/comments/queries";
 import { verifySessionCookie } from "@/db/identity/session";
 import {
 	countUserPostsToday,
@@ -27,6 +32,7 @@ import {
 import postsEndpoint from "./posts";
 
 const mockVerify = vi.mocked(verifySessionCookie);
+const mockCountComments = vi.mocked(countCommentsByPosts);
 const mockCreatePost = vi.mocked(createPost);
 const mockCountToday = vi.mocked(countUserPostsToday);
 const mockListPaginated = vi.mocked(listPaginatedPosts);
@@ -239,6 +245,7 @@ describe("GET /api/app/posts (paginated)", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mockVerify.mockResolvedValue({ userId: "u1", name: "Tomek", role: "member" });
+		mockCountComments.mockResolvedValue(new Map());
 	});
 
 	it("returns first page with nextCursor", async () => {
@@ -298,6 +305,48 @@ describe("GET /api/app/posts (paginated)", () => {
 		expect(res.status).toBe(200);
 		const body = (await res.json()) as { meta: { nextCursor: null } };
 		expect(body.meta.nextCursor).toBeNull();
+	});
+
+	it("includes commentCount per post in feed response", async () => {
+		const now = new Date();
+		mockListPaginated.mockResolvedValue({
+			posts: [
+				{
+					id: "post-1",
+					authorId: "u1",
+					description: "First",
+					createdAt: now,
+					updatedAt: now,
+					author: { id: "u1", name: "Tomek" },
+					images: [],
+				},
+				{
+					id: "post-2",
+					authorId: "u1",
+					description: "Second",
+					createdAt: now,
+					updatedAt: now,
+					author: { id: "u1", name: "Tomek" },
+					images: [],
+				},
+			],
+			nextCursor: null,
+		});
+		mockCountComments.mockResolvedValue(
+			new Map([
+				["post-1", 3],
+				["post-2", 0],
+			]),
+		);
+
+		const api = createApi();
+		const res = await api.request("/api/app/posts", authedRequest("/api/app/posts"), env);
+
+		expect(res.status).toBe(200);
+		const body = (await res.json()) as { data: { id: string; commentCount: number }[] };
+		expect(body.data[0]?.commentCount).toBe(3);
+		expect(body.data[1]?.commentCount).toBe(0);
+		expect(mockCountComments).toHaveBeenCalledWith(["post-1", "post-2"]);
 	});
 });
 
