@@ -1,3 +1,10 @@
+# [1.7.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.6.1...v1.7.0) (2026-04-14)
+
+
+### Features
+
+* cursor-based feed pagination with infinite scroll ([#5](https://github.com/CrystalGamesStudio/wspolniak/issues/5)) ([c3f1997](https://github.com/CrystalGamesStudio/wspolniak/commit/c3f199756a3579974b2628d4bf2adf5f59be1ded))
+
 ## [1.6.1](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.6.0...v1.6.1) (2026-04-12)
 
 
