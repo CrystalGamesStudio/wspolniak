@@ -1,3 +1,10 @@
+---
+paths:
+  - src/db/**
+  - src/hono/**
+  - src/core/errors.ts
+---
+
 # Error Handling
 
 ## Layered Approach

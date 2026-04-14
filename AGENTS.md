@@ -21,10 +21,15 @@ TanStack Start frontend + Hono API backend on Cloudflare Workers.
 - `src/components/ui/` — Shadcn primitives (do not edit manually)
 - `src/core/functions/` — TanStack server functions
 - `src/core/middleware/` — server function middleware
+- `src/db/` — Drizzle schema, queries, and migrations (per-domain modules)
 - `src/hono/` — Hono API routes and factory
+- `src/pwa/` — PWA service worker and install logic
+- `src/lib/` — shared utilities
 - `src/server.ts` — custom CF Workers entry (routes `/api/*` → Hono, rest → TanStack)
 - `src/integrations/tanstack-query/` — query client setup and providers
 - Path alias: `@/*` → `src/*`
+
+<important if="you need to run commands to build, test, lint, or deploy">
 
 ## Commands
 
@@ -55,6 +60,8 @@ pnpm db:production:migrate    # run production migrations
 pnpm db:production:pull       # pull schema from production DB
 ```
 
+</important>
+
 ## Architecture
 
 Prefer **deep modules** (Ousterhout): small interface hiding large implementation. Test at module boundaries, not internals. See `.claude/rules/deep-modules.md`.
@@ -63,7 +70,9 @@ Technology-specific rules live in `.claude/rules/` with scoped `paths:` frontmat
 
 ## Verification
 
+<important if="you are creating new files or modifying existing files">
 Max 500 lines per source file — split if exceeding.
+</important>
 
 <important if="you have finished implementing or modifying code">
 Run manually before declaring done:
