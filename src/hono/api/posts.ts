@@ -1,4 +1,6 @@
 import { canDeletePost, canEditPost } from "@/core/authorization";
+import { notifyNewPost } from "@/core/notify";
+import { createSendWebPush } from "@/core/web-push";
 import { countCommentsByPosts } from "@/db/comments/queries";
 import {
 	countUserPostsToday,
@@ -9,6 +11,10 @@ import {
 	updatePostDescription,
 } from "@/db/posts/queries";
 import { createPostSchema, updatePostSchema } from "@/db/posts/schema";
+import {
+	deleteSubscriptionByEndpoint,
+	getActiveSubscriptions,
+} from "@/db/push-subscriptions/queries";
 import { createHono } from "@/hono/factory";
 import { authMiddleware } from "@/hono/middleware/auth";
 
@@ -37,6 +43,27 @@ postsEndpoint.post("/", async (c) => {
 		description: result.data.description,
 		cfImageIds: result.data.cfImageIds,
 	});
+
+	if (c.env.VAPID_PUBLIC_KEY && c.env.VAPID_PRIVATE_KEY) {
+		const sendPush = createSendWebPush({
+			publicKey: c.env.VAPID_PUBLIC_KEY,
+			privateKey: c.env.VAPID_PRIVATE_KEY,
+			subject: `mailto:${c.env.VAPID_SUBJECT ?? "admin@wspolniak.app"}`,
+		});
+		c.executionCtx.waitUntil(
+			notifyNewPost(
+				{
+					getActiveSubscriptions,
+					getSubscriptionsByUserId: async () => [],
+					sendPush,
+					deleteSubscription: deleteSubscriptionByEndpoint,
+				},
+				user.userId,
+				user.name,
+				post.post.id,
+			),
+		);
+	}
 
 	return c.json({ data: post.post }, 201);
 });

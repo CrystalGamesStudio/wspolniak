@@ -15,6 +15,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app/index'
 import { Route as AuthErrorRouteImport } from './routes/auth/error'
 import { Route as AppNewRouteImport } from './routes/app/new'
+import { Route as AppAdminRouteImport } from './routes/app/admin'
 import { Route as AppPostIdRouteImport } from './routes/app/post.$id'
 
 const SetupRoute = SetupRouteImport.update({
@@ -47,6 +48,11 @@ const AppNewRoute = AppNewRouteImport.update({
   path: '/new',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAdminRoute = AppAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppPostIdRoute = AppPostIdRouteImport.update({
   id: '/post/$id',
   path: '/post/$id',
@@ -57,6 +63,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
   '/setup': typeof SetupRoute
+  '/app/admin': typeof AppAdminRoute
   '/app/new': typeof AppNewRoute
   '/auth/error': typeof AuthErrorRoute
   '/app/': typeof AppIndexRoute
@@ -65,6 +72,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/setup': typeof SetupRoute
+  '/app/admin': typeof AppAdminRoute
   '/app/new': typeof AppNewRoute
   '/auth/error': typeof AuthErrorRoute
   '/app': typeof AppIndexRoute
@@ -75,6 +83,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
   '/setup': typeof SetupRoute
+  '/app/admin': typeof AppAdminRoute
   '/app/new': typeof AppNewRoute
   '/auth/error': typeof AuthErrorRoute
   '/app/': typeof AppIndexRoute
@@ -86,17 +95,26 @@ export interface FileRouteTypes {
     | '/'
     | '/app'
     | '/setup'
+    | '/app/admin'
     | '/app/new'
     | '/auth/error'
     | '/app/'
     | '/app/post/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/setup' | '/app/new' | '/auth/error' | '/app' | '/app/post/$id'
+  to:
+    | '/'
+    | '/setup'
+    | '/app/admin'
+    | '/app/new'
+    | '/auth/error'
+    | '/app'
+    | '/app/post/$id'
   id:
     | '__root__'
     | '/'
     | '/app'
     | '/setup'
+    | '/app/admin'
     | '/app/new'
     | '/auth/error'
     | '/app/'
@@ -154,6 +172,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppNewRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/admin': {
+      id: '/app/admin'
+      path: '/admin'
+      fullPath: '/app/admin'
+      preLoaderRoute: typeof AppAdminRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/post/$id': {
       id: '/app/post/$id'
       path: '/post/$id'
@@ -165,12 +190,14 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppRouteChildren {
+  AppAdminRoute: typeof AppAdminRoute
   AppNewRoute: typeof AppNewRoute
   AppIndexRoute: typeof AppIndexRoute
   AppPostIdRoute: typeof AppPostIdRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppAdminRoute: AppAdminRoute,
   AppNewRoute: AppNewRoute,
   AppIndexRoute: AppIndexRoute,
   AppPostIdRoute: AppPostIdRoute,

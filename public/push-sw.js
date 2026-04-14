@@ -1,0 +1,40 @@
+// Push notification handler for Service Worker
+// Loaded by Workbox via importScripts
+
+self.addEventListener("push", (event) => {
+	if (!event.data) return;
+
+	let payload;
+	try {
+		payload = event.data.json();
+	} catch {
+		return;
+	}
+
+	const { title, body, icon, url } = payload;
+
+	event.waitUntil(
+		self.registration.showNotification(title, {
+			body: body || "",
+			icon: icon || "/icons/icon-192x192.png",
+			data: { url: url || "/app" },
+		}),
+	);
+});
+
+self.addEventListener("notificationclick", (event) => {
+	event.notification.close();
+
+	const url = event.notification.data?.url || "/app";
+
+	event.waitUntil(
+		clients.matchAll({ type: "window", includeUncontrolled: true }).then((windowClients) => {
+			for (const client of windowClients) {
+				if (client.url.includes(url) && "focus" in client) {
+					return client.focus();
+				}
+			}
+			return clients.openWindow(url);
+		}),
+	);
+});

@@ -86,9 +86,16 @@ function FeedPage() {
 		<div className="mx-auto max-w-2xl bg-background px-4 py-6">
 			<div className="mb-6 flex items-center justify-between">
 				<h1 className="text-2xl font-bold text-foreground">Witaj {session.name}</h1>
-				<a href="/app/new">
-					<Button>Nowy post</Button>
-				</a>
+				<div className="flex gap-2">
+					{session.role === "admin" && (
+						<a href="/app/admin">
+							<Button variant="outline">Rodzina</Button>
+						</a>
+					)}
+					<a href="/app/new">
+						<Button>Nowy post</Button>
+					</a>
+				</div>
 			</div>
 			<Feed
 				posts={allPosts as never[]}
