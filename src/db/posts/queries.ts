@@ -168,6 +168,29 @@ export async function getPostById(id: string): Promise<PostWithAuthorAndImages |
 	};
 }
 
+export async function updatePostDescription(
+	id: string,
+	description: string | null,
+): Promise<Post | null> {
+	const rows = await getDb()
+		.update(posts)
+		.set({ description, updatedAt: new Date() })
+		.where(and(eq(posts.id, id), isNull(posts.deletedAt)))
+		.returning();
+
+	return rows[0] ?? null;
+}
+
+export async function softDeletePost(id: string): Promise<Post | null> {
+	const rows = await getDb()
+		.update(posts)
+		.set({ deletedAt: new Date() })
+		.where(and(eq(posts.id, id), isNull(posts.deletedAt)))
+		.returning();
+
+	return rows[0] ?? null;
+}
+
 export async function countUserPostsToday(userId: string): Promise<number> {
 	const startOfDay = new Date();
 	startOfDay.setHours(0, 0, 0, 0);

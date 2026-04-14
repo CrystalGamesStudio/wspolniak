@@ -93,6 +93,8 @@ function FeedPage() {
 			<Feed
 				posts={allPosts as never[]}
 				imageAccountHash={imageAccountHash}
+				currentUserId={session.userId}
+				currentUserRole={session.role}
 				hasNextPage={hasNextPage}
 				isFetchingNextPage={isFetchingNextPage}
 				loadMoreRef={loadMoreRef}

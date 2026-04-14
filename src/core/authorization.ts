@@ -1,0 +1,20 @@
+export interface Actor {
+	userId: string;
+	role: string;
+}
+
+export interface PostTarget {
+	authorId: string;
+}
+
+function isOwnerOrAdmin(actor: Actor, ownerId: string): boolean {
+	return actor.userId === ownerId || actor.role === "admin";
+}
+
+export function canEditPost(actor: Actor, post: PostTarget): boolean {
+	return isOwnerOrAdmin(actor, post.authorId);
+}
+
+export function canDeletePost(actor: Actor, post: PostTarget): boolean {
+	return isOwnerOrAdmin(actor, post.authorId);
+}

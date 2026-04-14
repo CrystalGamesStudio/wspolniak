@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { PostView } from "@/components/app/post-view";
 
 interface PostResponse {
@@ -20,6 +20,8 @@ export const Route = createFileRoute("/app/post/$id")({
 
 function PostPage() {
 	const { id } = Route.useParams();
+	const { session } = Route.useRouteContext();
+	const navigate = useNavigate();
 	const { data: response, isLoading } = useQuery({
 		queryKey: ["posts", id],
 		queryFn: () => fetchPost(id),
@@ -49,7 +51,13 @@ function PostPage() {
 			>
 				&larr; Wróć do feedu
 			</a>
-			<PostView post={response.data as never} imageAccountHash={response.meta.imageAccountHash} />
+			<PostView
+				post={response.data as never}
+				imageAccountHash={response.meta.imageAccountHash}
+				currentUserId={session.userId}
+				currentUserRole={session.role}
+				onDeleted={() => navigate({ to: "/app" })}
+			/>
 		</div>
 	);
 }

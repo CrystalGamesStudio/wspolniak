@@ -11,6 +11,8 @@ vi.mock("@/db/posts/queries", () => ({
 	listPaginatedPosts: vi.fn(),
 	getPostById: vi.fn(),
 	countUserPostsToday: vi.fn(),
+	updatePostDescription: vi.fn(),
+	softDeletePost: vi.fn(),
 }));
 
 import { verifySessionCookie } from "@/db/identity/session";
@@ -19,6 +21,8 @@ import {
 	createPost,
 	getPostById,
 	listPaginatedPosts,
+	softDeletePost,
+	updatePostDescription,
 } from "@/db/posts/queries";
 import postsEndpoint from "./posts";
 
@@ -27,6 +31,8 @@ const mockCreatePost = vi.mocked(createPost);
 const mockCountToday = vi.mocked(countUserPostsToday);
 const mockListPaginated = vi.mocked(listPaginatedPosts);
 const mockGetPost = vi.mocked(getPostById);
+const mockUpdateDescription = vi.mocked(updatePostDescription);
+const mockSoftDelete = vi.mocked(softDeletePost);
 
 function createApi() {
 	const api = new Hono<{
@@ -292,5 +298,205 @@ describe("GET /api/app/posts (paginated)", () => {
 		expect(res.status).toBe(200);
 		const body = (await res.json()) as { meta: { nextCursor: null } };
 		expect(body.meta.nextCursor).toBeNull();
+	});
+});
+
+const now = new Date();
+const samplePost = {
+	id: "post-1",
+	authorId: "u1",
+	description: "Stary opis",
+	deletedAt: null,
+	createdAt: now,
+	updatedAt: now,
+	author: { id: "u1", name: "Tomek" },
+	images: [],
+};
+
+describe("PATCH /api/app/posts/:id", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		mockVerify.mockResolvedValue({ userId: "u1", name: "Tomek", role: "member" });
+	});
+
+	it("allows author to edit their own post description", async () => {
+		mockGetPost.mockResolvedValue(samplePost);
+		mockUpdateDescription.mockResolvedValue({ ...samplePost, description: "Nowy opis" });
+
+		const api = createApi();
+		const res = await api.request(
+			"/api/app/posts/post-1",
+			authedRequest("/api/app/posts/post-1", {
+				method: "PATCH",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ description: "Nowy opis" }),
+			}),
+			env,
+		);
+
+		expect(res.status).toBe(200);
+		const body = (await res.json()) as { data: { description: string } };
+		expect(body.data.description).toBe("Nowy opis");
+	});
+
+	it("allows admin to edit any post", async () => {
+		mockVerify.mockResolvedValue({ userId: "u2", name: "Admin", role: "admin" });
+		mockGetPost.mockResolvedValue(samplePost);
+		mockUpdateDescription.mockResolvedValue({ ...samplePost, description: "Admin edit" });
+
+		const api = createApi();
+		const res = await api.request(
+			"/api/app/posts/post-1",
+			authedRequest("/api/app/posts/post-1", {
+				method: "PATCH",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ description: "Admin edit" }),
+			}),
+			env,
+		);
+
+		expect(res.status).toBe(200);
+	});
+
+	it("returns 403 for non-author non-admin member", async () => {
+		mockVerify.mockResolvedValue({ userId: "u2", name: "Kasia", role: "member" });
+		mockGetPost.mockResolvedValue(samplePost);
+
+		const api = createApi();
+		const res = await api.request(
+			"/api/app/posts/post-1",
+			authedRequest("/api/app/posts/post-1", {
+				method: "PATCH",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ description: "Hack" }),
+			}),
+			env,
+		);
+
+		expect(res.status).toBe(403);
+		expect(mockUpdateDescription).not.toHaveBeenCalled();
+	});
+
+	it("returns 404 for non-existent post", async () => {
+		mockGetPost.mockResolvedValue(null);
+
+		const api = createApi();
+		const res = await api.request(
+			"/api/app/posts/non-existent",
+			authedRequest("/api/app/posts/non-existent", {
+				method: "PATCH",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ description: "Test" }),
+			}),
+			env,
+		);
+
+		expect(res.status).toBe(404);
+	});
+
+	it("returns 401 without session", async () => {
+		mockVerify.mockResolvedValue(null);
+		const api = createApi();
+		const res = await api.request(
+			"/api/app/posts/post-1",
+			{
+				method: "PATCH",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ description: "Test" }),
+			},
+			env,
+		);
+
+		expect(res.status).toBe(401);
+	});
+
+	it("returns 400 when description exceeds 2000 chars", async () => {
+		mockGetPost.mockResolvedValue(samplePost);
+
+		const api = createApi();
+		const res = await api.request(
+			"/api/app/posts/post-1",
+			authedRequest("/api/app/posts/post-1", {
+				method: "PATCH",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ description: "x".repeat(2001) }),
+			}),
+			env,
+		);
+
+		expect(res.status).toBe(400);
+	});
+});
+
+describe("DELETE /api/app/posts/:id", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		mockVerify.mockResolvedValue({ userId: "u1", name: "Tomek", role: "member" });
+	});
+
+	it("allows author to delete their own post", async () => {
+		mockGetPost.mockResolvedValue(samplePost);
+		mockSoftDelete.mockResolvedValue({ ...samplePost, deletedAt: now });
+
+		const api = createApi();
+		const res = await api.request(
+			"/api/app/posts/post-1",
+			authedRequest("/api/app/posts/post-1", { method: "DELETE" }),
+			env,
+		);
+
+		expect(res.status).toBe(200);
+		expect(mockSoftDelete).toHaveBeenCalledWith("post-1");
+	});
+
+	it("allows admin to delete any post", async () => {
+		mockVerify.mockResolvedValue({ userId: "u2", name: "Admin", role: "admin" });
+		mockGetPost.mockResolvedValue(samplePost);
+		mockSoftDelete.mockResolvedValue({ ...samplePost, deletedAt: now });
+
+		const api = createApi();
+		const res = await api.request(
+			"/api/app/posts/post-1",
+			authedRequest("/api/app/posts/post-1", { method: "DELETE" }),
+			env,
+		);
+
+		expect(res.status).toBe(200);
+	});
+
+	it("returns 403 for non-author non-admin member", async () => {
+		mockVerify.mockResolvedValue({ userId: "u2", name: "Kasia", role: "member" });
+		mockGetPost.mockResolvedValue(samplePost);
+
+		const api = createApi();
+		const res = await api.request(
+			"/api/app/posts/post-1",
+			authedRequest("/api/app/posts/post-1", { method: "DELETE" }),
+			env,
+		);
+
+		expect(res.status).toBe(403);
+		expect(mockSoftDelete).not.toHaveBeenCalled();
+	});
+
+	it("returns 404 for non-existent post", async () => {
+		mockGetPost.mockResolvedValue(null);
+
+		const api = createApi();
+		const res = await api.request(
+			"/api/app/posts/non-existent",
+			authedRequest("/api/app/posts/non-existent", { method: "DELETE" }),
+			env,
+		);
+
+		expect(res.status).toBe(404);
+	});
+
+	it("returns 401 without session", async () => {
+		mockVerify.mockResolvedValue(null);
+		const api = createApi();
+		const res = await api.request("/api/app/posts/post-1", { method: "DELETE" }, env);
+
+		expect(res.status).toBe(401);
 	});
 });
