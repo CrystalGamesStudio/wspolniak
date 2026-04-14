@@ -1,3 +1,10 @@
+# [1.8.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.7.0...v1.8.0) (2026-04-14)
+
+
+### Features
+
+* edit & delete posts with authorization ([#6](https://github.com/CrystalGamesStudio/wspolniak/issues/6)) ([192df36](https://github.com/CrystalGamesStudio/wspolniak/commit/192df360d1b3ca165c097492d295f0472d886508))
+
 # [1.7.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.6.1...v1.7.0) (2026-04-14)
 
 
