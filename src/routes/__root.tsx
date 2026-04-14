@@ -27,6 +27,10 @@ export const Route = createRootRouteWithContext<{
 				title: "Wspólniak",
 				description: "Wspólniak — aplikacja dla rodziny",
 			}),
+			{
+				name: "theme-color",
+				content: "#18181b",
+			},
 		],
 		links: [
 			{ rel: "stylesheet", href: appCss },
@@ -47,7 +51,7 @@ export const Route = createRootRouteWithContext<{
 				sizes: "16x16",
 				href: "/favicon-16x16.png",
 			},
-			{ rel: "manifest", href: "/site.webmanifest", color: "#fffff" },
+			{ rel: "manifest", href: "/manifest.webmanifest" },
 			{ rel: "icon", href: "/favicon.ico" },
 		],
 	}),

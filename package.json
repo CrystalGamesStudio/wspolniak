@@ -82,6 +82,7 @@
 		"tsx": "^4.21.0",
 		"typescript": "^5.9.3",
 		"vite": "7.1.2",
+		"vite-plugin-pwa": "^1.2.0",
 		"vitest": "^4.1.4",
 		"web-vitals": "^4.2.4",
 		"wrangler": "^4.81.1"
