@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 import { pgTable, text, timestamp } from "drizzle-orm/pg-core";
 
 export const comments = pgTable("comments", {

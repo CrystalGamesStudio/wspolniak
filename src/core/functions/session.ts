@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 import { createServerFn } from "@tanstack/react-start";
 import { getSessionUser } from "@/core/middleware/auth";
 

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 import { checkDatabase } from "@/db/health";
 import { createHono } from "@/hono/factory";
 

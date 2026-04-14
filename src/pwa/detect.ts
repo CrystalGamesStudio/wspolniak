@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /**
  * Detects iOS Safari (not Chrome/Firefox/etc. on iOS).
  * Accepts optional UA string for testability; defaults to navigator.userAgent.

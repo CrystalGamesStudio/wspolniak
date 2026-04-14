@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 import { Link } from "@tanstack/react-router";
 import {
 	ArrowRight,
@@ -193,7 +194,7 @@ export function LandingPage({ isAuthenticated }: LandingPageProps) {
 			<footer className="border-t border-border px-6 py-8">
 				<div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-4 sm:flex-row">
 					<p className="text-sm text-muted-foreground">
-						Wspólniak &mdash; open source, MIT License
+						Wspólniak &mdash; open source, AGPL-3.0-or-later
 					</p>
 					<a
 						href="https://github.com/CrystalGamesStudio/wspolniak"

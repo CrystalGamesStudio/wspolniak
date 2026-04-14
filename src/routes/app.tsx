@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { PwaShell } from "@/components/pwa/pwa-shell";
 import { getSession } from "@/core/functions/session";

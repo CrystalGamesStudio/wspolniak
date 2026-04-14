@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /** Web Push VAPID + encryption using Web Crypto API (CF Workers compatible). */
 
 function base64ToUint8Array(base64: string): Uint8Array {

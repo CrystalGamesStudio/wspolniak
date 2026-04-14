@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 import type { InferSelectModel } from "drizzle-orm";
 import { eq, ne } from "drizzle-orm";
 import { getDb } from "@/db/setup";

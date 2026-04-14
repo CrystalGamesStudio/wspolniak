@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 import { getCookie } from "@tanstack/react-start/server";
 import {
 	SESSION_COOKIE_NAME,

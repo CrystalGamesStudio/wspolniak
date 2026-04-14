@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 import { createSessionCookie, SESSION_COOKIE_NAME, verifySessionCookie } from "./session";
 
 const SECRET = "test-secret-at-least-32-characters-long";

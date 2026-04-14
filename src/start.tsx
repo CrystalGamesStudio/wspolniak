@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 import { createStart } from "@tanstack/react-start";
 
 declare module "@tanstack/react-start" {

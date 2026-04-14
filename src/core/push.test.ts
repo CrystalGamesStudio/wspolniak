@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 import { buildPushPayload, fanOutPush, type PushPayload, type SubscriptionInfo } from "./push";
 
 describe("buildPushPayload", () => {

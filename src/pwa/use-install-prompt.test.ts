@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 import { act, renderHook } from "@testing-library/react";
 import { useInstallPrompt } from "./use-install-prompt";
 

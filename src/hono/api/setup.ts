@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 import { z } from "zod/v4";
 import { generateToken } from "@/db/identity/crypto";
 import { createUser } from "@/db/identity/queries";

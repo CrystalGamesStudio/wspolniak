@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 import { deleteSubscriptionByEndpoint, saveSubscription } from "@/db/push-subscriptions/queries";
 import { subscribeSchema, unsubscribeSchema } from "@/db/push-subscriptions/schema";
 import { createHono } from "@/hono/factory";

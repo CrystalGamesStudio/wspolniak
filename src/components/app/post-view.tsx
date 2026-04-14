@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 import { PostActions } from "@/components/app/post-actions";
 import { getImageUrl } from "@/images/client";
 
