@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 import { completeSetup, isSetupCompleted } from "./queries";
 import { instanceConfig } from "./table";
 

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 import { canDeleteComment, canEditComment } from "@/core/authorization";
 import { notifyNewComment } from "@/core/notify";
 import { createSendWebPush } from "@/core/web-push";

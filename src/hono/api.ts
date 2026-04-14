@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 import adminEndpoint from "@/hono/api/admin";
 import appEndpoint from "@/hono/api/app";
 import commentsEndpoint from "@/hono/api/comments";

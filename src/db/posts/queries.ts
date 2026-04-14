@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 import type { InferSelectModel } from "drizzle-orm";
 import { and, count, desc, eq, gte, isNull, sql } from "drizzle-orm";
 import { users } from "@/db/identity/table";

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 export const SESSION_COOKIE_NAME = "session";
 
 const ONE_YEAR_SECONDS = 365 * 24 * 60 * 60;
