@@ -1,3 +1,13 @@
+# [1.9.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.8.0...v1.9.0) (2026-04-14)
+
+
+### Features
+
+* add comments with authorization and feed count ([#7](https://github.com/CrystalGamesStudio/wspolniak/issues/7)) ([b93db7c](https://github.com/CrystalGamesStudio/wspolniak/commit/b93db7cdc5b0680a065d866c0d5f194795f75bac))
+* add push notifications and admin member management ([#9](https://github.com/CrystalGamesStudio/wspolniak/issues/9)) ([1bd1119](https://github.com/CrystalGamesStudio/wspolniak/commit/1bd1119d0e85bb232063cac22d6aceb4c662b842))
+* add SPDX headers, fix license to AGPL-3.0, add apple-touch icon ([#10](https://github.com/CrystalGamesStudio/wspolniak/issues/10)) ([4bf1069](https://github.com/CrystalGamesStudio/wspolniak/commit/4bf1069d3d8d2da3f603006a8939b52ce0595037))
+* PWA shell with offline support and install prompts ([#8](https://github.com/CrystalGamesStudio/wspolniak/issues/8)) ([9fbba7f](https://github.com/CrystalGamesStudio/wspolniak/commit/9fbba7f431726229aa4f2fe4c3984697dfc3eaed))
+
 # [1.8.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.7.0...v1.8.0) (2026-04-14)
 
 
