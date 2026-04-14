@@ -1,3 +1,4 @@
+import { PostActions } from "@/components/app/post-actions";
 import { getImageUrl } from "@/images/client";
 
 interface FeedImage {
@@ -21,6 +22,8 @@ interface FeedPost {
 interface FeedProps {
 	posts: FeedPost[];
 	imageAccountHash: string;
+	currentUserId: string;
+	currentUserRole: string;
 	hasNextPage?: boolean;
 	isFetchingNextPage?: boolean;
 	loadMoreRef?: React.RefObject<HTMLDivElement | null>;
@@ -29,6 +32,8 @@ interface FeedProps {
 export function Feed({
 	posts,
 	imageAccountHash,
+	currentUserId,
+	currentUserRole,
 	hasNextPage,
 	isFetchingNextPage,
 	loadMoreRef,
@@ -50,6 +55,11 @@ export function Feed({
 						<time className="text-sm text-muted-foreground" dateTime={post.createdAt}>
 							{formatRelativeTime(post.createdAt)}
 						</time>
+						{(post.authorId === currentUserId || currentUserRole === "admin") && (
+							<div className="ml-auto">
+								<PostActions postId={post.id} description={post.description} />
+							</div>
+						)}
 					</div>
 
 					{post.description && <p className="mb-3 text-foreground">{post.description}</p>}

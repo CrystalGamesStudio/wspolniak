@@ -10,3 +10,13 @@ export const createPostSchema = z.object({
 });
 
 export type CreatePostRequest = z.infer<typeof createPostSchema>;
+
+export const updatePostSchema = z.object({
+	description: z
+		.string()
+		.max(2000)
+		.nullish()
+		.transform((v) => v ?? null),
+});
+
+export type UpdatePostRequest = z.infer<typeof updatePostSchema>;

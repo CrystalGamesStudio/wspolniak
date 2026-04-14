@@ -4,6 +4,8 @@ import {
 	getPostById,
 	listPaginatedPosts,
 	listRecentPosts,
+	softDeletePost,
+	updatePostDescription,
 } from "./queries";
 import { postImages, posts } from "./table";
 
@@ -426,5 +428,69 @@ describe("listPaginatedPosts", () => {
 
 		expect(result.posts).toHaveLength(1);
 		expect(result.posts[0]?.images).toHaveLength(2);
+	});
+});
+
+function mockUpdateChain(returnedRows: unknown[]) {
+	const mockReturning = vi.fn().mockResolvedValue(returnedRows);
+	const mockWhere = vi.fn().mockReturnValue({ returning: mockReturning });
+	const mockSet = vi.fn().mockReturnValue({ where: mockWhere });
+	const mockUpdate = vi.fn().mockReturnValue({ set: mockSet });
+	mockGetDb.mockReturnValue({ update: mockUpdate } as never);
+}
+
+describe("updatePostDescription", () => {
+	it("updates description and returns the updated post", async () => {
+		const now = new Date();
+		const updatedPost = {
+			id: "post-1",
+			authorId: "user-1",
+			description: "Nowy opis",
+			deletedAt: null,
+			createdAt: now,
+			updatedAt: now,
+		};
+		mockUpdateChain([updatedPost]);
+
+		const result = await updatePostDescription("post-1", "Nowy opis");
+
+		expect(result).not.toBeNull();
+		expect(result?.description).toBe("Nowy opis");
+	});
+
+	it("returns null when post does not exist", async () => {
+		mockUpdateChain([]);
+
+		const result = await updatePostDescription("non-existent", "Coś");
+
+		expect(result).toBeNull();
+	});
+});
+
+describe("softDeletePost", () => {
+	it("sets deletedAt and returns the deleted post", async () => {
+		const now = new Date();
+		const deletedPost = {
+			id: "post-1",
+			authorId: "user-1",
+			description: "Test",
+			deletedAt: now,
+			createdAt: now,
+			updatedAt: now,
+		};
+		mockUpdateChain([deletedPost]);
+
+		const result = await softDeletePost("post-1");
+
+		expect(result).not.toBeNull();
+		expect(result?.deletedAt).toBeTruthy();
+	});
+
+	it("returns null when post does not exist", async () => {
+		mockUpdateChain([]);
+
+		const result = await softDeletePost("non-existent");
+
+		expect(result).toBeNull();
 	});
 });

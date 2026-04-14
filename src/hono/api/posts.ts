@@ -1,10 +1,13 @@
+import { canDeletePost, canEditPost } from "@/core/authorization";
 import {
 	countUserPostsToday,
 	createPost,
 	getPostById,
 	listPaginatedPosts,
+	softDeletePost,
+	updatePostDescription,
 } from "@/db/posts/queries";
-import { createPostSchema } from "@/db/posts/schema";
+import { createPostSchema, updatePostSchema } from "@/db/posts/schema";
 import { createHono } from "@/hono/factory";
 import { authMiddleware } from "@/hono/middleware/auth";
 
@@ -61,6 +64,44 @@ postsEndpoint.get("/:id", async (c) => {
 		return c.json({ error: "Not found" }, 404);
 	}
 	return c.json({ data: post, meta: { imageAccountHash: c.env.CLOUDFLARE_IMAGES_ACCOUNT_HASH } });
+});
+
+postsEndpoint.patch("/:id", async (c) => {
+	const user = c.get("user");
+	const body = await c.req.json();
+	const result = updatePostSchema.safeParse(body);
+
+	if (!result.success) {
+		return c.json({ error: "Validation failed", details: result.error.flatten() }, 400);
+	}
+
+	const post = await getPostById(c.req.param("id"));
+	if (!post) {
+		return c.json({ error: "Not found" }, 404);
+	}
+
+	if (!canEditPost(user, post)) {
+		return c.json({ error: "Forbidden" }, 403);
+	}
+
+	const updated = await updatePostDescription(post.id, result.data.description);
+	return c.json({ data: updated });
+});
+
+postsEndpoint.delete("/:id", async (c) => {
+	const user = c.get("user");
+
+	const post = await getPostById(c.req.param("id"));
+	if (!post) {
+		return c.json({ error: "Not found" }, 404);
+	}
+
+	if (!canDeletePost(user, post)) {
+		return c.json({ error: "Forbidden" }, 403);
+	}
+
+	await softDeletePost(post.id);
+	return c.json({ data: { id: post.id } });
 });
 
 export default postsEndpoint;

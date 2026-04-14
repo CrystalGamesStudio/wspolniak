@@ -1,5 +1,20 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen } from "@testing-library/react";
+import type { ReactNode } from "react";
 import { Feed } from "./feed";
+
+function createWrapper() {
+	const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+	return function Wrapper({ children }: { children: ReactNode }) {
+		return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
+	};
+}
+
+const defaultProps = {
+	imageAccountHash: "hash-1",
+	currentUserId: "u1",
+	currentUserRole: "member",
+};
 
 describe("Feed", () => {
 	it("renders posts with author name and description", () => {
@@ -29,7 +44,7 @@ describe("Feed", () => {
 			},
 		];
 
-		render(<Feed posts={posts} imageAccountHash="hash-1" />);
+		render(<Feed posts={posts} {...defaultProps} />, { wrapper: createWrapper() });
 
 		expect(screen.getByText("Tomek")).toBeDefined();
 		expect(screen.getByText("Wakacje nad morzem")).toBeDefined();
@@ -38,7 +53,7 @@ describe("Feed", () => {
 	});
 
 	it("renders empty state when no posts", () => {
-		render(<Feed posts={[]} imageAccountHash="hash-1" />);
+		render(<Feed posts={[]} {...defaultProps} />, { wrapper: createWrapper() });
 
 		expect(screen.getByText(/brak postów/i)).toBeDefined();
 	});
@@ -60,7 +75,7 @@ describe("Feed", () => {
 			},
 		];
 
-		render(<Feed posts={posts} imageAccountHash="hash-1" />);
+		render(<Feed posts={posts} {...defaultProps} />, { wrapper: createWrapper() });
 
 		const images = screen.getAllByRole("img");
 		expect(images).toHaveLength(2);
@@ -84,7 +99,9 @@ describe("Feed", () => {
 			},
 		];
 
-		render(<Feed posts={posts} imageAccountHash="hash-1" hasNextPage={false} />);
+		render(<Feed posts={posts} {...defaultProps} hasNextPage={false} />, {
+			wrapper: createWrapper(),
+		});
 
 		expect(screen.getByText(/koniec/i)).toBeDefined();
 	});
@@ -105,7 +122,9 @@ describe("Feed", () => {
 			},
 		];
 
-		render(<Feed posts={posts} imageAccountHash="hash-1" hasNextPage={true} />);
+		render(<Feed posts={posts} {...defaultProps} hasNextPage={true} />, {
+			wrapper: createWrapper(),
+		});
 
 		expect(screen.queryByText(/koniec/i)).toBeNull();
 	});
@@ -126,9 +145,9 @@ describe("Feed", () => {
 			},
 		];
 
-		render(
-			<Feed posts={posts} imageAccountHash="hash-1" hasNextPage={true} isFetchingNextPage={true} />,
-		);
+		render(<Feed posts={posts} {...defaultProps} hasNextPage={true} isFetchingNextPage={true} />, {
+			wrapper: createWrapper(),
+		});
 
 		expect(screen.getByText(/ładowanie/i)).toBeDefined();
 	});

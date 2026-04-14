@@ -1,3 +1,4 @@
+import { PostActions } from "@/components/app/post-actions";
 import { getImageUrl } from "@/images/client";
 
 interface PostImage {
@@ -21,9 +22,20 @@ interface PostData {
 interface PostViewProps {
 	post: PostData;
 	imageAccountHash: string;
+	currentUserId?: string;
+	currentUserRole?: string;
+	onDeleted?: () => void;
 }
 
-export function PostView({ post, imageAccountHash }: PostViewProps) {
+export function PostView({
+	post,
+	imageAccountHash,
+	currentUserId,
+	currentUserRole,
+	onDeleted,
+}: PostViewProps) {
+	const canManage = currentUserId === post.authorId || currentUserRole === "admin";
+
 	return (
 		<article className="space-y-4">
 			<div className="flex items-center gap-2">
@@ -37,6 +49,11 @@ export function PostView({ post, imageAccountHash }: PostViewProps) {
 						minute: "2-digit",
 					})}
 				</time>
+				{canManage && (
+					<div className="ml-auto">
+						<PostActions postId={post.id} description={post.description} onDeleted={onDeleted} />
+					</div>
+				)}
 			</div>
 
 			{post.description && <p className="text-foreground">{post.description}</p>}
