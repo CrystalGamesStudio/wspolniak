@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 import { canDeletePost, canEditPost } from "@/core/authorization";
 import { notifyNewPost } from "@/core/notify";
 import { createSendWebPush } from "@/core/web-push";

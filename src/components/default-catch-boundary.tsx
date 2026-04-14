@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 import type { ErrorComponentProps } from "@tanstack/react-router";
 import { Link, rootRouteId, useMatch, useRouter } from "@tanstack/react-router";
 import { AlertTriangle, ArrowLeft, Bug, ChevronDown, Home, Mail, RefreshCw } from "lucide-react";

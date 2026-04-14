@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 import { render, screen } from "@testing-library/react";
 import { LandingPage } from "./landing-page";
 
@@ -58,5 +59,11 @@ describe("LandingPage", () => {
 		expect(screen.getByText("Dlaczego Wspólniak?")).toBeDefined();
 		expect(screen.getByText("Pełna prywatność")).toBeDefined();
 		expect(screen.getByText("Dla całej rodziny")).toBeDefined();
+	});
+
+	it("displays AGPL-3.0-or-later license in footer", () => {
+		render(<LandingPage />);
+
+		expect(screen.getByText(/AGPL-3\.0/i)).toBeDefined();
 	});
 });

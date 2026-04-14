@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 import { createMiddleware } from "hono/factory";
 import type { SessionPayload } from "@/db/identity/session";
 

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 type PushPayloadInput =
 	| { type: "new_post"; authorName: string; postId: string }
 	| { type: "new_comment"; authorName: string; postId: string; snippet: string };

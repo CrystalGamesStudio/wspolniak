@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 import { setCookie } from "hono/cookie";
 import { findUserByTokenHash } from "@/db/identity/queries";
 import { createSessionCookie, SESSION_COOKIE_NAME } from "@/db/identity/session";

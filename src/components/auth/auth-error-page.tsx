@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 export function AuthErrorPage() {
 	return (
 		<div className="flex min-h-screen items-center justify-center bg-background">

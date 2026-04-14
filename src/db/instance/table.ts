@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 import { boolean, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 
 export const instanceConfig = pgTable("instance_config", {

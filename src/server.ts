@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // DO NOT DELETE THIS FILE!!!
 // Custom CF Workers entry: routes /api/* to Hono, /app/u/* to auth, rest to TanStack Start
 import handler from "@tanstack/react-start/server-entry";
