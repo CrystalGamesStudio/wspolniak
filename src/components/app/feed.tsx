@@ -21,9 +21,18 @@ interface FeedPost {
 interface FeedProps {
 	posts: FeedPost[];
 	imageAccountHash: string;
+	hasNextPage?: boolean;
+	isFetchingNextPage?: boolean;
+	loadMoreRef?: React.RefObject<HTMLDivElement | null>;
 }
 
-export function Feed({ posts, imageAccountHash }: FeedProps) {
+export function Feed({
+	posts,
+	imageAccountHash,
+	hasNextPage,
+	isFetchingNextPage,
+	loadMoreRef,
+}: FeedProps) {
 	if (posts.length === 0) {
 		return (
 			<div className="py-12 text-center">
@@ -67,6 +76,15 @@ export function Feed({ posts, imageAccountHash }: FeedProps) {
 					</div>
 				</article>
 			))}
+
+			<div ref={loadMoreRef}>
+				{isFetchingNextPage && (
+					<p className="py-4 text-center text-muted-foreground">Ładowanie...</p>
+				)}
+				{!hasNextPage && posts.length > 0 && !isFetchingNextPage && (
+					<p className="py-4 text-center text-muted-foreground">Koniec</p>
+				)}
+			</div>
 		</div>
 	);
 }

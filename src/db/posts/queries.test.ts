@@ -1,4 +1,10 @@
-import { countUserPostsToday, createPost, getPostById, listRecentPosts } from "./queries";
+import {
+	countUserPostsToday,
+	createPost,
+	getPostById,
+	listPaginatedPosts,
+	listRecentPosts,
+} from "./queries";
 import { postImages, posts } from "./table";
 
 vi.mock("@/db/setup", () => ({
@@ -316,5 +322,109 @@ describe("countUserPostsToday", () => {
 		const result = await countUserPostsToday("user-1");
 
 		expect(result).toBe(0);
+	});
+});
+
+function mockSelectChain(mockRows: unknown[]) {
+	const mockLimit = vi.fn().mockResolvedValue(mockRows);
+	const mockOrderBy = vi.fn().mockReturnValue({ limit: mockLimit });
+	const mockWhere = vi.fn().mockReturnValue({ orderBy: mockOrderBy });
+	const mockLeftJoin2 = vi.fn().mockReturnValue({ where: mockWhere });
+	const mockLeftJoin1 = vi.fn().mockReturnValue({ leftJoin: mockLeftJoin2 });
+	const mockFrom = vi.fn().mockReturnValue({ leftJoin: mockLeftJoin1 });
+	const mockSelect = vi.fn().mockReturnValue({ from: mockFrom });
+	mockGetDb.mockReturnValue({ select: mockSelect } as never);
+}
+
+function _makePostRow(id: string, authorName: string, createdAt: Date, imageId?: string) {
+	return {
+		post: {
+			id,
+			authorId: "user-1",
+			description: `Post ${id}`,
+			deletedAt: null,
+			createdAt,
+			updatedAt: createdAt,
+		},
+		author: { id: "user-1", name: authorName },
+		image: imageId
+			? { id: imageId, postId: id, cfImageId: `cf-${imageId}`, displayOrder: 0, createdAt }
+			: null,
+	};
+}
+
+describe("listPaginatedPosts", () => {
+	it("returns empty posts and null cursor for empty feed", async () => {
+		mockSelectChain([]);
+
+		const result = await listPaginatedPosts({ limit: 20 });
+
+		expect(result.posts).toEqual([]);
+		expect(result.nextCursor).toBeNull();
+	});
+
+	it("returns all posts and null cursor when fewer than limit", async () => {
+		const now = new Date();
+		const older = new Date(now.getTime() - 60_000);
+		mockSelectChain([
+			_makePostRow("post-2", "Tomek", now, "img-2"),
+			_makePostRow("post-1", "Tomek", older, "img-1"),
+		]);
+
+		const result = await listPaginatedPosts({ limit: 20 });
+
+		expect(result.posts).toHaveLength(2);
+		expect(result.posts[0]?.id).toBe("post-2");
+		expect(result.posts[1]?.id).toBe("post-1");
+		expect(result.nextCursor).toBeNull();
+	});
+
+	it("returns nextCursor when exactly limit+1 rows exist", async () => {
+		const base = new Date("2026-01-01T12:00:00Z");
+		// limit=2, so we need 3 rows (limit+1) to signal hasMore
+		const rows = [
+			_makePostRow("post-3", "Kasia", new Date(base.getTime() - 0), "img-3"),
+			_makePostRow("post-2", "Kasia", new Date(base.getTime() - 1000), "img-2"),
+			_makePostRow("post-1", "Kasia", new Date(base.getTime() - 2000), "img-1"),
+		];
+		mockSelectChain(rows);
+
+		const result = await listPaginatedPosts({ limit: 2 });
+
+		expect(result.posts).toHaveLength(2);
+		expect(result.posts[0]?.id).toBe("post-3");
+		expect(result.posts[1]?.id).toBe("post-2");
+		expect(result.nextCursor).not.toBeNull();
+		expect(result.nextCursor?.id).toBe("post-2");
+	});
+
+	it("returns null cursor at exact boundary (posts === limit)", async () => {
+		const base = new Date("2026-01-01T12:00:00Z");
+		// limit=2, exactly 2 rows — no extra row means no more pages
+		const rows = [
+			_makePostRow("post-2", "Kasia", new Date(base.getTime() - 0), "img-2"),
+			_makePostRow("post-1", "Kasia", new Date(base.getTime() - 1000), "img-1"),
+		];
+		mockSelectChain(rows);
+
+		const result = await listPaginatedPosts({ limit: 2 });
+
+		expect(result.posts).toHaveLength(2);
+		expect(result.nextCursor).toBeNull();
+	});
+
+	it("groups multiple images under the same post in paginated results", async () => {
+		const now = new Date();
+		// Two rows for the same post (two images)
+		const rows = [
+			_makePostRow("post-1", "Tomek", now, "img-1"),
+			{ ..._makePostRow("post-1", "Tomek", now, "img-2") },
+		];
+		mockSelectChain(rows);
+
+		const result = await listPaginatedPosts({ limit: 20 });
+
+		expect(result.posts).toHaveLength(1);
+		expect(result.posts[0]?.images).toHaveLength(2);
 	});
 });

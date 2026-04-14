@@ -1,4 +1,9 @@
-import { countUserPostsToday, createPost, getPostById, listRecentPosts } from "@/db/posts/queries";
+import {
+	countUserPostsToday,
+	createPost,
+	getPostById,
+	listPaginatedPosts,
+} from "@/db/posts/queries";
 import { createPostSchema } from "@/db/posts/schema";
 import { createHono } from "@/hono/factory";
 import { authMiddleware } from "@/hono/middleware/auth";
@@ -33,8 +38,21 @@ postsEndpoint.post("/", async (c) => {
 });
 
 postsEndpoint.get("/", async (c) => {
-	const posts = await listRecentPosts(50);
-	return c.json({ data: posts, meta: { imageAccountHash: c.env.CLOUDFLARE_IMAGES_ACCOUNT_HASH } });
+	const cursorParam = c.req.query("cursor");
+	let cursor: { createdAt: string; id: string } | undefined;
+	if (cursorParam) {
+		const separatorIndex = cursorParam.lastIndexOf("_");
+		cursor = {
+			createdAt: cursorParam.slice(0, separatorIndex),
+			id: cursorParam.slice(separatorIndex + 1),
+		};
+	}
+
+	const result = await listPaginatedPosts({ limit: 20, cursor });
+	return c.json({
+		data: result.posts,
+		meta: { nextCursor: result.nextCursor, imageAccountHash: c.env.CLOUDFLARE_IMAGES_ACCOUNT_HASH },
+	});
 });
 
 postsEndpoint.get("/:id", async (c) => {

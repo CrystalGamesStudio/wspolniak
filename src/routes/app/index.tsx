@@ -1,17 +1,38 @@
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useRef } from "react";
 import { Feed } from "@/components/app/feed";
 import { Button } from "@/components/ui/button";
 
-interface FeedResponse {
-	data: unknown[];
-	meta: { imageAccountHash: string };
+interface FeedPost {
+	id: string;
+	authorId: string;
+	description: string | null;
+	createdAt: string;
+	updatedAt: string;
+	author: { id: string; name: string };
+	images: {
+		id: string;
+		postId: string;
+		cfImageId: string;
+		displayOrder: number;
+		createdAt: string;
+	}[];
 }
 
-async function fetchPosts(): Promise<FeedResponse> {
-	const res = await fetch("/api/app/posts");
+interface FeedPage {
+	data: FeedPost[];
+	meta: {
+		nextCursor: { createdAt: string; id: string } | null;
+		imageAccountHash: string;
+	};
+}
+
+async function fetchPosts({ pageParam }: { pageParam?: string }): Promise<FeedPage> {
+	const url = pageParam ? `/api/app/posts?cursor=${pageParam}` : "/api/app/posts";
+	const res = await fetch(url);
 	if (!res.ok) throw new Error("Nie udało się pobrać postów");
-	return res.json() as Promise<FeedResponse>;
+	return res.json() as Promise<FeedPage>;
 }
 
 export const Route = createFileRoute("/app/")({
@@ -20,10 +41,35 @@ export const Route = createFileRoute("/app/")({
 
 function FeedPage() {
 	const { session } = Route.useRouteContext();
-	const { data, isLoading } = useQuery({
+	const loadMoreRef = useRef<HTMLDivElement>(null);
+
+	const { data, isLoading, hasNextPage, isFetchingNextPage, fetchNextPage } = useInfiniteQuery({
 		queryKey: ["posts"],
 		queryFn: fetchPosts,
+		initialPageParam: undefined as string | undefined,
+		getNextPageParam: (lastPage) => {
+			const cursor = lastPage.meta.nextCursor;
+			return cursor ? `${cursor.createdAt}_${cursor.id}` : undefined;
+		},
 	});
+
+	useEffect(() => {
+		const el = loadMoreRef.current;
+		if (!el) return;
+
+		const observer = new IntersectionObserver(
+			(entries) => {
+				const first = entries[0];
+				if (first?.isIntersecting && hasNextPage && !isFetchingNextPage) {
+					fetchNextPage();
+				}
+			},
+			{ rootMargin: "200px" },
+		);
+
+		observer.observe(el);
+		return () => observer.disconnect();
+	}, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
 	if (isLoading) {
 		return (
@@ -32,6 +78,9 @@ function FeedPage() {
 			</div>
 		);
 	}
+
+	const allPosts = data?.pages.flatMap((page) => page.data) ?? [];
+	const imageAccountHash = data?.pages[0]?.meta.imageAccountHash ?? "";
 
 	return (
 		<div className="mx-auto max-w-2xl bg-background px-4 py-6">
@@ -42,8 +91,11 @@ function FeedPage() {
 				</a>
 			</div>
 			<Feed
-				posts={(data?.data ?? []) as never[]}
-				imageAccountHash={data?.meta.imageAccountHash ?? ""}
+				posts={allPosts as never[]}
+				imageAccountHash={imageAccountHash}
+				hasNextPage={hasNextPage}
+				isFetchingNextPage={isFetchingNextPage}
+				loadMoreRef={loadMoreRef}
 			/>
 		</div>
 	);

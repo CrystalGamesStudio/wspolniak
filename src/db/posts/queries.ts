@@ -1,5 +1,5 @@
 import type { InferSelectModel } from "drizzle-orm";
-import { and, count, desc, eq, gte, isNull } from "drizzle-orm";
+import { and, count, desc, eq, gte, isNull, sql } from "drizzle-orm";
 import { users } from "@/db/identity/table";
 import { getDb } from "@/db/setup";
 import { postImages, posts } from "./table";
@@ -44,28 +44,19 @@ interface PostWithAuthorAndImages {
 	images: PostImage[];
 }
 
-export async function listRecentPosts(limit: number): Promise<PostWithAuthorAndImages[]> {
-	const rows = await getDb()
-		.select({
-			post: posts,
-			author: { id: users.id, name: users.name },
-			image: postImages,
-		})
-		.from(posts)
-		.leftJoin(users, eq(posts.authorId, users.id))
-		.leftJoin(postImages, eq(posts.id, postImages.postId))
-		.where(isNull(posts.deletedAt))
-		.orderBy(desc(posts.createdAt))
-		.limit(limit);
+type PostJoinRow = {
+	post: Post;
+	author: { id: string; name: string } | null;
+	image: PostImage | null;
+};
 
+function aggregatePostRows(rows: PostJoinRow[]): PostWithAuthorAndImages[] {
 	const postsMap = new Map<string, PostWithAuthorAndImages>();
 
 	for (const row of rows) {
 		const existing = postsMap.get(row.post.id);
 		if (existing) {
-			if (row.image) {
-				existing.images.push(row.image);
-			}
+			if (row.image) existing.images.push(row.image);
 		} else {
 			postsMap.set(row.post.id, {
 				id: row.post.id,
@@ -80,6 +71,71 @@ export async function listRecentPosts(limit: number): Promise<PostWithAuthorAndI
 	}
 
 	return [...postsMap.values()];
+}
+
+export async function listRecentPosts(limit: number): Promise<PostWithAuthorAndImages[]> {
+	const rows = await getDb()
+		.select({
+			post: posts,
+			author: { id: users.id, name: users.name },
+			image: postImages,
+		})
+		.from(posts)
+		.leftJoin(users, eq(posts.authorId, users.id))
+		.leftJoin(postImages, eq(posts.id, postImages.postId))
+		.where(isNull(posts.deletedAt))
+		.orderBy(desc(posts.createdAt))
+		.limit(limit);
+
+	return aggregatePostRows(rows);
+}
+
+interface PaginatedPostsInput {
+	limit: number;
+	cursor?: { createdAt: string; id: string };
+}
+
+interface PaginatedPostsResult {
+	posts: PostWithAuthorAndImages[];
+	nextCursor: { createdAt: string; id: string } | null;
+}
+
+export async function listPaginatedPosts(
+	input: PaginatedPostsInput,
+): Promise<PaginatedPostsResult> {
+	const { limit, cursor } = input;
+	const fetchLimit = limit + 1;
+
+	const conditions = [isNull(posts.deletedAt)];
+	if (cursor) {
+		const cursorDate = new Date(cursor.createdAt);
+		conditions.push(
+			sql`(${posts.createdAt} < ${cursorDate} OR (${posts.createdAt} = ${cursorDate} AND ${posts.id} < ${cursor.id}))`,
+		);
+	}
+
+	const rows = await getDb()
+		.select({
+			post: posts,
+			author: { id: users.id, name: users.name },
+			image: postImages,
+		})
+		.from(posts)
+		.leftJoin(users, eq(posts.authorId, users.id))
+		.leftJoin(postImages, eq(posts.id, postImages.postId))
+		.where(and(...conditions))
+		.orderBy(desc(posts.createdAt), desc(posts.id))
+		.limit(fetchLimit);
+
+	const allPosts = aggregatePostRows(rows);
+	const hasMore = allPosts.length > limit;
+	const resultPosts = hasMore ? allPosts.slice(0, limit) : allPosts;
+
+	const lastPost = resultPosts[resultPosts.length - 1];
+	const nextCursor =
+		hasMore && lastPost ? { createdAt: lastPost.createdAt.toISOString(), id: lastPost.id } : null;
+
+	return { posts: resultPosts, nextCursor };
 }
 
 export async function getPostById(id: string): Promise<PostWithAuthorAndImages | null> {
