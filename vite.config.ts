@@ -56,6 +56,7 @@ const config = defineConfig({
 			},
 			workbox: {
 				navigateFallback: null,
+				importScripts: ["push-sw.js"],
 				runtimeCaching: [
 					{
 						urlPattern: /^https:\/\/imagedelivery\.net\/.*/i,

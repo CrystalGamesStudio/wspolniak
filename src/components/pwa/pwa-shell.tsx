@@ -5,6 +5,7 @@ import { isIOSSafari, isStandalone } from "@/pwa/detect";
 import { useInstallPrompt } from "@/pwa/use-install-prompt";
 import { useOnlineStatus } from "@/pwa/use-online-status";
 import { IOSInstallBanner } from "./ios-install-banner";
+import { PushPrompt } from "./push-prompt";
 
 export function PwaShell({ children }: { children: React.ReactNode }) {
 	const online = useOnlineStatus();
@@ -75,6 +76,8 @@ export function PwaShell({ children }: { children: React.ReactNode }) {
 			)}
 
 			<IOSInstallBanner isIOSSafari={iosSafari} isStandalone={standalone} />
+
+			<PushPrompt isStandalone={standalone} />
 		</>
 	);
 }

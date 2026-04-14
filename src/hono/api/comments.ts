@@ -1,4 +1,6 @@
 import { canDeleteComment, canEditComment } from "@/core/authorization";
+import { notifyNewComment } from "@/core/notify";
+import { createSendWebPush } from "@/core/web-push";
 import {
 	createComment,
 	getCommentById,
@@ -8,6 +10,10 @@ import {
 } from "@/db/comments/queries";
 import { createCommentSchema, updateCommentSchema } from "@/db/comments/schema";
 import { getPostById } from "@/db/posts/queries";
+import {
+	deleteSubscriptionByEndpoint,
+	getSubscriptionsByUserId,
+} from "@/db/push-subscriptions/queries";
 import { createHono } from "@/hono/factory";
 import { authMiddleware } from "@/hono/middleware/auth";
 
@@ -46,6 +52,30 @@ commentsEndpoint.post("/:postId/comments", async (c) => {
 		authorId: user.userId,
 		body: result.data.body,
 	});
+
+	if (c.env.VAPID_PUBLIC_KEY && c.env.VAPID_PRIVATE_KEY) {
+		const sendPush = createSendWebPush({
+			publicKey: c.env.VAPID_PUBLIC_KEY,
+			privateKey: c.env.VAPID_PRIVATE_KEY,
+			subject: `mailto:${c.env.VAPID_SUBJECT ?? "admin@wspolniak.app"}`,
+		});
+		const snippet = result.data.body.slice(0, 100);
+		c.executionCtx.waitUntil(
+			notifyNewComment(
+				{
+					getActiveSubscriptions: async () => [],
+					getSubscriptionsByUserId,
+					sendPush,
+					deleteSubscription: deleteSubscriptionByEndpoint,
+				},
+				user.userId,
+				user.name,
+				post.authorId,
+				postId,
+				snippet,
+			),
+		);
+	}
 
 	return c.json({ data: comment }, 201);
 });
