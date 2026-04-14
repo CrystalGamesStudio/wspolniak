@@ -1,5 +1,6 @@
 import adminEndpoint from "@/hono/api/admin";
 import appEndpoint from "@/hono/api/app";
+import commentsEndpoint from "@/hono/api/comments";
 import healthEndpoint from "@/hono/api/health";
 import imagesEndpoint from "@/hono/api/images";
 import postsEndpoint from "@/hono/api/posts";
@@ -13,4 +14,5 @@ apiHono.route("/setup", setupEndpoint);
 apiHono.route("/app", appEndpoint);
 apiHono.route("/app/images", imagesEndpoint);
 apiHono.route("/app/posts", postsEndpoint);
+apiHono.route("/app/posts", commentsEndpoint);
 apiHono.route("/admin", adminEndpoint);

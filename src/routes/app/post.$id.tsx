@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { CommentSection } from "@/components/app/comment-section";
 import { PostView } from "@/components/app/post-view";
 
 interface PostResponse {
@@ -58,6 +59,8 @@ function PostPage() {
 				currentUserRole={session.role}
 				onDeleted={() => navigate({ to: "/app" })}
 			/>
+			<hr className="my-6 border-border" />
+			<CommentSection postId={id} currentUserId={session.userId} currentUserRole={session.role} />
 		</div>
 	);
 }
