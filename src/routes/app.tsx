@@ -1,4 +1,5 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
+import { PwaShell } from "@/components/pwa/pwa-shell";
 import { getSession } from "@/core/functions/session";
 
 export const Route = createFileRoute("/app")({
@@ -9,5 +10,9 @@ export const Route = createFileRoute("/app")({
 		}
 		return { session };
 	},
-	component: () => <Outlet />,
+	component: () => (
+		<PwaShell>
+			<Outlet />
+		</PwaShell>
+	),
 });
