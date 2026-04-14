@@ -1,3 +1,10 @@
+---
+paths:
+  - wrangler.jsonc
+  - vite.config.ts
+  - src/server.ts
+---
+
 # Cloudflare Deployment Rules
 
 ## Custom Domains vs Routes
