@@ -13,9 +13,9 @@ export const apiHono = createHono().basePath("/api");
 
 apiHono.route("/health", healthEndpoint);
 apiHono.route("/setup", setupEndpoint);
-apiHono.route("/app", appEndpoint);
 apiHono.route("/app/images", imagesEndpoint);
 apiHono.route("/app/posts", postsEndpoint);
 apiHono.route("/app/posts", commentsEndpoint);
 apiHono.route("/app/push", pushEndpoint);
+apiHono.route("/app", appEndpoint);
 apiHono.route("/admin", adminEndpoint);
