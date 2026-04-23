@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { Check, Copy, Link, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
+import { ThemeToggle } from "@/components/theme";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -103,11 +104,14 @@ function AdminPage() {
 		<div className="mx-auto max-w-2xl bg-background px-4 py-6">
 			<div className="mb-6 flex items-center justify-between">
 				<h1 className="text-2xl font-bold text-foreground">Zarządzanie rodziną</h1>
-				<a href="/app">
-					<Button variant="outline" size="sm">
-						Wróć
-					</Button>
-				</a>
+				<div className="flex items-center gap-2">
+					<ThemeToggle size="sm" />
+					<a href="/app">
+						<Button variant="outline" size="sm">
+							Wróć
+						</Button>
+					</a>
+				</div>
 			</div>
 
 			{lastMagicLink && (

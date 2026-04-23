@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-import { type ChangeEvent, type FormEvent, useCallback, useMemo, useState } from "react";
+import { ImagePlus } from "lucide-react";
+import { type ChangeEvent, type FormEvent, useCallback, useMemo, useRef, useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,6 +21,7 @@ export function NewPostForm({ onSubmit, isSubmitting }: NewPostFormProps) {
 	const [files, setFiles] = useState<File[]>([]);
 	const [error, setError] = useState<string | null>(null);
 	const [previews, setPreviews] = useState<string[]>([]);
+	const fileInputRef = useRef<HTMLInputElement>(null);
 
 	const handleFileChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
 		const selected = Array.from(e.target.files ?? []);
@@ -79,15 +81,26 @@ export function NewPostForm({ onSubmit, isSubmitting }: NewPostFormProps) {
 			</div>
 
 			<div className="space-y-2">
-				<Label htmlFor="photos">Zdjęcia</Label>
+				<Label>Zdjęcia</Label>
 				<input
-					id="photos"
+					ref={fileInputRef}
 					type="file"
 					accept={ACCEPTED_TYPES}
 					multiple
 					onChange={handleFileChange}
-					className="block w-full text-sm text-foreground file:mr-4 file:rounded-md file:border-0 file:bg-primary file:px-4 file:py-2 file:text-sm file:font-medium file:text-primary-foreground hover:file:bg-primary/90"
+					className="hidden"
 				/>
+				<Button
+					type="button"
+					variant="outline"
+					className="w-full"
+					onClick={() => fileInputRef.current?.click()}
+				>
+					<ImagePlus className="mr-2 h-4 w-4" />
+					{files.length > 0
+						? `Wybrano ${files.length} ${files.length === 1 ? "zdjęcie" : files.length < 5 ? "zdjęcia" : "zdjęć"}`
+						: "Wybierz zdjęcia"}
+				</Button>
 			</div>
 
 			{previews.length > 0 && (

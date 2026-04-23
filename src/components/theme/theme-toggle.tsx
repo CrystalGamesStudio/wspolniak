@@ -54,21 +54,21 @@ export function ThemeToggle({
 	const themeOptions = [
 		{
 			value: "light",
-			label: "Light",
+			label: "Jasny",
 			icon: Sun,
-			description: "Use light theme",
+			description: "Zawsze jasny motyw",
 		},
 		{
 			value: "dark",
-			label: "Dark",
+			label: "Ciemny",
 			icon: Moon,
-			description: "Use dark theme",
+			description: "Zawsze ciemny motyw",
 		},
 		{
 			value: "system",
-			label: "System",
+			label: "Systemowy",
 			icon: Monitor,
-			description: "Use system theme",
+			description: "Motyw z ustawień systemu",
 		},
 	] as const;
 
@@ -88,7 +88,7 @@ export function ThemeToggle({
             focus:ring-2 focus:ring-ring focus:ring-offset-2
             ${showLabel ? "gap-2" : "aspect-square"}
           `}
-					aria-label="Toggle theme"
+					aria-label="Zmień motyw"
 				>
 					<div className="relative flex items-center justify-center">{getCurrentIcon()}</div>
 					{showLabel && (
@@ -97,7 +97,10 @@ export function ThemeToggle({
 						</span>
 					)}
 					<span className="sr-only">
-						Current theme: {theme === "system" ? `System (${resolvedTheme})` : theme}
+						Aktualny motyw:{" "}
+						{theme === "system"
+							? `Systemowy (${resolvedTheme})`
+							: themeOptions.find((o) => o.value === theme)?.label}
 					</span>
 				</Button>
 			</DropdownMenuTrigger>
@@ -164,7 +167,7 @@ export function ThemeToggle({
                 ${resolvedTheme === "dark" ? "bg-blue-500" : "bg-amber-500"}
               `}
 							/>
-							Currently using {resolvedTheme} theme
+							Aktywny: {resolvedTheme === "dark" ? "ciemny" : "jasny"} motyw
 						</div>
 					</div>
 				)}
