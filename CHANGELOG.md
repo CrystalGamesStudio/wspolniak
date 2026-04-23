@@ -1,3 +1,10 @@
+## [1.12.1](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.12.0...v1.12.1) (2026-04-23)
+
+
+### Bug Fixes
+
+* correct production deploy flow and sync-secrets script ([04112d9](https://github.com/CrystalGamesStudio/wspolniak/commit/04112d9c7f608664b005df3a2ce026e71cac7c24))
+
 # [1.12.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.11.1...v1.12.0) (2026-04-23)
 
 
