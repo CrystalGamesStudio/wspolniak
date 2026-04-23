@@ -6,10 +6,16 @@ vi.mock("@/db/identity/session", () => ({
 	SESSION_COOKIE_NAME: "session",
 }));
 
+vi.mock("@/db/identity/queries", () => ({
+	findActiveUserById: vi.fn(),
+}));
+
+import { findActiveUserById } from "@/db/identity/queries";
 import { verifySessionCookie } from "@/db/identity/session";
 import appEndpoint from "./app";
 
 const mockVerify = vi.mocked(verifySessionCookie);
+const mockFindUser = vi.mocked(findActiveUserById);
 
 function createApi() {
 	const api = new Hono<{ Bindings: { SESSION_SECRET: string } }>().basePath("/api");
@@ -24,6 +30,14 @@ describe("GET /api/app/me", () => {
 
 	it("returns user data with valid session", async () => {
 		mockVerify.mockResolvedValue({ userId: "u1", name: "Tomek", role: "admin" });
+		mockFindUser.mockResolvedValue({
+			id: "u1",
+			name: "Tomek",
+			role: "admin",
+			tokenHash: "hash",
+			deletedAt: null,
+			createdAt: new Date(),
+		});
 
 		const api = createApi();
 		const res = await api.request(

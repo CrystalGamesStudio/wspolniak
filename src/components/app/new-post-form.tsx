@@ -81,8 +81,9 @@ export function NewPostForm({ onSubmit, isSubmitting }: NewPostFormProps) {
 			</div>
 
 			<div className="space-y-2">
-				<Label>Zdjęcia</Label>
+				<Label htmlFor="photos">Zdjęcia</Label>
 				<input
+					id="photos"
 					ref={fileInputRef}
 					type="file"
 					accept={ACCEPTED_TYPES}

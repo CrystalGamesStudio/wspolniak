@@ -6,6 +6,10 @@ vi.mock("@/db/identity/session", () => ({
 	SESSION_COOKIE_NAME: "session",
 }));
 
+vi.mock("@/db/identity/queries", () => ({
+	findActiveUserById: vi.fn(),
+}));
+
 vi.mock("@/db/posts/queries", () => ({
 	getPostById: vi.fn(),
 }));
@@ -25,11 +29,13 @@ import {
 	softDeleteComment,
 	updateCommentBody,
 } from "@/db/comments/queries";
+import { findActiveUserById } from "@/db/identity/queries";
 import { verifySessionCookie } from "@/db/identity/session";
 import { getPostById } from "@/db/posts/queries";
 import commentsEndpoint from "./comments";
 
 const mockVerify = vi.mocked(verifySessionCookie);
+const mockFindUser = vi.mocked(findActiveUserById);
 const mockGetPost = vi.mocked(getPostById);
 const mockCreateComment = vi.mocked(createComment);
 const mockListComments = vi.mocked(listCommentsByPost);
@@ -79,6 +85,14 @@ describe("POST /api/app/posts/:postId/comments", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mockVerify.mockResolvedValue({ userId: "u1", name: "Tomek", role: "member" });
+		mockFindUser.mockResolvedValue({
+			id: "u1",
+			name: "Tomek",
+			role: "member",
+			tokenHash: "hash",
+			deletedAt: null,
+			createdAt: new Date(),
+		});
 	});
 
 	it("creates comment with valid input", async () => {
@@ -178,6 +192,14 @@ describe("GET /api/app/posts/:postId/comments", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mockVerify.mockResolvedValue({ userId: "u1", name: "Tomek", role: "member" });
+		mockFindUser.mockResolvedValue({
+			id: "u1",
+			name: "Tomek",
+			role: "member",
+			tokenHash: "hash",
+			deletedAt: null,
+			createdAt: new Date(),
+		});
 	});
 
 	it("returns comments for a post", async () => {
@@ -224,6 +246,14 @@ describe("PATCH /api/app/posts/:postId/comments/:commentId", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mockVerify.mockResolvedValue({ userId: "u1", name: "Tomek", role: "member" });
+		mockFindUser.mockResolvedValue({
+			id: "u1",
+			name: "Tomek",
+			role: "member",
+			tokenHash: "hash",
+			deletedAt: null,
+			createdAt: new Date(),
+		});
 	});
 
 	it("allows author to edit their own comment", async () => {
@@ -248,6 +278,14 @@ describe("PATCH /api/app/posts/:postId/comments/:commentId", () => {
 
 	it("allows admin to edit any comment", async () => {
 		mockVerify.mockResolvedValue({ userId: "u2", name: "Admin", role: "admin" });
+		mockFindUser.mockResolvedValue({
+			id: "u2",
+			name: "Admin",
+			role: "admin",
+			tokenHash: "hash",
+			deletedAt: null,
+			createdAt: new Date(),
+		});
 		mockGetComment.mockResolvedValue(sampleComment);
 		mockUpdateBody.mockResolvedValue({ ...sampleComment, body: "Admin edit" });
 
@@ -267,6 +305,14 @@ describe("PATCH /api/app/posts/:postId/comments/:commentId", () => {
 
 	it("returns 403 for non-author non-admin member", async () => {
 		mockVerify.mockResolvedValue({ userId: "u2", name: "Kasia", role: "member" });
+		mockFindUser.mockResolvedValue({
+			id: "u2",
+			name: "Kasia",
+			role: "member",
+			tokenHash: "hash",
+			deletedAt: null,
+			createdAt: new Date(),
+		});
 		mockGetComment.mockResolvedValue(sampleComment);
 
 		const api = createApi();
@@ -323,6 +369,14 @@ describe("DELETE /api/app/posts/:postId/comments/:commentId", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mockVerify.mockResolvedValue({ userId: "u1", name: "Tomek", role: "member" });
+		mockFindUser.mockResolvedValue({
+			id: "u1",
+			name: "Tomek",
+			role: "member",
+			tokenHash: "hash",
+			deletedAt: null,
+			createdAt: new Date(),
+		});
 	});
 
 	it("allows author to delete their own comment", async () => {
@@ -342,6 +396,14 @@ describe("DELETE /api/app/posts/:postId/comments/:commentId", () => {
 
 	it("allows admin to delete any comment", async () => {
 		mockVerify.mockResolvedValue({ userId: "u2", name: "Admin", role: "admin" });
+		mockFindUser.mockResolvedValue({
+			id: "u2",
+			name: "Admin",
+			role: "admin",
+			tokenHash: "hash",
+			deletedAt: null,
+			createdAt: new Date(),
+		});
 		mockGetComment.mockResolvedValue(sampleComment);
 		mockSoftDelete.mockResolvedValue({ ...sampleComment, deletedAt: now });
 
@@ -357,6 +419,14 @@ describe("DELETE /api/app/posts/:postId/comments/:commentId", () => {
 
 	it("returns 403 for non-author non-admin member", async () => {
 		mockVerify.mockResolvedValue({ userId: "u2", name: "Kasia", role: "member" });
+		mockFindUser.mockResolvedValue({
+			id: "u2",
+			name: "Kasia",
+			role: "member",
+			tokenHash: "hash",
+			deletedAt: null,
+			createdAt: new Date(),
+		});
 		mockGetComment.mockResolvedValue(sampleComment);
 
 		const api = createApi();
