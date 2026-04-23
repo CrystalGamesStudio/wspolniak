@@ -30,6 +30,8 @@
 		"db:dev:pull": "dotenvx run -f .dev.vars -- drizzle-kit pull --config drizzle-dev.config.ts",
 		"db:dev:studio": "dotenvx run -f .dev.vars -- drizzle-kit studio --config drizzle-dev.config.ts",
 		"db:dev:seed": "dotenvx run -f .dev.vars -- tsx scripts/seed.ts",
+		"admin:dev:regenerate": "dotenvx run -f .dev.vars -- tsx scripts/regenerate-admin-token.ts",
+		"admin:production:regenerate": "dotenvx run -f .production.vars -- tsx scripts/regenerate-admin-token.ts",
 		"db:production:generate": "dotenvx run -f .production.vars -- drizzle-kit generate --config drizzle-production.config.ts",
 		"db:production:migrate": "dotenvx run -f .production.vars -- drizzle-kit migrate --config drizzle-production.config.ts",
 		"db:production:pull": "dotenvx run -f .production.vars -- drizzle-kit pull --config drizzle-production.config.ts"
