@@ -8,6 +8,13 @@
       "when": 1775917511215,
       "tag": "0000_good_pixie",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1776941068305,
+      "tag": "0001_orange_power_man",
+      "breakpoints": true
     }
   ]
 }
