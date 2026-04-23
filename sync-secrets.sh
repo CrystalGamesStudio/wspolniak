@@ -45,7 +45,7 @@ while IFS='=' read -r key value || [ -n "$key" ]; do
   fi
 
   echo "  SET  $key"
-  echo "$value" | wrangler secret put "$key" --env "$ENV"
+  echo "$value" | pnpm exec wrangler secret put "$key" --env "$ENV"
   COUNT=$((COUNT + 1))
 done < "$VARS_FILE"
 
