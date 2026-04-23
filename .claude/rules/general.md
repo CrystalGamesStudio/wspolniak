@@ -74,8 +74,9 @@ for (let i = 0; i < items.length; i++) {
 
 ## Bug Fix Workflow
 
-When a bug is reported:
-1. Write a failing test that reproduces the bug — do not touch implementation yet
-2. Show the failing test and propose a fix — wait for approval
-3. Implement the fix — the test should now pass
-4. Run full test suite to confirm no regressions
+When a bug is found or reported:
+1. Create a GitHub issue with `--label "bug"` — include root cause, reproduction steps, affected files, and suggested fix
+2. Write a failing test that reproduces the bug (if testable) — do not touch implementation yet
+3. Show the failing test and propose a fix — wait for approval
+4. Implement the fix — the test should now pass
+5. Run full test suite to confirm no regressions
