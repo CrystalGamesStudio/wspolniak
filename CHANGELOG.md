@@ -1,3 +1,10 @@
+## [1.12.2](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.12.1...v1.12.2) (2026-04-23)
+
+
+### Bug Fixes
+
+* route ordering blocks vapid-key endpoint, fix push icon path ([#20](https://github.com/CrystalGamesStudio/wspolniak/issues/20)) ([e8260f3](https://github.com/CrystalGamesStudio/wspolniak/commit/e8260f3b5402b214a6ba0be2507f3e26f935f7a3))
+
 ## [1.12.1](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.12.0...v1.12.1) (2026-04-23)
 
 
