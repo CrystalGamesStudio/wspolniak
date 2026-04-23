@@ -54,11 +54,48 @@ Dla rodzin, które chcą prywatnej przestrzeni na zdjęcia, bez:
 | Framework | TanStack Start (SSR + Router + Query) |
 | Styling | Tailwind CSS v4 + Shadcn/UI |
 | API | Hono na Cloudflare Workers |
-| Database | Cloudflare D1 (SQLite) |
+| Database | Neon PostgreSQL (serverless) |
 | Image storage | Cloudflare Images (automatyczna konwersja HEIC, warianty) |
 | Push | Web Push VAPID |
 | Language | TypeScript strict, Polish UI |
 | License | AGPL-3.0-or-later |
+
+---
+
+## Dla członków rodziny
+
+Dostałeś link od kogoś z rodziny? Oto jak zacząć:
+
+### 1. Otwórz link
+
+Kliknij link, który dostałeś (np. przez SMS lub WhatsApp). Zostaniesz automatycznie zalogowany — bez hasła, bez rejestracji.
+
+### 2. Zainstaluj aplikację na telefonie
+
+Wspólniak działa jako PWA (Progressive Web App) — możesz "zainstalować" go jak normalną aplikację, bez App Store.
+
+**Android (Chrome):**
+1. Pojawi się baner **"Zainstaluj aplikację Wspólniak"** na dole ekranu
+2. Kliknij **Instaluj**
+3. Gotowe — ikona pojawi się na ekranie głównym
+
+**iPhone (Safari):**
+1. Pojawi się baner z instrukcją na dole ekranu
+2. Naciśnij ikonę **Udostępnij** (kwadrat ze strzałką w górę)
+3. Wybierz **Dodaj do ekranu głównego**
+4. Potwierdź klikając **Dodaj**
+
+> **Ważne:** Na iPhone musisz użyć Safari — Chrome/Firefox na iOS nie wspierają instalacji PWA.
+
+### 3. Włącz powiadomienia
+
+Po zainstalowaniu aplikacji pojawi się komunikat **"Włącz powiadomienia o nowych zdjęciach"**. Kliknij **Włącz** — dzięki temu dostaniesz powiadomienie na telefon za każdym razem, gdy ktoś wrzuci nowe zdjęcie lub skomentuje post.
+
+> **iPhone:** Powiadomienia push wymagają iOS 16.4 lub nowszego i działają tylko po zainstalowaniu aplikacji na ekranie głównym.
+
+### 4. Gotowe
+
+Otwieraj Wspólniaka z ekranu głównego, przeglądaj zdjęcia, komentuj i wrzucaj swoje. Ostatnio załadowany feed jest dostępny nawet offline.
 
 ---
 
@@ -68,7 +105,8 @@ Wspólniak jest projektowany jako **self-hosted first**. Chcesz uruchomić włas
 
 ### Wymagania
 
-- **Konto Cloudflare** (free tier wystarcza dla Workers + D1)
+- **Konto Cloudflare** (free tier wystarcza dla Workers)
+- **Baza danych Neon PostgreSQL** (free tier: 0.5 GiB storage, 190h compute)
 - **Subskrypcja Cloudflare Images** (~$5/mies, 100k obrazów + 100k delivery) — wymagana dla automatycznej konwersji HEIC i generacji wariantów (thumbnail/full/avif)
 - **Domena** — własna (custom domain w CF) albo darmowa `*.workers.dev`
 - **~10 minut** na pierwszy deploy
@@ -83,14 +121,17 @@ cd wspolniak
 # Zainstaluj zależności
 pnpm install
 
-# Skonfiguruj wrangler.jsonc (D1, CF Images bindings, custom domain)
+# Skonfiguruj wrangler.jsonc (CF Images bindings, custom domain)
 # Zobacz docs/ dla szczegółów
 
 # Uruchom lokalnie
 pnpm dev
 
-# Deploy na Cloudflare
+# Deploy na Cloudflare (dev)
 pnpm deploy
+
+# Deploy na produkcję
+pnpm deploy:production
 ```
 
 Po pierwszym deploy wejdź na swoją domenę i kliknij `/setup` — pierwsza osoba która wejdzie zostanie adminem swojej instancji i dostanie magic link do skopiowania.
@@ -101,11 +142,15 @@ Po pierwszym deploy wejdź na swoją domenę i kliknij `/setup` — pierwsza oso
 |---|---|
 | `pnpm dev` | Dev server na porcie 3000 |
 | `pnpm build` | Production build |
-| `pnpm deploy` | Build + `wrangler deploy` |
+| `pnpm deploy` | Build + `wrangler deploy` (dev) |
+| `pnpm deploy:production` | Build + deploy na produkcję |
 | `pnpm test` / `test:watch` / `test:coverage` | Vitest |
 | `pnpm types` | Type-check (`tsc --noEmit`) |
 | `pnpm lint` / `lint:fix` | Biome |
 | `pnpm knip` | Detect unused files, deps, exports |
+| `pnpm admin:dev:regenerate` | Regeneruj magic link admina (dev) |
+| `pnpm admin:production:regenerate` | Regeneruj magic link admina (prod) |
+| `./sync-secrets.sh production` | Sync sekretów z `.production.vars` do CF |
 
 Pełna lista scripts i dev workflow — zobacz [`.claude/CLAUDE.md`](.claude/CLAUDE.md).
 
@@ -148,7 +193,7 @@ Hostując Wspólniaka dla własnej rodziny, zazwyczaj mieścisz się w wyłącze
 Planowany flow dla self-hosterów:
 
 1. Klikasz **Deploy to Cloudflare** button (powyżej)
-2. Cloudflare fork'uje repo na Twoje konto GitHub, tworzy Worker, D1 database i binding
+2. Cloudflare fork'uje repo na Twoje konto GitHub, tworzy Worker i binding
 3. **Aktywujesz Cloudflare Images** w dashboard ($5/mies subscription)
 4. Ustawiasz custom domain (opcjonalnie) lub używasz `*.workers.dev`
 5. Wchodzisz na swoją domenę → `/setup` → tworzysz konto admina
