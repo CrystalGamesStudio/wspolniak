@@ -1,3 +1,10 @@
+# [1.12.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.11.1...v1.12.0) (2026-04-23)
+
+
+### Features
+
+* add CLI script to regenerate admin magic link ([8099d25](https://github.com/CrystalGamesStudio/wspolniak/commit/8099d257b7c25086e84867c96d0023aa218bd231))
+
 ## [1.11.1](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.11.0...v1.11.1) (2026-04-23)
 
 
