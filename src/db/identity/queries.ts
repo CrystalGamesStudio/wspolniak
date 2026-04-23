@@ -44,6 +44,14 @@ export async function softDeleteMember(userId: string) {
 	await getDb().update(users).set({ deletedAt: new Date() }).where(eq(users.id, userId));
 }
 
+export async function findActiveUserById(id: string): Promise<User | null> {
+	const rows = await getDb()
+		.select()
+		.from(users)
+		.where(and(eq(users.id, id), isNull(users.deletedAt)));
+	return rows[0] ?? null;
+}
+
 export async function findUserByTokenHash(tokenHash: string): Promise<User | null> {
 	const rows = await getDb()
 		.select()

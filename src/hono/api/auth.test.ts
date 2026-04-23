@@ -50,7 +50,6 @@ describe("GET /app/u/:token", () => {
 		const setCookie = res.headers.get("Set-Cookie");
 		expect(setCookie).toContain("session=jwt-cookie-value");
 		expect(setCookie).toContain("HttpOnly");
-		expect(setCookie).toContain("Secure");
 		expect(setCookie).toContain("SameSite=Lax");
 		expect(setCookie).toContain("Max-Age=31536000");
 	});

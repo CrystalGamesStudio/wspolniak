@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { getCookie } from "hono/cookie";
 import { createMiddleware } from "hono/factory";
+import { findActiveUserById } from "@/db/identity/queries";
 import {
 	SESSION_COOKIE_NAME,
 	type SessionPayload,
@@ -24,7 +25,13 @@ export function authMiddleware() {
 			return c.json({ error: "Unauthorized" }, 401);
 		}
 
-		c.set("user", payload);
+		const dbUser = await findActiveUserById(payload.userId);
+
+		if (!dbUser) {
+			return c.json({ error: "Unauthorized" }, 401);
+		}
+
+		c.set("user", { userId: dbUser.id, name: dbUser.name, role: dbUser.role });
 		await next();
 	});
 }

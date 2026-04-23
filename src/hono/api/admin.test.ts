@@ -7,6 +7,7 @@ vi.mock("@/db/identity/session", () => ({
 }));
 
 vi.mock("@/db/identity/queries", () => ({
+	findActiveUserById: vi.fn(),
 	createMember: vi.fn(),
 	listActiveMembers: vi.fn(),
 	regenerateMemberToken: vi.fn(),
@@ -15,6 +16,7 @@ vi.mock("@/db/identity/queries", () => ({
 
 import {
 	createMember,
+	findActiveUserById,
 	listActiveMembers,
 	regenerateMemberToken,
 	softDeleteMember,
@@ -23,6 +25,7 @@ import { verifySessionCookie } from "@/db/identity/session";
 import adminEndpoint from "./admin";
 
 const mockVerify = vi.mocked(verifySessionCookie);
+const mockFindUser = vi.mocked(findActiveUserById);
 const mockCreateMember = vi.mocked(createMember);
 const mockListActiveMembers = vi.mocked(listActiveMembers);
 const mockRegenerateMemberToken = vi.mocked(regenerateMemberToken);
@@ -41,6 +44,14 @@ function adminHeaders() {
 beforeEach(() => {
 	vi.clearAllMocks();
 	mockVerify.mockResolvedValue({ userId: "u1", name: "Tomek", role: "admin" });
+	mockFindUser.mockResolvedValue({
+		id: "u1",
+		name: "Tomek",
+		role: "admin",
+		tokenHash: "hash",
+		deletedAt: null,
+		createdAt: new Date(),
+	});
 });
 
 describe("POST /api/admin/members", () => {
@@ -174,6 +185,14 @@ describe("DELETE /api/admin/members/:id", () => {
 describe("admin authorization", () => {
 	it("returns 403 for non-admin member on all admin endpoints", async () => {
 		mockVerify.mockResolvedValue({ userId: "u2", name: "Kasia", role: "member" });
+		mockFindUser.mockResolvedValue({
+			id: "u2",
+			name: "Kasia",
+			role: "member",
+			tokenHash: "hash",
+			deletedAt: null,
+			createdAt: new Date(),
+		});
 
 		const api = createApi();
 		const res = await api.request(

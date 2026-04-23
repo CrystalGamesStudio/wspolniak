@@ -6,16 +6,22 @@ vi.mock("@/db/identity/session", () => ({
 	SESSION_COOKIE_NAME: "session",
 }));
 
+vi.mock("@/db/identity/queries", () => ({
+	findActiveUserById: vi.fn(),
+}));
+
 vi.mock("@/db/push-subscriptions/queries", () => ({
 	saveSubscription: vi.fn(),
 	deleteSubscriptionByEndpoint: vi.fn(),
 }));
 
+import { findActiveUserById } from "@/db/identity/queries";
 import { verifySessionCookie } from "@/db/identity/session";
 import { deleteSubscriptionByEndpoint, saveSubscription } from "@/db/push-subscriptions/queries";
 import pushEndpoint from "./push";
 
 const mockVerify = vi.mocked(verifySessionCookie);
+const mockFindUser = vi.mocked(findActiveUserById);
 const mockSave = vi.mocked(saveSubscription);
 const mockDelete = vi.mocked(deleteSubscriptionByEndpoint);
 
@@ -42,6 +48,14 @@ describe("POST /api/app/push/subscribe", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mockVerify.mockResolvedValue({ userId: "u1", name: "Tomek", role: "member" });
+		mockFindUser.mockResolvedValue({
+			id: "u1",
+			name: "Tomek",
+			role: "member",
+			tokenHash: "hash",
+			deletedAt: null,
+			createdAt: new Date(),
+		});
 	});
 
 	it("saves a push subscription for the authenticated user", async () => {
@@ -117,6 +131,14 @@ describe("DELETE /api/app/push/subscribe", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mockVerify.mockResolvedValue({ userId: "u1", name: "Tomek", role: "member" });
+		mockFindUser.mockResolvedValue({
+			id: "u1",
+			name: "Tomek",
+			role: "member",
+			tokenHash: "hash",
+			deletedAt: null,
+			createdAt: new Date(),
+		});
 	});
 
 	it("deletes subscription by endpoint", async () => {

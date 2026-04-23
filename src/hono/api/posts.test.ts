@@ -6,6 +6,10 @@ vi.mock("@/db/identity/session", () => ({
 	SESSION_COOKIE_NAME: "session",
 }));
 
+vi.mock("@/db/identity/queries", () => ({
+	findActiveUserById: vi.fn(),
+}));
+
 vi.mock("@/db/posts/queries", () => ({
 	createPost: vi.fn(),
 	listRecentPosts: vi.fn(),
@@ -21,6 +25,7 @@ vi.mock("@/db/comments/queries", () => ({
 }));
 
 import { countCommentsByPosts } from "@/db/comments/queries";
+import { findActiveUserById } from "@/db/identity/queries";
 import { verifySessionCookie } from "@/db/identity/session";
 import {
 	countUserPostsToday,
@@ -33,6 +38,7 @@ import {
 import postsEndpoint from "./posts";
 
 const mockVerify = vi.mocked(verifySessionCookie);
+const mockFindUser = vi.mocked(findActiveUserById);
 const mockCountComments = vi.mocked(countCommentsByPosts);
 const mockCreatePost = vi.mocked(createPost);
 const mockCountToday = vi.mocked(countUserPostsToday);
@@ -62,6 +68,14 @@ describe("POST /api/app/posts", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mockVerify.mockResolvedValue({ userId: "u1", name: "Tomek", role: "member" });
+		mockFindUser.mockResolvedValue({
+			id: "u1",
+			name: "Tomek",
+			role: "member",
+			tokenHash: "hash",
+			deletedAt: null,
+			createdAt: new Date(),
+		});
 	});
 
 	it("creates post with valid input", async () => {
@@ -187,6 +201,14 @@ describe("GET /api/app/posts", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mockVerify.mockResolvedValue({ userId: "u1", name: "Tomek", role: "member" });
+		mockFindUser.mockResolvedValue({
+			id: "u1",
+			name: "Tomek",
+			role: "member",
+			tokenHash: "hash",
+			deletedAt: null,
+			createdAt: new Date(),
+		});
 	});
 
 	it("returns 401 without session", async () => {
@@ -202,6 +224,14 @@ describe("GET /api/app/posts/:id", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mockVerify.mockResolvedValue({ userId: "u1", name: "Tomek", role: "member" });
+		mockFindUser.mockResolvedValue({
+			id: "u1",
+			name: "Tomek",
+			role: "member",
+			tokenHash: "hash",
+			deletedAt: null,
+			createdAt: new Date(),
+		});
 	});
 
 	it("returns single post by id", async () => {
@@ -246,6 +276,14 @@ describe("GET /api/app/posts (paginated)", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mockVerify.mockResolvedValue({ userId: "u1", name: "Tomek", role: "member" });
+		mockFindUser.mockResolvedValue({
+			id: "u1",
+			name: "Tomek",
+			role: "member",
+			tokenHash: "hash",
+			deletedAt: null,
+			createdAt: new Date(),
+		});
 		mockCountComments.mockResolvedValue(new Map());
 	});
 
@@ -367,6 +405,14 @@ describe("PATCH /api/app/posts/:id", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mockVerify.mockResolvedValue({ userId: "u1", name: "Tomek", role: "member" });
+		mockFindUser.mockResolvedValue({
+			id: "u1",
+			name: "Tomek",
+			role: "member",
+			tokenHash: "hash",
+			deletedAt: null,
+			createdAt: new Date(),
+		});
 	});
 
 	it("allows author to edit their own post description", async () => {
@@ -391,6 +437,14 @@ describe("PATCH /api/app/posts/:id", () => {
 
 	it("allows admin to edit any post", async () => {
 		mockVerify.mockResolvedValue({ userId: "u2", name: "Admin", role: "admin" });
+		mockFindUser.mockResolvedValue({
+			id: "u2",
+			name: "Admin",
+			role: "admin",
+			tokenHash: "hash",
+			deletedAt: null,
+			createdAt: new Date(),
+		});
 		mockGetPost.mockResolvedValue(samplePost);
 		mockUpdateDescription.mockResolvedValue({ ...samplePost, description: "Admin edit" });
 
@@ -410,6 +464,14 @@ describe("PATCH /api/app/posts/:id", () => {
 
 	it("returns 403 for non-author non-admin member", async () => {
 		mockVerify.mockResolvedValue({ userId: "u2", name: "Kasia", role: "member" });
+		mockFindUser.mockResolvedValue({
+			id: "u2",
+			name: "Kasia",
+			role: "member",
+			tokenHash: "hash",
+			deletedAt: null,
+			createdAt: new Date(),
+		});
 		mockGetPost.mockResolvedValue(samplePost);
 
 		const api = createApi();
@@ -482,6 +544,14 @@ describe("DELETE /api/app/posts/:id", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mockVerify.mockResolvedValue({ userId: "u1", name: "Tomek", role: "member" });
+		mockFindUser.mockResolvedValue({
+			id: "u1",
+			name: "Tomek",
+			role: "member",
+			tokenHash: "hash",
+			deletedAt: null,
+			createdAt: new Date(),
+		});
 	});
 
 	it("allows author to delete their own post", async () => {
@@ -501,6 +571,14 @@ describe("DELETE /api/app/posts/:id", () => {
 
 	it("allows admin to delete any post", async () => {
 		mockVerify.mockResolvedValue({ userId: "u2", name: "Admin", role: "admin" });
+		mockFindUser.mockResolvedValue({
+			id: "u2",
+			name: "Admin",
+			role: "admin",
+			tokenHash: "hash",
+			deletedAt: null,
+			createdAt: new Date(),
+		});
 		mockGetPost.mockResolvedValue(samplePost);
 		mockSoftDelete.mockResolvedValue({ ...samplePost, deletedAt: now });
 
@@ -516,6 +594,14 @@ describe("DELETE /api/app/posts/:id", () => {
 
 	it("returns 403 for non-author non-admin member", async () => {
 		mockVerify.mockResolvedValue({ userId: "u2", name: "Kasia", role: "member" });
+		mockFindUser.mockResolvedValue({
+			id: "u2",
+			name: "Kasia",
+			role: "member",
+			tokenHash: "hash",
+			deletedAt: null,
+			createdAt: new Date(),
+		});
 		mockGetPost.mockResolvedValue(samplePost);
 
 		const api = createApi();

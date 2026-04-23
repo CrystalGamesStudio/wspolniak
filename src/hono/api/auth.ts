@@ -24,9 +24,11 @@ authRoute.get("/:token", async (c) => {
 
 	const cookie = await createSessionCookie(user, c.env.SESSION_SECRET);
 
+	const isSecure = new URL(c.req.url).protocol === "https:";
+
 	setCookie(c, SESSION_COOKIE_NAME, cookie, {
 		httpOnly: true,
-		secure: true,
+		secure: isSecure,
 		sameSite: "Lax",
 		path: "/",
 		maxAge: ONE_YEAR_SECONDS,

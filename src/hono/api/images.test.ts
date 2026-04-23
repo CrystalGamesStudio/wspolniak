@@ -6,15 +6,21 @@ vi.mock("@/db/identity/session", () => ({
 	SESSION_COOKIE_NAME: "session",
 }));
 
+vi.mock("@/db/identity/queries", () => ({
+	findActiveUserById: vi.fn(),
+}));
+
 vi.mock("@/images/client", () => ({
 	createDirectUploadUrl: vi.fn(),
 }));
 
+import { findActiveUserById } from "@/db/identity/queries";
 import { verifySessionCookie } from "@/db/identity/session";
 import { createDirectUploadUrl } from "@/images/client";
 import imagesEndpoint from "./images";
 
 const mockVerify = vi.mocked(verifySessionCookie);
+const mockFindUser = vi.mocked(findActiveUserById);
 const mockCreateUpload = vi.mocked(createDirectUploadUrl);
 
 function createApi() {
@@ -44,6 +50,14 @@ describe("POST /api/app/images/upload-url", () => {
 
 	it("returns upload URL for authenticated user", async () => {
 		mockVerify.mockResolvedValue({ userId: "u1", name: "Tomek", role: "member" });
+		mockFindUser.mockResolvedValue({
+			id: "u1",
+			name: "Tomek",
+			role: "member",
+			tokenHash: "hash",
+			deletedAt: null,
+			createdAt: new Date(),
+		});
 		mockCreateUpload.mockResolvedValue({
 			cfImageId: "cf-img-123",
 			uploadURL: "https://upload.imagedelivery.net/abc/cf-img-123",
