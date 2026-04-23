@@ -36,8 +36,10 @@ TanStack Start frontend + Hono API backend on Cloudflare Workers.
 ```bash
 pnpm dev                  # dev server (port 3000)
 pnpm build                # production build
+pnpm build:production     # production build (CF production env)
 pnpm serve                # preview production build
-pnpm deploy               # build + wrangler deploy
+pnpm deploy               # build + wrangler deploy (dev)
+pnpm deploy:production    # build + deploy to production
 pnpm test                 # run all tests
 pnpm test:watch           # watch mode
 pnpm test:coverage        # with coverage
@@ -58,6 +60,10 @@ pnpm db:dev:seed              # seed dev DB
 pnpm db:production:generate   # generate production migrations
 pnpm db:production:migrate    # run production migrations
 pnpm db:production:pull       # pull schema from production DB
+
+# Admin
+pnpm admin:dev:regenerate         # regenerate admin magic link (dev)
+pnpm admin:production:regenerate  # regenerate admin magic link (prod)
 ```
 
 </important>
