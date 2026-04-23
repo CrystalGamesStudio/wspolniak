@@ -1,3 +1,10 @@
+# [1.11.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.10.0...v1.11.0) (2026-04-23)
+
+
+### Features
+
+* configure production deployment for wspolniak.com ([b4b76e7](https://github.com/CrystalGamesStudio/wspolniak/commit/b4b76e72e07cf5c8150ed7703b0006536e995038))
+
 # [1.10.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.9.0...v1.10.0) (2026-04-23)
 
 
