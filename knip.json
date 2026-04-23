@@ -1,12 +1,13 @@
 {
 	"$schema": "https://unpkg.com/knip@5/schema.json",
-	"entry": ["src/start.tsx", "src/routes/**/*.{ts,tsx}", "taze.config.ts", "scripts/*.ts"],
-	"ignoreDependencies": [
-		"@tanstack/react-form",
-		"@testing-library/dom",
-		"@testing-library/react",
-		"@vitest/coverage-v8",
-		"web-vitals"
+	"entry": [
+		"src/start.tsx",
+		"src/routes/**/*.{ts,tsx}",
+		"taze.config.ts",
+		"drizzle-dev.config.ts",
+		"drizzle-production.config.ts",
+		"public/push-sw.js"
 	],
+	"ignoreDependencies": ["@radix-ui/react-dialog", "cloudflare", "web-vitals"],
 	"ignore": ["src/components/ui/**", "src/core/errors.ts", "src/db/**"]
 }

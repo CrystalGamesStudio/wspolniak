@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { CommentSection } from "@/components/app/comment-section";
 import { PostView } from "@/components/app/post-view";
+import { ThemeToggle } from "@/components/theme";
 
 interface PostResponse {
 	data: unknown;
@@ -47,12 +48,12 @@ function PostPage() {
 
 	return (
 		<div className="mx-auto max-w-2xl bg-background px-4 py-6">
-			<a
-				href="/app"
-				className="mb-4 inline-block text-sm text-muted-foreground hover:text-foreground"
-			>
-				&larr; Wróć do feedu
-			</a>
+			<div className="mb-4 flex items-center justify-between">
+				<a href="/app" className="text-sm text-muted-foreground hover:text-foreground">
+					&larr; Wróć do feedu
+				</a>
+				<ThemeToggle size="sm" />
+			</div>
 			<PostView
 				post={response.data as never}
 				imageAccountHash={response.meta.imageAccountHash}

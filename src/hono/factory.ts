@@ -2,7 +2,7 @@
 import { Hono } from "hono";
 import type { SessionPayload } from "@/db/identity/session";
 
-export type AppEnv = {
+type AppEnv = {
 	Bindings: Env;
 	Variables: { user: SessionPayload };
 };

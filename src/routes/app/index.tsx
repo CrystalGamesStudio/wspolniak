@@ -3,6 +3,7 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef } from "react";
 import { Feed } from "@/components/app/feed";
+import { ThemeToggle } from "@/components/theme";
 import { Button } from "@/components/ui/button";
 
 interface FeedPost {
@@ -87,7 +88,8 @@ function FeedPage() {
 		<div className="mx-auto max-w-2xl bg-background px-4 py-6">
 			<div className="mb-6 flex items-center justify-between">
 				<h1 className="text-2xl font-bold text-foreground">Witaj {session.name}</h1>
-				<div className="flex gap-2">
+				<div className="flex items-center gap-2">
+					<ThemeToggle size="sm" />
 					{session.role === "admin" && (
 						<a href="/app/admin">
 							<Button variant="outline">Rodzina</Button>
