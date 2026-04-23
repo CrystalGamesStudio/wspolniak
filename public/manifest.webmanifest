@@ -1,0 +1,27 @@
+{
+	"name": "Wspólniak",
+	"short_name": "Wspólniak",
+	"description": "Prywatne udostępnianie zdjęć dla rodziny",
+	"theme_color": "#18181b",
+	"background_color": "#ffffff",
+	"display": "standalone",
+	"start_url": "/app",
+	"icons": [
+		{
+			"src": "logo192.png",
+			"sizes": "192x192",
+			"type": "image/png"
+		},
+		{
+			"src": "logo512.png",
+			"sizes": "512x512",
+			"type": "image/png"
+		},
+		{
+			"src": "logo512.png",
+			"sizes": "512x512",
+			"type": "image/png",
+			"purpose": "maskable"
+		}
+	]
+}
