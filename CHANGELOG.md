@@ -1,3 +1,10 @@
+## [1.11.1](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.11.0...v1.11.1) (2026-04-23)
+
+
+### Bug Fixes
+
+* use pg driver for drizzle-kit migrations and add production migration ([3b28d13](https://github.com/CrystalGamesStudio/wspolniak/commit/3b28d13706e98b141f753458269876f38d98303b))
+
 # [1.11.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.10.0...v1.11.0) (2026-04-23)
 
 
