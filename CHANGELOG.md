@@ -1,3 +1,15 @@
+# [1.10.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.9.0...v1.10.0) (2026-04-23)
+
+
+### Bug Fixes
+
+* validate session against database and fix secure cookie on localhost ([0f4df52](https://github.com/CrystalGamesStudio/wspolniak/commit/0f4df5205310732539eab0e8e660363a50fef218))
+
+
+### Features
+
+* add ThemeToggle to app pages, clean up knip config, polish UI labels ([dc91c29](https://github.com/CrystalGamesStudio/wspolniak/commit/dc91c29acd0744b3a2f53dadf17cebaf699dfadc))
+
 # [1.9.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.8.0...v1.9.0) (2026-04-14)
 
 
