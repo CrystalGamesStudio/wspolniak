@@ -1,3 +1,10 @@
+## [1.12.3](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.12.2...v1.12.3) (2026-04-23)
+
+
+### Bug Fixes
+
+* add error handling to push subscribe flow ([#20](https://github.com/CrystalGamesStudio/wspolniak/issues/20)) ([88dfef6](https://github.com/CrystalGamesStudio/wspolniak/commit/88dfef65894d37d95b5a4f47c34bf2bd2ddd00f3))
+
 ## [1.12.2](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.12.1...v1.12.2) (2026-04-23)
 
 
