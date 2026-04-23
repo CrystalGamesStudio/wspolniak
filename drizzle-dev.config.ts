@@ -13,6 +13,9 @@ export default defineConfig({
 	out: "./src/db/migrations/dev",
 	dialect: "postgresql",
 	dbCredentials: {
-		url: `postgresql://${username}:${password}@${host}`,
+		url: `postgresql://${username}:${password}@${host}`.replace(
+			"sslmode=require",
+			"sslmode=verify-full",
+		),
 	},
 });
