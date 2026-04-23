@@ -39,36 +39,42 @@ export function usePushSubscription(): UsePushSubscriptionResult {
 	}, []);
 
 	const subscribe = useCallback(async () => {
-		if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
+		try {
+			if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
 
-		const result = await Notification.requestPermission();
-		setPermission(result);
-		if (result !== "granted") return;
+			const result = await Notification.requestPermission();
+			setPermission(result);
+			if (result !== "granted") return;
 
-		const vapidResponse = await fetch("/api/app/push/vapid-key");
-		const vapidData = (await vapidResponse.json()) as { data?: { publicKey: string } };
-		if (!vapidData.data) return;
+			const vapidResponse = await fetch("/api/app/push/vapid-key");
+			const vapidData = (await vapidResponse.json()) as { data?: { publicKey: string } };
+			if (!vapidData.data) return;
 
-		const registration = await navigator.serviceWorker.ready;
-		const subscription = await registration.pushManager.subscribe({
-			userVisibleOnly: true,
-			applicationServerKey: urlBase64ToUint8Array(vapidData.data.publicKey).buffer as ArrayBuffer,
-		});
+			const registration = await navigator.serviceWorker.ready;
+			const subscription = await registration.pushManager.subscribe({
+				userVisibleOnly: true,
+				applicationServerKey: urlBase64ToUint8Array(vapidData.data.publicKey).buffer as ArrayBuffer,
+			});
 
-		const subJson = subscription.toJSON();
-		await fetch("/api/app/push/subscribe", {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({
-				endpoint: subJson.endpoint,
-				keys: {
-					p256dh: subJson.keys?.p256dh,
-					auth: subJson.keys?.auth,
-				},
-			}),
-		});
+			const subJson = subscription.toJSON();
+			const saveResponse = await fetch("/api/app/push/subscribe", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					endpoint: subJson.endpoint,
+					keys: {
+						p256dh: subJson.keys?.p256dh,
+						auth: subJson.keys?.auth,
+					},
+				}),
+			});
 
-		setIsSubscribed(true);
+			if (!saveResponse.ok) {
+				return;
+			}
+
+			setIsSubscribed(true);
+		} catch (_error) {}
 	}, []);
 
 	const unsubscribe = useCallback(async () => {
