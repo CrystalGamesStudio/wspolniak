@@ -12,4 +12,12 @@ describe("PWA assets", () => {
 			expect(existsSync(resolve(publicDir, icon))).toBe(true);
 		});
 	}
+
+	it("sw.js exists in public/ (registered by PwaShell as /sw.js)", () => {
+		expect(existsSync(resolve(publicDir, "sw.js"))).toBe(true);
+	});
+
+	it("manifest.webmanifest exists in public/", () => {
+		expect(existsSync(resolve(publicDir, "manifest.webmanifest"))).toBe(true);
+	});
 });
