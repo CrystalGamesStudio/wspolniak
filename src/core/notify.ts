@@ -7,6 +7,7 @@ interface NotifyDeps {
 	getSubscriptionsByUserId: (userId: string) => Promise<SubscriptionInfo[]>;
 	sendPush: (subscription: SubscriptionInfo, payload: PushPayload) => Promise<Response>;
 	deleteSubscription: (endpoint: string) => Promise<unknown>;
+	onSendError?: (endpoint: string, status: number) => void;
 }
 
 export async function notifyNewPost(
@@ -22,6 +23,7 @@ export async function notifyNewPost(
 		payload,
 		sendPush: deps.sendPush,
 		deleteSubscription: deps.deleteSubscription,
+		onSendError: deps.onSendError,
 	});
 }
 
@@ -47,5 +49,6 @@ export async function notifyNewComment(
 		payload,
 		sendPush: deps.sendPush,
 		deleteSubscription: deps.deleteSubscription,
+		onSendError: deps.onSendError,
 	});
 }
