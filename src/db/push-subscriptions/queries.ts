@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import type { InferSelectModel } from "drizzle-orm";
-import { eq, ne } from "drizzle-orm";
+import { and, eq, ne } from "drizzle-orm";
 import { getDb } from "@/db/setup";
 import { pushSubscriptions } from "./table";
 
@@ -12,6 +12,19 @@ export async function saveSubscription(input: {
 	p256dh: string;
 	auth: string;
 }): Promise<PushSubscription> {
+	// One subscription per user: drop any rows pointing at stale endpoints
+	// (iOS rotates endpoints after PWA reinstall / Safari data clear). Without
+	// this, push fans out to dead endpoints, the live device receives nothing,
+	// and CF logs look clean. See docs/push-debugging.md.
+	await getDb()
+		.delete(pushSubscriptions)
+		.where(
+			and(
+				eq(pushSubscriptions.userId, input.userId),
+				ne(pushSubscriptions.endpoint, input.endpoint),
+			),
+		);
+
 	const rows = await getDb()
 		.insert(pushSubscriptions)
 		.values({ id: crypto.randomUUID(), ...input })
