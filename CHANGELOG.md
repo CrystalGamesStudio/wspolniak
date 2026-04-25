@@ -1,3 +1,10 @@
+## [1.12.12](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.12.11...v1.12.12) (2026-04-25)
+
+
+### Bug Fixes
+
+* **pwa:** add dismiss button to push prompt banner ([#26](https://github.com/CrystalGamesStudio/wspolniak/issues/26)) ([fd0b497](https://github.com/CrystalGamesStudio/wspolniak/commit/fd0b497ebaba4c5aa8100f1ab9c0ba229a74781d)), closes [#19](https://github.com/CrystalGamesStudio/wspolniak/issues/19)
+
 ## [1.12.11](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.12.10...v1.12.11) (2026-04-25)
 
 
