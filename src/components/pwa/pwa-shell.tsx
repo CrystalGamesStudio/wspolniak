@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-import { Download, RefreshCw, WifiOff } from "lucide-react";
+
+import { Download, WifiOff } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { isIOSSafari, isStandalone } from "@/pwa/detect";
@@ -13,8 +14,6 @@ export function PwaShell({ children }: { children: React.ReactNode }) {
 	const { canInstall, promptInstall } = useInstallPrompt();
 	const [iosSafari, setIOSSafari] = useState(false);
 	const [standalone, setStandalone] = useState(false);
-	const [needRefresh, setNeedRefresh] = useState(false);
-	const [swRegistration, setSwRegistration] = useState<ServiceWorkerRegistration | null>(null);
 
 	useEffect(() => {
 		setIOSSafari(isIOSSafari());
@@ -22,28 +21,12 @@ export function PwaShell({ children }: { children: React.ReactNode }) {
 	}, []);
 
 	useEffect(() => {
-		if (!("serviceWorker" in navigator)) return;
-
-		navigator.serviceWorker.ready.then((registration) => {
-			setSwRegistration(registration);
-
-			registration.addEventListener("updatefound", () => {
-				const newWorker = registration.installing;
-				if (!newWorker) return;
-
-				newWorker.addEventListener("statechange", () => {
-					if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
-						setNeedRefresh(true);
-					}
-				});
-			});
+		if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
+		navigator.serviceWorker.register("/sw.js").catch((error) => {
+			// biome-ignore lint/suspicious/noConsole: surface SW registration failures for PWA push diagnosis
+			console.error("[pwa] SW register failed", error);
 		});
 	}, []);
-
-	function handleUpdate() {
-		swRegistration?.waiting?.postMessage({ type: "SKIP_WAITING" });
-		window.location.reload();
-	}
 
 	return (
 		<>
@@ -56,17 +39,7 @@ export function PwaShell({ children }: { children: React.ReactNode }) {
 				</div>
 			)}
 
-			{needRefresh && (
-				<div className="fixed inset-x-0 bottom-0 z-50 flex items-center justify-between border-t border-border bg-card p-3 shadow-lg">
-					<span className="text-sm text-foreground">Dostępna nowa wersja aplikacji</span>
-					<Button size="sm" onClick={handleUpdate}>
-						<RefreshCw className="mr-1 h-3 w-3" />
-						Odśwież
-					</Button>
-				</div>
-			)}
-
-			{canInstall && !needRefresh && (
+			{canInstall && (
 				<div className="fixed inset-x-0 bottom-0 z-50 flex items-center justify-between border-t border-border bg-card p-3 shadow-lg">
 					<span className="text-sm text-foreground">Zainstaluj aplikację Wspólniak</span>
 					<Button size="sm" onClick={promptInstall}>

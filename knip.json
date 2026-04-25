@@ -6,7 +6,7 @@
 		"taze.config.ts",
 		"drizzle-dev.config.ts",
 		"drizzle-production.config.ts",
-		"public/push-sw.js"
+		"public/sw.js"
 	],
 	"ignoreDependencies": ["@radix-ui/react-dialog", "cloudflare", "web-vitals"],
 	"ignore": ["src/components/ui/**", "src/core/errors.ts", "src/db/**"]

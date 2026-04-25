@@ -1,5 +1,13 @@
-// Push notification handler for Service Worker
-// Loaded by Workbox via importScripts
+// Service worker for Wspólniak — handles web push notifications.
+// Registered manually from src/components/pwa/pwa-shell.tsx.
+
+self.addEventListener("install", () => {
+	self.skipWaiting();
+});
+
+self.addEventListener("activate", (event) => {
+	event.waitUntil(self.clients.claim());
+});
 
 self.addEventListener("push", (event) => {
 	if (!event.data) return;
