@@ -46,11 +46,33 @@ postsEndpoint.post("/", async (c) => {
 	});
 
 	if (c.env.VAPID_PUBLIC_KEY && c.env.VAPID_PRIVATE_KEY) {
-		const sendPush = createSendWebPush({
+		const baseSendPush = createSendWebPush({
 			publicKey: c.env.VAPID_PUBLIC_KEY,
 			privateKey: c.env.VAPID_PRIVATE_KEY,
 			subject: `mailto:${c.env.VAPID_SUBJECT ?? "admin@wspolniak.app"}`,
 		});
+		const sendPush: typeof baseSendPush = async (subscription, payload) => {
+			try {
+				const res = await baseSendPush(subscription, payload);
+				if (!res.ok && res.status !== 410) {
+					const body = await res
+						.clone()
+						.text()
+						.catch(() => "<no body>");
+					// biome-ignore lint/suspicious/noConsole: surface push delivery failures in `wrangler tail`
+					console.error("[push] non-OK response", {
+						status: res.status,
+						endpoint: subscription.endpoint,
+						body,
+					});
+				}
+				return res;
+			} catch (error) {
+				// biome-ignore lint/suspicious/noConsole: surface push delivery failures in `wrangler tail`
+				console.error("[push] threw", { endpoint: subscription.endpoint, error: String(error) });
+				throw error;
+			}
+		};
 		c.executionCtx.waitUntil(
 			notifyNewPost(
 				{
@@ -58,6 +80,15 @@ postsEndpoint.post("/", async (c) => {
 					getSubscriptionsByUserId: async () => [],
 					sendPush,
 					deleteSubscription: deleteSubscriptionByEndpoint,
+					onSendError: (endpoint, status) => {
+						// biome-ignore lint/suspicious/noConsole: surface push delivery failures in `wrangler tail`
+						console.error("[push] send failed", {
+							status,
+							endpoint,
+							postId: post.post.id,
+							kind: "post",
+						});
+					},
 				},
 				user.userId,
 				user.name,

@@ -12,7 +12,7 @@ describe("buildPushPayload", () => {
 		expect(payload).toEqual({
 			title: "Mama dodał(a) zdjęcie",
 			body: "",
-			icon: "/icons/icon-192x192.png",
+			icon: "/logo192.png",
 			url: "/app/posts/post-123",
 		});
 	});
@@ -28,7 +28,7 @@ describe("buildPushPayload", () => {
 		expect(payload).toEqual({
 			title: "Tata skomentował(a) Twoje zdjęcie",
 			body: "Super zdjęcie!",
-			icon: "/icons/icon-192x192.png",
+			icon: "/logo192.png",
 			url: "/app/posts/post-456",
 		});
 	});
@@ -38,7 +38,7 @@ describe("fanOutPush", () => {
 	const payload: PushPayload = {
 		title: "Test",
 		body: "body",
-		icon: "/icons/icon-192x192.png",
+		icon: "/logo192.png",
 		url: "/app/posts/p1",
 	};
 

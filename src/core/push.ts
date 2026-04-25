@@ -24,7 +24,7 @@ interface FanOutDeps {
 	onSendError?: (endpoint: string, status: number) => void;
 }
 
-const ICON = "/icons/icon-192x192.png";
+const ICON = "/logo192.png";
 
 export function buildPushPayload(input: PushPayloadInput): PushPayload {
 	switch (input.type) {
