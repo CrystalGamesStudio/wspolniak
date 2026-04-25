@@ -1,3 +1,10 @@
+## [1.12.4](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.12.3...v1.12.4) (2026-04-25)
+
+
+### Bug Fixes
+
+* register service worker manually so push notifications actually fire ([#21](https://github.com/CrystalGamesStudio/wspolniak/issues/21)) ([5cebde0](https://github.com/CrystalGamesStudio/wspolniak/commit/5cebde0f43b897158c6d95e465ca711c0ec9c5a4)), closes [vite-pwa/vite-plugin-pwa#902](https://github.com/vite-pwa/vite-plugin-pwa/issues/902)
+
 ## [1.12.3](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.12.2...v1.12.3) (2026-04-23)
 
 
