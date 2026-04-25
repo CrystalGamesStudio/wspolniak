@@ -25,6 +25,46 @@ interface VapidInput {
 	privateKey: string;
 }
 
+async function importVapidPrivateKey(
+	privateKeyBase64: string,
+	publicKeyBase64: string,
+): Promise<CryptoKey> {
+	const privateKeyBytes = base64ToUint8Array(privateKeyBase64);
+
+	// Raw 32-byte ECDSA P-256 scalar — the format `web-push generate-vapid-keys`
+	// emits. Web Crypto can't import raw private keys directly, so wrap into JWK
+	// using the public key's X/Y coordinates (we have the public key on input).
+	if (privateKeyBytes.length === 32) {
+		const publicKeyBytes = base64ToUint8Array(publicKeyBase64);
+		if (publicKeyBytes.length !== 65 || publicKeyBytes[0] !== 0x04) {
+			throw new Error("VAPID public key must be 65-byte uncompressed P-256 point");
+		}
+		return crypto.subtle.importKey(
+			"jwk",
+			{
+				kty: "EC",
+				crv: "P-256",
+				x: uint8ArrayToBase64Url(publicKeyBytes.slice(1, 33)),
+				y: uint8ArrayToBase64Url(publicKeyBytes.slice(33, 65)),
+				d: uint8ArrayToBase64Url(privateKeyBytes),
+				ext: false,
+			},
+			{ name: "ECDSA", namedCurve: "P-256" },
+			false,
+			["sign"],
+		);
+	}
+
+	// PKCS8 DER (e.g. exported via `crypto.subtle.exportKey("pkcs8", ...)`)
+	return crypto.subtle.importKey(
+		"pkcs8",
+		privateKeyBytes.buffer as ArrayBuffer,
+		{ name: "ECDSA", namedCurve: "P-256" },
+		false,
+		["sign"],
+	);
+}
+
 export async function buildVapidAuthHeader(input: VapidInput): Promise<string> {
 	const header = { typ: "JWT", alg: "ES256" };
 	const now = Math.floor(Date.now() / 1000);
@@ -38,14 +78,7 @@ export async function buildVapidAuthHeader(input: VapidInput): Promise<string> {
 	const encodedPayload = uint8ArrayToBase64Url(new TextEncoder().encode(JSON.stringify(payload)));
 	const unsignedToken = `${encodedHeader}.${encodedPayload}`;
 
-	const privateKeyBytes = base64ToUint8Array(input.privateKey);
-	const key = await crypto.subtle.importKey(
-		"pkcs8",
-		privateKeyBytes.buffer as ArrayBuffer,
-		{ name: "ECDSA", namedCurve: "P-256" },
-		false,
-		["sign"],
-	);
+	const key = await importVapidPrivateKey(input.privateKey, input.publicKey);
 
 	const signature = await crypto.subtle.sign(
 		{ name: "ECDSA", hash: "SHA-256" },
