@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import { Download, WifiOff } from "lucide-react";
+import { WifiOff } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
 import { isIOSSafari, isStandalone } from "@/pwa/detect";
 import { useInstallPrompt } from "@/pwa/use-install-prompt";
 import { useOnlineStatus } from "@/pwa/use-online-status";
+import { InstallBanner } from "./install-banner";
 import { IOSInstallBanner } from "./ios-install-banner";
 import { PushPrompt } from "./push-prompt";
 
@@ -28,9 +28,11 @@ export function PwaShell({ children }: { children: React.ReactNode }) {
 		});
 	}, []);
 
+	const mayShowBottomBanner = canInstall || (iosSafari && !standalone) || standalone;
+
 	return (
 		<>
-			{children}
+			<div className={mayShowBottomBanner ? "pb-20" : undefined}>{children}</div>
 
 			{!online && (
 				<div className="fixed inset-x-0 top-0 z-50 flex items-center justify-center gap-2 bg-destructive p-2 text-destructive-foreground">
@@ -39,15 +41,7 @@ export function PwaShell({ children }: { children: React.ReactNode }) {
 				</div>
 			)}
 
-			{canInstall && (
-				<div className="fixed inset-x-0 bottom-0 z-50 flex items-center justify-between border-t border-border bg-card p-3 shadow-lg">
-					<span className="text-sm text-foreground">Zainstaluj aplikację Wspólniak</span>
-					<Button size="sm" onClick={promptInstall}>
-						<Download className="mr-1 h-3 w-3" />
-						Instaluj
-					</Button>
-				</div>
-			)}
+			<InstallBanner canInstall={canInstall} promptInstall={promptInstall} />
 
 			<IOSInstallBanner isIOSSafari={iosSafari} isStandalone={standalone} />
 
