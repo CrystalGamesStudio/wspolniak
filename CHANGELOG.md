@@ -1,3 +1,10 @@
+## [1.12.6](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.12.5...v1.12.6) (2026-04-25)
+
+
+### Bug Fixes
+
+* **push:** accept raw 32-byte VAPID private key alongside PKCS8 ([#22](https://github.com/CrystalGamesStudio/wspolniak/issues/22)) ([07f9e57](https://github.com/CrystalGamesStudio/wspolniak/commit/07f9e57f1f9ffbcf819a7ed800af1a3028067a2a))
+
 ## [1.12.5](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.12.4...v1.12.5) (2026-04-25)
 
 
