@@ -2,7 +2,7 @@
 import { buildVapidAuthHeader, encryptPayload } from "./web-push";
 
 describe("buildVapidAuthHeader", () => {
-	it("returns a valid Authorization header with vapid scheme", async () => {
+	it("returns a valid Authorization header with vapid scheme (PKCS8 private key)", async () => {
 		const keyPair = await crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, [
 			"sign",
 		]);
@@ -12,6 +12,40 @@ describe("buildVapidAuthHeader", () => {
 
 		const publicKeyBase64 = btoa(String.fromCharCode(...new Uint8Array(rawPublic)));
 		const privateKeyBase64 = btoa(String.fromCharCode(...new Uint8Array(rawPrivate)));
+
+		const header = await buildVapidAuthHeader({
+			audience: "https://push.example.com",
+			subject: "mailto:admin@example.com",
+			publicKey: publicKeyBase64,
+			privateKey: privateKeyBase64,
+		});
+
+		expect(header).toMatch(/^vapid t=[\w-]+\.[\w-]+\.[\w-]+, k=[\w-]+$/);
+	});
+
+	it("accepts raw 32-byte private key (format emitted by `web-push generate-vapid-keys`)", async () => {
+		const keyPair = await crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, [
+			"sign",
+			"verify",
+		]);
+
+		const rawPublic = await crypto.subtle.exportKey("raw", keyPair.publicKey);
+		const jwkPrivate = await crypto.subtle.exportKey("jwk", keyPair.privateKey);
+		if (!jwkPrivate.d) throw new Error("expected JWK to expose d");
+
+		// Decode URL-safe base64 of JWK.d to get the raw 32-byte scalar, then
+		// re-encode as standard base64 (the format the .production.vars-style
+		// keys are typically pasted in).
+		const padded = jwkPrivate.d + "=".repeat((4 - (jwkPrivate.d.length % 4)) % 4);
+		const rawScalarBinary = atob(padded.replace(/-/g, "+").replace(/_/g, "/"));
+		const rawScalarBytes = new Uint8Array(rawScalarBinary.length);
+		for (let i = 0; i < rawScalarBinary.length; i++) {
+			rawScalarBytes[i] = rawScalarBinary.charCodeAt(i);
+		}
+		expect(rawScalarBytes.length).toBe(32);
+
+		const publicKeyBase64 = btoa(String.fromCharCode(...new Uint8Array(rawPublic)));
+		const privateKeyBase64 = btoa(String.fromCharCode(...rawScalarBytes));
 
 		const header = await buildVapidAuthHeader({
 			audience: "https://push.example.com",
