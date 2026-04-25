@@ -1,3 +1,10 @@
+## [1.12.11](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.12.10...v1.12.11) (2026-04-25)
+
+
+### Bug Fixes
+
+* **pwa:** add dismiss to install banner, prevent bottom blocking ([#19](https://github.com/CrystalGamesStudio/wspolniak/issues/19)) ([594d849](https://github.com/CrystalGamesStudio/wspolniak/commit/594d8499cd99bfc3bcedfb87c384ccfb22e3a883))
+
 ## [1.12.10](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.12.9...v1.12.10) (2026-04-25)
 
 
