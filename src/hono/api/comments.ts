@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { canDeleteComment, canEditComment } from "@/core/authorization";
 import { notifyNewComment } from "@/core/notify";
-import { createSendWebPush } from "@/core/web-push";
+import { createSendWebPushFromEnv } from "@/core/web-push";
 import {
 	createComment,
 	getCommentById,
@@ -54,12 +54,8 @@ commentsEndpoint.post("/:postId/comments", async (c) => {
 		body: result.data.body,
 	});
 
-	if (c.env.VAPID_PUBLIC_KEY && c.env.VAPID_PRIVATE_KEY) {
-		const baseSendPush = createSendWebPush({
-			publicKey: c.env.VAPID_PUBLIC_KEY,
-			privateKey: c.env.VAPID_PRIVATE_KEY,
-			subject: `mailto:${c.env.VAPID_SUBJECT ?? "admin@wspolniak.app"}`,
-		});
+	const baseSendPush = createSendWebPushFromEnv(c.env);
+	if (baseSendPush) {
 		const sendPush: typeof baseSendPush = async (subscription, payload) => {
 			try {
 				const res = await baseSendPush(subscription, payload);

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { canDeletePost, canEditPost } from "@/core/authorization";
 import { notifyNewPost } from "@/core/notify";
-import { createSendWebPush } from "@/core/web-push";
+import { createSendWebPushFromEnv } from "@/core/web-push";
 import { countCommentsByPosts } from "@/db/comments/queries";
 import {
 	countUserPostsToday,
@@ -45,12 +45,8 @@ postsEndpoint.post("/", async (c) => {
 		cfImageIds: result.data.cfImageIds,
 	});
 
-	if (c.env.VAPID_PUBLIC_KEY && c.env.VAPID_PRIVATE_KEY) {
-		const baseSendPush = createSendWebPush({
-			publicKey: c.env.VAPID_PUBLIC_KEY,
-			privateKey: c.env.VAPID_PRIVATE_KEY,
-			subject: `mailto:${c.env.VAPID_SUBJECT ?? "admin@wspolniak.app"}`,
-		});
+	const baseSendPush = createSendWebPushFromEnv(c.env);
+	if (baseSendPush) {
 		const sendPush: typeof baseSendPush = async (subscription, payload) => {
 			try {
 				const res = await baseSendPush(subscription, payload);

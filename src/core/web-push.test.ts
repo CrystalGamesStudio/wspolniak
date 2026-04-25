@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-import { buildVapidAuthHeader, encryptPayload } from "./web-push";
+import { buildVapidAuthHeader, encryptPayload, resolveVapidSubject } from "./web-push";
 
 describe("buildVapidAuthHeader", () => {
 	it("returns a valid Authorization header with vapid scheme (PKCS8 private key)", async () => {
@@ -55,6 +55,27 @@ describe("buildVapidAuthHeader", () => {
 		});
 
 		expect(header).toMatch(/^vapid t=[\w-]+\.[\w-]+\.[\w-]+, k=[\w-]+$/);
+	});
+});
+
+describe("resolveVapidSubject", () => {
+	it("returns env value as-is when it already contains the mailto: scheme", () => {
+		expect(resolveVapidSubject("mailto:admin@wspolniak.com")).toBe("mailto:admin@wspolniak.com");
+	});
+
+	it("returns env value as-is when it is an https: URI", () => {
+		expect(resolveVapidSubject("https://wspolniak.com/contact")).toBe(
+			"https://wspolniak.com/contact",
+		);
+	});
+
+	it("prefixes a bare email with mailto:", () => {
+		expect(resolveVapidSubject("admin@wspolniak.com")).toBe("mailto:admin@wspolniak.com");
+	});
+
+	it("falls back to a default mailto subject when env is undefined", () => {
+		const result = resolveVapidSubject(undefined);
+		expect(result).toMatch(/^mailto:/);
 	});
 });
 
