@@ -24,7 +24,7 @@ describe("notifyNewPost", () => {
 		expect(deps.sendPush).toHaveBeenCalledTimes(2);
 		expect(deps.sendPush.mock.calls[0]?.[1]).toMatchObject({
 			title: "Mama dodał(a) zdjęcie",
-			url: "/app/posts/post-1",
+			url: "/app/post/post-1",
 		});
 	});
 
@@ -51,7 +51,7 @@ describe("notifyNewComment", () => {
 		expect(deps.sendPush.mock.calls[0]?.[1]).toMatchObject({
 			title: "Tata skomentował(a) Twoje zdjęcie",
 			body: "Fajne!",
-			url: "/app/posts/post-1",
+			url: "/app/post/post-1",
 		});
 	});
 
