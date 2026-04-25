@@ -40,15 +40,28 @@ export function usePushSubscription(): UsePushSubscriptionResult {
 
 	const subscribe = useCallback(async () => {
 		try {
-			if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
+			if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+				// biome-ignore lint/suspicious/noConsole: surface push subscribe failures for iOS PWA diagnosis
+				console.error("[push] Service Worker or PushManager not available");
+				return;
+			}
 
 			const result = await Notification.requestPermission();
 			setPermission(result);
 			if (result !== "granted") return;
 
 			const vapidResponse = await fetch("/api/app/push/vapid-key");
+			if (!vapidResponse.ok) {
+				// biome-ignore lint/suspicious/noConsole: surface push subscribe failures for iOS PWA diagnosis
+				console.error("[push] vapid-key request failed", vapidResponse.status);
+				return;
+			}
 			const vapidData = (await vapidResponse.json()) as { data?: { publicKey: string } };
-			if (!vapidData.data) return;
+			if (!vapidData.data) {
+				// biome-ignore lint/suspicious/noConsole: surface push subscribe failures for iOS PWA diagnosis
+				console.error("[push] vapid-key response missing data");
+				return;
+			}
 
 			const registration = await navigator.serviceWorker.ready;
 			const subscription = await registration.pushManager.subscribe({
@@ -70,11 +83,16 @@ export function usePushSubscription(): UsePushSubscriptionResult {
 			});
 
 			if (!saveResponse.ok) {
+				// biome-ignore lint/suspicious/noConsole: surface push subscribe failures for iOS PWA diagnosis
+				console.error("[push] subscribe save failed", saveResponse.status);
 				return;
 			}
 
 			setIsSubscribed(true);
-		} catch (_error) {}
+		} catch (error) {
+			// biome-ignore lint/suspicious/noConsole: surface push subscribe failures for iOS PWA diagnosis
+			console.error("[push] subscribe threw", error);
+		}
 	}, []);
 
 	const unsubscribe = useCallback(async () => {
