@@ -1,3 +1,10 @@
+## [1.12.7](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.12.6...v1.12.7) (2026-04-25)
+
+
+### Bug Fixes
+
+* **push:** stop double-prefixing VAPID subject with mailto: ([#23](https://github.com/CrystalGamesStudio/wspolniak/issues/23)) ([dcbef23](https://github.com/CrystalGamesStudio/wspolniak/commit/dcbef23c6522c7840db46b3992b86b934c1a1e31))
+
 ## [1.12.6](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.12.5...v1.12.6) (2026-04-25)
 
 
