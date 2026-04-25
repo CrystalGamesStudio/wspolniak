@@ -1,3 +1,10 @@
+## [1.12.9](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.12.8...v1.12.9) (2026-04-25)
+
+
+### Bug Fixes
+
+* **push:** one subscription per user, drop stale endpoints on save ([#25](https://github.com/CrystalGamesStudio/wspolniak/issues/25)) ([ee92a79](https://github.com/CrystalGamesStudio/wspolniak/commit/ee92a7964fc9141084e5ac96cd77747953f5270d))
+
 ## [1.12.8](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.12.7...v1.12.8) (2026-04-25)
 
 
