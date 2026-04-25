@@ -33,14 +33,14 @@ export function buildPushPayload(input: PushPayloadInput): PushPayload {
 				title: `${input.authorName} dodał(a) zdjęcie`,
 				body: "",
 				icon: ICON,
-				url: `/app/posts/${input.postId}`,
+				url: `/app/post/${input.postId}`,
 			};
 		case "new_comment":
 			return {
 				title: `${input.authorName} skomentował(a) Twoje zdjęcie`,
 				body: input.snippet,
 				icon: ICON,
-				url: `/app/posts/${input.postId}`,
+				url: `/app/post/${input.postId}`,
 			};
 	}
 }

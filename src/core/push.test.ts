@@ -13,7 +13,7 @@ describe("buildPushPayload", () => {
 			title: "Mama dodał(a) zdjęcie",
 			body: "",
 			icon: "/logo192.png",
-			url: "/app/posts/post-123",
+			url: "/app/post/post-123",
 		});
 	});
 
@@ -29,7 +29,7 @@ describe("buildPushPayload", () => {
 			title: "Tata skomentował(a) Twoje zdjęcie",
 			body: "Super zdjęcie!",
 			icon: "/logo192.png",
-			url: "/app/posts/post-456",
+			url: "/app/post/post-456",
 		});
 	});
 });
@@ -39,7 +39,7 @@ describe("fanOutPush", () => {
 		title: "Test",
 		body: "body",
 		icon: "/logo192.png",
-		url: "/app/posts/p1",
+		url: "/app/post/p1",
 	};
 
 	const sub1: SubscriptionInfo = {
