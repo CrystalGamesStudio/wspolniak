@@ -32,6 +32,22 @@ export const Route = createRootRouteWithContext<{
 				name: "theme-color",
 				content: "#18181b",
 			},
+			{
+				name: "apple-mobile-web-app-capable",
+				content: "yes",
+			},
+			{
+				name: "mobile-web-app-capable",
+				content: "yes",
+			},
+			{
+				name: "apple-mobile-web-app-status-bar-style",
+				content: "black-translucent",
+			},
+			{
+				name: "apple-mobile-web-app-title",
+				content: "Wspólniak",
+			},
 		],
 		links: [
 			{ rel: "stylesheet", href: appCss },
