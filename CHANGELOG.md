@@ -1,3 +1,10 @@
+## [1.12.10](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.12.9...v1.12.10) (2026-04-25)
+
+
+### Bug Fixes
+
+* **pwa:** regenerate icons with opaque background, add iOS meta tags ([#18](https://github.com/CrystalGamesStudio/wspolniak/issues/18)) ([853531b](https://github.com/CrystalGamesStudio/wspolniak/commit/853531b2ba7d3f30540f38bfbfd7bc984e5c537b))
+
 ## [1.12.9](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.12.8...v1.12.9) (2026-04-25)
 
 
