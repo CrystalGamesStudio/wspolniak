@@ -230,6 +230,41 @@ interface VapidKeys {
 	subject: string;
 }
 
+/**
+ * Normalizes a VAPID subject from env into a full URI per RFC 8292 §2.1.
+ * Pass-through for values already containing a scheme; prefixes `mailto:`
+ * onto bare emails. Apple Push rejects double-prefixed subjects with
+ * `BadJwtToken`, so the env convention must be enforced at one place.
+ */
+export function resolveVapidSubject(envSubject: string | undefined): string {
+	const value = envSubject?.trim();
+	if (!value) return "mailto:admin@wspolniak.app";
+	if (value.startsWith("mailto:") || value.startsWith("https:")) return value;
+	return `mailto:${value}`;
+}
+
+interface VapidEnv {
+	VAPID_PUBLIC_KEY?: string;
+	VAPID_PRIVATE_KEY?: string;
+	VAPID_SUBJECT?: string;
+}
+
+/**
+ * Builds a sendPush function from env vars, or returns null if VAPID is not
+ * configured. Centralizes the subject-prefix logic so call sites can't reintroduce
+ * the `mailto:mailto:...` bug.
+ */
+export function createSendWebPushFromEnv(
+	env: VapidEnv,
+): ReturnType<typeof createSendWebPush> | null {
+	if (!env.VAPID_PUBLIC_KEY || !env.VAPID_PRIVATE_KEY) return null;
+	return createSendWebPush({
+		publicKey: env.VAPID_PUBLIC_KEY,
+		privateKey: env.VAPID_PRIVATE_KEY,
+		subject: resolveVapidSubject(env.VAPID_SUBJECT),
+	});
+}
+
 export function createSendWebPush(vapidKeys: VapidKeys) {
 	return async (
 		subscription: { endpoint: string; p256dh: string; auth: string },
