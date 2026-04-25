@@ -1,3 +1,10 @@
+## [1.12.8](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.12.7...v1.12.8) (2026-04-25)
+
+
+### Bug Fixes
+
+* **push:** correct deep-link URL from /app/posts/ to /app/post/ ([#24](https://github.com/CrystalGamesStudio/wspolniak/issues/24)) ([8a1ce08](https://github.com/CrystalGamesStudio/wspolniak/commit/8a1ce082069d20bc8cdf86ba1b7c7497ac7012d7))
+
 ## [1.12.7](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.12.6...v1.12.7) (2026-04-25)
 
 
