@@ -1,3 +1,10 @@
+## [1.12.5](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.12.4...v1.12.5) (2026-04-25)
+
+
+### Bug Fixes
+
+* **push:** correct icon path + log delivery failures ([#21](https://github.com/CrystalGamesStudio/wspolniak/issues/21)) ([8158542](https://github.com/CrystalGamesStudio/wspolniak/commit/8158542bcd60beb42c13f0bf15f75bb6c59ac370)), closes [#20](https://github.com/CrystalGamesStudio/wspolniak/issues/20)
+
 ## [1.12.4](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.12.3...v1.12.4) (2026-04-25)
 
 
