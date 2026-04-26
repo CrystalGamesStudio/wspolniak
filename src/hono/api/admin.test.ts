@@ -14,6 +14,11 @@ vi.mock("@/db/identity/queries", () => ({
 	softDeleteMember: vi.fn(),
 }));
 
+vi.mock("@/db/instance/queries", () => ({
+	getShareCode: vi.fn(),
+	setShareCode: vi.fn(),
+}));
+
 import {
 	createMember,
 	findActiveUserById,
@@ -22,6 +27,7 @@ import {
 	softDeleteMember,
 } from "@/db/identity/queries";
 import { verifySessionCookie } from "@/db/identity/session";
+import { getShareCode, setShareCode } from "@/db/instance/queries";
 import adminEndpoint from "./admin";
 
 const mockVerify = vi.mocked(verifySessionCookie);
@@ -30,6 +36,8 @@ const mockCreateMember = vi.mocked(createMember);
 const mockListActiveMembers = vi.mocked(listActiveMembers);
 const mockRegenerateMemberToken = vi.mocked(regenerateMemberToken);
 const mockSoftDeleteMember = vi.mocked(softDeleteMember);
+const mockGetShareCode = vi.mocked(getShareCode);
+const mockSetShareCode = vi.mocked(setShareCode);
 
 function createApi() {
 	const api = new Hono<{ Bindings: { SESSION_SECRET: string } }>().basePath("/api");
@@ -204,5 +212,72 @@ describe("admin authorization", () => {
 		expect(res.status).toBe(403);
 		const body = (await res.json()) as { error: string };
 		expect(body.error).toBe("Forbidden");
+	});
+});
+
+describe("GET /api/admin/share-code", () => {
+	it("returns current share code", async () => {
+		mockGetShareCode.mockResolvedValue("7843");
+
+		const api = createApi();
+		const res = await api.request(
+			"/api/admin/share-code",
+			{ headers: adminHeaders() },
+			{ SESSION_SECRET: "secret" },
+		);
+
+		expect(res.status).toBe(200);
+		const body = (await res.json()) as { data: { code: string | null } };
+		expect(body.data.code).toBe("7843");
+	});
+});
+
+describe("PUT /api/admin/share-code", () => {
+	it("updates share code", async () => {
+		mockSetShareCode.mockResolvedValue(undefined);
+
+		const api = createApi();
+		const res = await api.request(
+			"/api/admin/share-code",
+			{
+				method: "PUT",
+				headers: { ...adminHeaders(), "Content-Type": "application/json" },
+				body: JSON.stringify({ code: "9999" }),
+			},
+			{ SESSION_SECRET: "secret" },
+		);
+
+		expect(res.status).toBe(200);
+		expect(mockSetShareCode).toHaveBeenCalledWith("9999");
+	});
+
+	it("returns 400 when code is empty", async () => {
+		const api = createApi();
+		const res = await api.request(
+			"/api/admin/share-code",
+			{
+				method: "PUT",
+				headers: { ...adminHeaders(), "Content-Type": "application/json" },
+				body: JSON.stringify({ code: "" }),
+			},
+			{ SESSION_SECRET: "secret" },
+		);
+
+		expect(res.status).toBe(400);
+	});
+
+	it("returns 400 when code exceeds 20 characters", async () => {
+		const api = createApi();
+		const res = await api.request(
+			"/api/admin/share-code",
+			{
+				method: "PUT",
+				headers: { ...adminHeaders(), "Content-Type": "application/json" },
+				body: JSON.stringify({ code: "a".repeat(21) }),
+			},
+			{ SESSION_SECRET: "secret" },
+		);
+
+		expect(res.status).toBe(400);
 	});
 });

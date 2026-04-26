@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { Check, Copy, Link, Plus, Trash2 } from "lucide-react";
+import { Check, Copy, Link, Pencil, Plus, Trash2, X } from "lucide-react";
 import { useState } from "react";
 import { ThemeToggle } from "@/components/theme";
 import { Alert } from "@/components/ui/alert";
@@ -33,6 +33,36 @@ function AdminPage() {
 	const [newName, setNewName] = useState("");
 	const [copiedLink, setCopiedLink] = useState<string | null>(null);
 	const [lastMagicLink, setLastMagicLink] = useState<{ name: string; link: string } | null>(null);
+	const [editingShareCode, setEditingShareCode] = useState(false);
+	const [shareCodeInput, setShareCodeInput] = useState("");
+
+	const shareCodeQuery = useQuery({
+		queryKey: ["admin", "share-code"],
+		queryFn: async (): Promise<string | null> => {
+			const res = await fetch("/api/admin/share-code");
+			if (!res.ok) throw new Error("Nie udało się pobrać kodu");
+			const json = (await res.json()) as { data: { code: string | null } };
+			return json.data.code;
+		},
+	});
+
+	const shareCodeMutation = useMutation({
+		mutationFn: async (code: string) => {
+			const res = await fetch("/api/admin/share-code", {
+				method: "PUT",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ code }),
+			});
+			if (!res.ok) {
+				const err = (await res.json()) as { error: string };
+				throw new Error(err.error);
+			}
+		},
+		onSuccess: async () => {
+			setEditingShareCode(false);
+			await queryClient.invalidateQueries({ queryKey: ["admin", "share-code"] });
+		},
+	});
 
 	const membersQuery = useQuery({
 		queryKey: ["admin", "members"],
@@ -100,6 +130,22 @@ function AdminPage() {
 		createMutation.mutate(trimmed);
 	}
 
+	const shareUrl = typeof window !== "undefined" ? `${window.location.origin}/share` : "";
+	const currentShareCode = shareCodeQuery.data;
+
+	function startEditShareCode() {
+		setShareCodeInput(currentShareCode ?? "");
+		setEditingShareCode(true);
+	}
+
+	function handleSaveShareCode(e: React.FormEvent) {
+		e.preventDefault();
+		const trimmed = shareCodeInput.trim();
+		if (!trimmed) return;
+		shareCodeMutation.reset();
+		shareCodeMutation.mutate(trimmed);
+	}
+
 	return (
 		<div className="mx-auto max-w-2xl bg-background px-4 py-6">
 			<div className="mb-6 flex items-center justify-between">
@@ -112,6 +158,95 @@ function AdminPage() {
 						</Button>
 					</a>
 				</div>
+			</div>
+
+			<div className="mb-6 rounded-lg border border-border bg-card p-4">
+				<div className="mb-3 flex items-center justify-between">
+					<h2 className="text-sm font-medium text-foreground">Kod dostępu /share</h2>
+					{!editingShareCode && (
+						<Button size="sm" variant="ghost" onClick={startEditShareCode} title="Zmień kod">
+							<Pencil className="h-4 w-4" />
+						</Button>
+					)}
+				</div>
+
+				{shareCodeMutation.isError && (
+					<Alert variant="destructive" className="mb-3">
+						{shareCodeMutation.error.message}
+					</Alert>
+				)}
+
+				{editingShareCode ? (
+					<form onSubmit={handleSaveShareCode} className="flex gap-2">
+						<Input
+							value={shareCodeInput}
+							onChange={(e) => setShareCodeInput(e.target.value)}
+							placeholder="np. 7843"
+							className="flex-1"
+							maxLength={20}
+							autoFocus
+						/>
+						<Button
+							type="submit"
+							size="sm"
+							disabled={!shareCodeInput.trim() || shareCodeMutation.isPending}
+						>
+							{shareCodeMutation.isPending ? "Zapisuję..." : "Zapisz"}
+						</Button>
+						<Button
+							type="button"
+							size="sm"
+							variant="ghost"
+							onClick={() => {
+								setEditingShareCode(false);
+								shareCodeMutation.reset();
+							}}
+						>
+							<X className="h-4 w-4" />
+						</Button>
+					</form>
+				) : (
+					<>
+						<div className="flex items-center gap-2">
+							<code className="rounded bg-muted px-2 py-1 text-sm font-bold text-foreground">
+								{currentShareCode ?? "Brak"}
+							</code>
+							{currentShareCode && (
+								<Button
+									size="sm"
+									variant="outline"
+									onClick={() => copyToClipboard(currentShareCode)}
+									title="Kopiuj kod"
+								>
+									{copiedLink === currentShareCode ? (
+										<Check className="h-4 w-4" />
+									) : (
+										<Copy className="h-4 w-4" />
+									)}
+								</Button>
+							)}
+						</div>
+						{currentShareCode && (
+							<div className="mt-3 flex items-center gap-2">
+								<code className="flex-1 overflow-x-auto rounded bg-muted px-2 py-1 text-xs text-muted-foreground">
+									{shareUrl}
+								</code>
+								<Button
+									size="sm"
+									variant="outline"
+									onClick={() => copyToClipboard(shareUrl)}
+									title="Kopiuj link"
+								>
+									{copiedLink === shareUrl ? (
+										<Check className="h-4 w-4" />
+									) : (
+										<Copy className="h-4 w-4" />
+									)}
+								</Button>
+							</div>
+						)}
+					</>
+				)}
 			</div>
 
 			{lastMagicLink && (

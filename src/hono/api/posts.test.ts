@@ -132,7 +132,7 @@ describe("POST /api/app/posts", () => {
 		expect(res.status).toBe(401);
 	});
 
-	it("returns 400 when cfImageIds is empty", async () => {
+	it("creates post with empty cfImageIds (text-only post)", async () => {
 		const api = createApi();
 		const res = await api.request(
 			"/api/app/posts",
@@ -144,7 +144,7 @@ describe("POST /api/app/posts", () => {
 			env,
 		);
 
-		expect(res.status).toBe(400);
+		expect(res.status).toBe(201);
 	});
 
 	it("returns 400 when more than 10 images", async () => {

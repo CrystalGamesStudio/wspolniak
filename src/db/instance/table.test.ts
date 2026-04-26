@@ -11,7 +11,7 @@ describe("instance_config table", () => {
 
 	it("has all expected columns", () => {
 		expect(Object.keys(columns).sort()).toEqual(
-			["id", "familyName", "setupCompleted", "createdAt"].sort(),
+			["id", "familyName", "setupCompleted", "shareCode", "createdAt"].sort(),
 		);
 	});
 
@@ -29,6 +29,11 @@ describe("instance_config table", () => {
 		expect(columns.setupCompleted.dataType).toBe("boolean");
 		expect(columns.setupCompleted.notNull).toBe(true);
 		expect(columns.setupCompleted.hasDefault).toBe(true);
+	});
+
+	it("share_code is nullable text", () => {
+		expect(columns.shareCode.dataType).toBe("string");
+		expect(columns.shareCode.notNull).toBe(false);
 	});
 
 	it("created_at is timestamp not null with default", () => {

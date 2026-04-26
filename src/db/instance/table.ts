@@ -5,5 +5,6 @@ export const instanceConfig = pgTable("instance_config", {
 	id: text("id").primaryKey(),
 	familyName: text("family_name").notNull(),
 	setupCompleted: boolean("setup_completed").notNull().default(false),
+	shareCode: text("share_code"),
 	createdAt: timestamp("created_at").defaultNow().notNull(),
 });

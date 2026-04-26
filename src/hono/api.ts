@@ -7,6 +7,7 @@ import imagesEndpoint from "@/hono/api/images";
 import postsEndpoint from "@/hono/api/posts";
 import pushEndpoint from "@/hono/api/push";
 import setupEndpoint from "@/hono/api/setup";
+import shareEndpoint from "@/hono/api/share";
 import { createHono } from "./factory";
 
 export const apiHono = createHono().basePath("/api");
@@ -19,3 +20,4 @@ apiHono.route("/app/posts", commentsEndpoint);
 apiHono.route("/app/push", pushEndpoint);
 apiHono.route("/app", appEndpoint);
 apiHono.route("/admin", adminEndpoint);
+apiHono.route("/share", shareEndpoint);

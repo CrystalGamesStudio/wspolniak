@@ -53,6 +53,7 @@ describe("POST /api/setup", () => {
 			id: "cfg-1",
 			familyName: "Kowalscy",
 			setupCompleted: true,
+			shareCode: null,
 			createdAt: new Date(),
 		});
 		mockCreateUser.mockResolvedValue({

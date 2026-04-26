@@ -6,7 +6,7 @@ describe("NewPostForm", () => {
 	it("renders file picker and description input", () => {
 		render(<NewPostForm onSubmit={vi.fn()} isSubmitting={false} />);
 
-		expect(screen.getByLabelText(/opis/i)).toBeDefined();
+		expect(screen.getByLabelText(/tekst/i)).toBeDefined();
 		expect(screen.getByLabelText(/zdjęcia/i)).toBeDefined();
 		expect(screen.getByRole("button", { name: /opublikuj/i })).toBeDefined();
 	});

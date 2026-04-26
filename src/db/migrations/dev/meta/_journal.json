@@ -29,6 +29,13 @@
       "when": 1776176232995,
       "tag": "0003_right_tombstone",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1777226086425,
+      "tag": "0004_petite_thor",
+      "breakpoints": true
     }
   ]
 }
