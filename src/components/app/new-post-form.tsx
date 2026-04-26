@@ -96,14 +96,14 @@ export function NewPostForm({ onSubmit, isSubmitting }: NewPostFormProps) {
 					value={description}
 					onChange={(e) => setDescription(e.target.value)}
 					maxLength={2000}
-					rows={12}
+					rows={24}
 					placeholder="Co się wydarzyło?"
-					className="resize-y"
+					className="min-h-96 resize-y"
 				/>
 			</div>
 
 			<div className="space-y-2">
-				<Label htmlFor="photos">Zdjęcia (opcjonalnie)</Label>
+				<Label htmlFor="photos">Zdjęcia</Label>
 				<input
 					id="photos"
 					ref={fileInputRef}

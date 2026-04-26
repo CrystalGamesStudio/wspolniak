@@ -73,18 +73,19 @@ export function CommentActions({ postId, commentId, body }: CommentActionsProps)
 		<>
 			<DropdownMenu>
 				<DropdownMenuTrigger asChild>
-					<Button variant="ghost" size="icon" className="size-6">
-						<MoreHorizontalIcon className="size-3" />
+					<Button variant="ghost" size="icon" className="size-12 sm:size-8">
+						<MoreHorizontalIcon className="size-6 sm:size-4" />
 						<span className="sr-only">Opcje komentarza</span>
 					</Button>
 				</DropdownMenuTrigger>
-				<DropdownMenuContent align="end">
+				<DropdownMenuContent align="end" className="min-w-48">
 					<DropdownMenuItem
 						onSelect={() => {
 							setEditValue(body);
 							editMutation.reset();
 							setEditOpen(true);
 						}}
+						className="py-3 sm:py-1.5 text-base sm:text-sm"
 					>
 						<PencilIcon />
 						Edytuj
@@ -95,6 +96,7 @@ export function CommentActions({ postId, commentId, body }: CommentActionsProps)
 							deleteMutation.reset();
 							setDeleteOpen(true);
 						}}
+						className="py-3 sm:py-1.5 text-base sm:text-sm"
 					>
 						<TrashIcon />
 						Usuń
@@ -103,7 +105,7 @@ export function CommentActions({ postId, commentId, body }: CommentActionsProps)
 			</DropdownMenu>
 
 			<Dialog open={editOpen} onOpenChange={setEditOpen}>
-				<DialogContent>
+				<DialogContent className="max-h-[90vh] overflow-y-auto">
 					<DialogHeader>
 						<DialogTitle>Edytuj komentarz</DialogTitle>
 					</DialogHeader>
@@ -118,13 +120,18 @@ export function CommentActions({ postId, commentId, body }: CommentActionsProps)
 						maxLength={1000}
 						rows={3}
 					/>
-					<DialogFooter>
-						<Button variant="outline" onClick={() => setEditOpen(false)}>
+					<DialogFooter className="gap-2 sm:gap-0">
+						<Button
+							variant="outline"
+							onClick={() => setEditOpen(false)}
+							className="h-12 text-base sm:h-auto sm:text-sm flex-1 sm:flex-none"
+						>
 							Anuluj
 						</Button>
 						<Button
 							onClick={() => editMutation.mutate(editValue)}
 							disabled={editMutation.isPending || !editValue.trim()}
+							className="h-12 text-base sm:h-auto sm:text-sm flex-1 sm:flex-none"
 						>
 							{editMutation.isPending ? "Zapisywanie..." : "Zapisz"}
 						</Button>
@@ -133,7 +140,7 @@ export function CommentActions({ postId, commentId, body }: CommentActionsProps)
 			</Dialog>
 
 			<Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-				<DialogContent>
+				<DialogContent className="max-h-[90vh] overflow-y-auto">
 					<DialogHeader>
 						<DialogTitle>Usuń komentarz</DialogTitle>
 						<DialogDescription>Czy na pewno chcesz usunąć ten komentarz?</DialogDescription>
@@ -143,14 +150,19 @@ export function CommentActions({ postId, commentId, body }: CommentActionsProps)
 							<AlertDescription>{deleteMutation.error.message}</AlertDescription>
 						</Alert>
 					)}
-					<DialogFooter>
-						<Button variant="outline" onClick={() => setDeleteOpen(false)}>
+					<DialogFooter className="gap-2 sm:gap-0">
+						<Button
+							variant="outline"
+							onClick={() => setDeleteOpen(false)}
+							className="h-12 text-base sm:h-auto sm:text-sm flex-1 sm:flex-none"
+						>
 							Anuluj
 						</Button>
 						<Button
 							variant="destructive"
 							onClick={() => deleteMutation.mutate()}
 							disabled={deleteMutation.isPending}
+							className="h-12 text-base sm:h-auto sm:text-sm flex-1 sm:flex-none"
 						>
 							{deleteMutation.isPending ? "Usuwanie..." : "Usuń"}
 						</Button>

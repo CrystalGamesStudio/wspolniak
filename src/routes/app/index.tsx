@@ -118,7 +118,7 @@ function FeedPage() {
 					loadMoreRef={loadMoreRef}
 				/>
 			</div>
-			<MobileNav />
+			<MobileNav role={session.role} />
 		</PullToRefresh>
 	);
 }

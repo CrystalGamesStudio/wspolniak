@@ -1,15 +1,26 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { Link } from "@tanstack/react-router";
-import { Plus, RefreshCw } from "lucide-react";
+import { Plus, RefreshCw, Users } from "lucide-react";
 import { FeedbackButton } from "@/components/app/feedback-button";
 import { ThemeToggle } from "@/components/theme";
 import { Button } from "@/components/ui/button";
 
-export function MobileNav() {
+interface MobileNavProps {
+	role?: string;
+}
+
+export function MobileNav({ role }: MobileNavProps) {
 	return (
 		<nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background pb-safe sm:hidden">
 			<div className="flex items-center justify-around px-2 py-2">
+				{role === "admin" && (
+					<Link to="/app/admin" className="flex flex-col items-center gap-1">
+						<Users className="h-5 w-5 text-foreground" />
+						<span className="text-[10px] text-muted-foreground">Rodzina</span>
+					</Link>
+				)}
+
 				<button
 					type="button"
 					onClick={() => window.location.reload()}

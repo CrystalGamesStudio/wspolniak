@@ -101,7 +101,7 @@ export function CommentSection({ postId, currentUserId, currentUserRole }: Comme
 				})}
 			</div>
 
-			<div className="space-y-2">
+			<div id="new-comment" className="space-y-2">
 				{mutation.isError && (
 					<Alert variant="destructive">
 						<AlertDescription>{mutation.error.message}</AlertDescription>
