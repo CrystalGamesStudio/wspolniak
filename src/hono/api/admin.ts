@@ -5,6 +5,7 @@ import {
 	regenerateMemberToken,
 	softDeleteMember,
 } from "@/db/identity/queries";
+import { getShareCode, setShareCode } from "@/db/instance/queries";
 import { createHono } from "@/hono/factory";
 import { adminMiddleware } from "@/hono/middleware/admin";
 import { authMiddleware } from "@/hono/middleware/auth";
@@ -56,6 +57,22 @@ adminEndpoint.delete("/members/:id", async (c) => {
 	const userId = c.req.param("id");
 	await softDeleteMember(userId);
 	return c.json({ data: { deleted: true } });
+});
+
+adminEndpoint.get("/share-code", async (c) => {
+	const code = await getShareCode();
+	return c.json({ data: { code } });
+});
+
+adminEndpoint.put("/share-code", async (c) => {
+	const body = await c.req.json<{ code?: string }>();
+	const code = body.code?.trim();
+
+	if (!code) return c.json({ error: "Code is required" }, 400);
+	if (code.length > 20) return c.json({ error: "Code must be max 20 characters" }, 400);
+
+	await setShareCode(code);
+	return c.json({ data: { code } });
 });
 
 export default adminEndpoint;

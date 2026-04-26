@@ -3,6 +3,24 @@ import { eq } from "drizzle-orm";
 import { getDb } from "@/db/setup";
 import { instanceConfig } from "./table";
 
+export async function getShareCode(): Promise<string | null> {
+	const rows = await getDb()
+		.select({ shareCode: instanceConfig.shareCode })
+		.from(instanceConfig)
+		.limit(1);
+	return rows[0]?.shareCode ?? null;
+}
+
+export async function setShareCode(code: string): Promise<void> {
+	const rows = await getDb().select({ id: instanceConfig.id }).from(instanceConfig).limit(1);
+	const row = rows[0];
+	if (!row) throw new Error("setShareCode: no instance_config row");
+	await getDb()
+		.update(instanceConfig)
+		.set({ shareCode: code })
+		.where(eq(instanceConfig.id, row.id));
+}
+
 export async function isSetupCompleted(): Promise<boolean> {
 	const rows = await getDb()
 		.select()
