@@ -36,11 +36,11 @@ function PostPage() {
 		if (window.location.hash === "#comments" && !isLoading && response?.data) {
 			// Use setTimeout to ensure DOM is fully rendered
 			setTimeout(() => {
-				const element = document.getElementById("comments");
+				const element = document.getElementById("new-comment");
 				if (element) {
-					element.scrollIntoView({ behavior: "smooth" });
+					element.scrollIntoView({ behavior: "smooth", block: "center" });
 				}
-			}, 100);
+			}, 300);
 		}
 	}, [isLoading, response]);
 

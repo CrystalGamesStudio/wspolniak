@@ -105,7 +105,7 @@ export function PostActions({ postId, description, onDeleted }: PostActionsProps
 			</DropdownMenu>
 
 			<Dialog open={editOpen} onOpenChange={setEditOpen}>
-				<DialogContent>
+				<DialogContent className="max-h-[90vh] overflow-y-auto">
 					<DialogHeader>
 						<DialogTitle>Edytuj opis</DialogTitle>
 					</DialogHeader>
@@ -141,7 +141,7 @@ export function PostActions({ postId, description, onDeleted }: PostActionsProps
 			</Dialog>
 
 			<Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-				<DialogContent>
+				<DialogContent className="max-h-[90vh] overflow-y-auto">
 					<DialogHeader>
 						<DialogTitle>Usuń post</DialogTitle>
 						<DialogDescription>

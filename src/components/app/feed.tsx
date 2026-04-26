@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-import { MessageCircleIcon } from "lucide-react";
+import { ExternalLinkIcon, MessageCircleIcon } from "lucide-react";
 import { PostActions } from "@/components/app/post-actions";
 import { getImageUrl } from "@/images/client";
 
@@ -88,13 +88,23 @@ export function Feed({
 						))}
 					</div>
 
-					<a
-						href={`/app/post/${post.id}#comments`}
-						className="mt-3 flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-					>
-						<MessageCircleIcon className="size-4" />
-						{post.commentCount ?? 0}
-					</a>
+					<div className="mt-3 flex items-center justify-between">
+						<a
+							href={`/app/post/${post.id}#comments`}
+							className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+						>
+							<MessageCircleIcon className="size-6 sm:size-4" />
+							{post.commentCount ?? 0}
+						</a>
+						<a
+							href={`/app/post/${post.id}`}
+							className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+							aria-label="Otwórz pełny post"
+						>
+							<ExternalLinkIcon className="size-6 sm:size-4" />
+							<span className="hidden sm:inline">Otwórz pełny post</span>
+						</a>
+					</div>
 				</article>
 			))}
 

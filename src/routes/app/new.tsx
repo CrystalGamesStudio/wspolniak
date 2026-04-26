@@ -46,6 +46,7 @@ export const Route = createFileRoute("/app/new")({
 });
 
 function NewPostPage() {
+	const { session } = Route.useRouteContext();
 	const navigate = useNavigate();
 	const queryClient = useQueryClient();
 
@@ -78,7 +79,7 @@ function NewPostPage() {
 			)}
 
 			<NewPostForm onSubmit={(data) => mutation.mutate(data)} isSubmitting={mutation.isPending} />
-			<MobileNav />
+			<MobileNav role={session.role} />
 		</div>
 	);
 }

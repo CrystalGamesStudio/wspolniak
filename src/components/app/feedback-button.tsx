@@ -119,8 +119,9 @@ export function FeedbackButton({
 								<Textarea
 									id="message"
 									name="message"
-									rows={4}
+									rows={8}
 									placeholder="Opisz swój problem lub pomysł..."
+									className="min-h-48 resize-y"
 									required
 								/>
 							</div>
