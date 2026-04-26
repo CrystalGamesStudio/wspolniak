@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-import { ImagePlus } from "lucide-react";
+import { ImagePlus, X } from "lucide-react";
 import { type ChangeEvent, type FormEvent, useCallback, useMemo, useRef, useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
 const ACCEPTED_TYPES = "image/jpeg,image/png,image/webp,image/heic,image/heif";
 const MAX_FILES = 10;
@@ -47,11 +47,28 @@ export function NewPostForm({ onSubmit, isSubmitting }: NewPostFormProps) {
 		});
 	}, []);
 
+	const removeFile = useCallback((index: number) => {
+		setFiles((prev) => {
+			const newFiles = prev.filter((_, i) => i !== index);
+			if (newFiles.length === 0) {
+				fileInputRef.current!.value = "";
+			}
+			return newFiles;
+		});
+		setPreviews((prev) => {
+			const newPreviews = prev.filter((_, i) => i !== index);
+			if (prev[index]) {
+				URL.revokeObjectURL(prev[index]);
+			}
+			return newPreviews;
+		});
+	}, []);
+
 	const handleSubmit = useCallback(
 		(e: FormEvent) => {
 			e.preventDefault();
-			if (files.length === 0) {
-				setError("Dodaj przynajmniej jedno zdjęcie");
+			if (files.length === 0 && !description.trim()) {
+				setError("Dodaj tekst lub zdjęcie");
 				return;
 			}
 			onSubmit({ description, files });
@@ -59,7 +76,10 @@ export function NewPostForm({ onSubmit, isSubmitting }: NewPostFormProps) {
 		[description, files, onSubmit],
 	);
 
-	const canSubmit = useMemo(() => files.length > 0 && !isSubmitting, [files.length, isSubmitting]);
+	const canSubmit = useMemo(
+		() => (files.length > 0 || description.trim().length > 0) && !isSubmitting,
+		[files.length, description, isSubmitting],
+	);
 
 	return (
 		<form onSubmit={handleSubmit} className="space-y-4">
@@ -70,18 +90,20 @@ export function NewPostForm({ onSubmit, isSubmitting }: NewPostFormProps) {
 			)}
 
 			<div className="space-y-2">
-				<Label htmlFor="description">Opis (opcjonalnie)</Label>
-				<Input
+				<Label htmlFor="description">Tekst</Label>
+				<Textarea
 					id="description"
 					value={description}
 					onChange={(e) => setDescription(e.target.value)}
 					maxLength={2000}
+					rows={12}
 					placeholder="Co się wydarzyło?"
+					className="resize-y"
 				/>
 			</div>
 
 			<div className="space-y-2">
-				<Label htmlFor="photos">Zdjęcia</Label>
+				<Label htmlFor="photos">Zdjęcia (opcjonalnie)</Label>
 				<input
 					id="photos"
 					ref={fileInputRef}
@@ -107,12 +129,21 @@ export function NewPostForm({ onSubmit, isSubmitting }: NewPostFormProps) {
 			{previews.length > 0 && (
 				<div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
 					{previews.map((url, i) => (
-						<img
-							key={url}
-							src={url}
-							alt={`Podgląd ${i + 1}`}
-							className="aspect-square w-full rounded-md object-cover"
-						/>
+						<div key={url} className="relative aspect-square">
+							<img
+								src={url}
+								alt={`Podgląd ${i + 1}`}
+								className="aspect-square w-full rounded-md object-cover"
+							/>
+							<button
+								type="button"
+								onClick={() => removeFile(i)}
+								className="absolute right-1 top-1 flex size-6 items-center justify-center rounded-full bg-destructive text-destructive-foreground opacity-90 transition-opacity hover:opacity-100"
+								title="Usuń zdjęcie"
+							>
+								<X className="h-3 w-3" />
+							</button>
+						</div>
 					))}
 				</div>
 			)}

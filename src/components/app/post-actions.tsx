@@ -73,18 +73,19 @@ export function PostActions({ postId, description, onDeleted }: PostActionsProps
 		<>
 			<DropdownMenu>
 				<DropdownMenuTrigger asChild>
-					<Button variant="ghost" size="icon" className="size-8">
-						<MoreHorizontalIcon className="size-4" />
+					<Button variant="ghost" size="icon" className="size-12 sm:size-8">
+						<MoreHorizontalIcon className="size-6 sm:size-4" />
 						<span className="sr-only">Opcje posta</span>
 					</Button>
 				</DropdownMenuTrigger>
-				<DropdownMenuContent align="end">
+				<DropdownMenuContent align="end" className="min-w-48">
 					<DropdownMenuItem
 						onSelect={() => {
 							setEditValue(description ?? "");
 							editMutation.reset();
 							setEditOpen(true);
 						}}
+						className="py-3 sm:py-1.5 text-base sm:text-sm"
 					>
 						<PencilIcon />
 						Edytuj opis
@@ -95,6 +96,7 @@ export function PostActions({ postId, description, onDeleted }: PostActionsProps
 							deleteMutation.reset();
 							setDeleteOpen(true);
 						}}
+						className="py-3 sm:py-1.5 text-base sm:text-sm"
 					>
 						<TrashIcon />
 						Usuń post
@@ -119,13 +121,18 @@ export function PostActions({ postId, description, onDeleted }: PostActionsProps
 						rows={4}
 						placeholder="Opis (opcjonalnie)"
 					/>
-					<DialogFooter>
-						<Button variant="outline" onClick={() => setEditOpen(false)}>
+					<DialogFooter className="gap-2 sm:gap-0">
+						<Button
+							variant="outline"
+							onClick={() => setEditOpen(false)}
+							className="h-12 text-base sm:h-auto sm:text-sm flex-1 sm:flex-none"
+						>
 							Anuluj
 						</Button>
 						<Button
 							onClick={() => editMutation.mutate(editValue || null)}
 							disabled={editMutation.isPending}
+							className="h-12 text-base sm:h-auto sm:text-sm flex-1 sm:flex-none"
 						>
 							{editMutation.isPending ? "Zapisywanie..." : "Zapisz"}
 						</Button>
@@ -146,14 +153,19 @@ export function PostActions({ postId, description, onDeleted }: PostActionsProps
 							<AlertDescription>{deleteMutation.error.message}</AlertDescription>
 						</Alert>
 					)}
-					<DialogFooter>
-						<Button variant="outline" onClick={() => setDeleteOpen(false)}>
+					<DialogFooter className="gap-2 sm:gap-0">
+						<Button
+							variant="outline"
+							onClick={() => setDeleteOpen(false)}
+							className="h-12 text-base sm:h-auto sm:text-sm flex-1 sm:flex-none"
+						>
 							Anuluj
 						</Button>
 						<Button
 							variant="destructive"
 							onClick={() => deleteMutation.mutate()}
 							disabled={deleteMutation.isPending}
+							className="h-12 text-base sm:h-auto sm:text-sm flex-1 sm:flex-none"
 						>
 							{deleteMutation.isPending ? "Usuwanie..." : "Usuń"}
 						</Button>

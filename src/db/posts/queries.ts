@@ -11,11 +11,11 @@ export type PostImage = InferSelectModel<typeof postImages>;
 interface CreatePostInput {
 	authorId: string;
 	description: string | null;
-	cfImageIds: string[];
+	cfImageIds?: string[];
 }
 
 export async function createPost(input: CreatePostInput) {
-	const { authorId, description, cfImageIds } = input;
+	const { authorId, description, cfImageIds = [] } = input;
 	const db = getDb();
 
 	const postId = crypto.randomUUID();
@@ -23,14 +23,20 @@ export async function createPost(input: CreatePostInput) {
 	const post = postRows[0];
 	if (!post) throw new Error("createPost: insert returned no rows");
 
-	const imageValues = cfImageIds.map((cfImageId, index) => ({
-		id: crypto.randomUUID(),
-		postId,
-		cfImageId,
-		displayOrder: index,
-	}));
-
-	const images = await db.insert(postImages).values(imageValues).returning();
+	const images =
+		cfImageIds.length > 0
+			? await db
+					.insert(postImages)
+					.values(
+						cfImageIds.map((cfImageId, index) => ({
+							id: crypto.randomUUID(),
+							postId,
+							cfImageId,
+							displayOrder: index,
+						})),
+					)
+					.returning()
+			: [];
 
 	return { post, images };
 }

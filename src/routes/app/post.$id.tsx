@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { CommentSection } from "@/components/app/comment-section";
 import { PostView } from "@/components/app/post-view";
 import { ThemeToggle } from "@/components/theme";
@@ -29,6 +30,19 @@ function PostPage() {
 		queryKey: ["posts", id],
 		queryFn: () => fetchPost(id),
 	});
+
+	// Scroll to comments section when URL hash is #comments
+	useEffect(() => {
+		if (window.location.hash === "#comments" && !isLoading && response?.data) {
+			// Use setTimeout to ensure DOM is fully rendered
+			setTimeout(() => {
+				const element = document.getElementById("comments");
+				if (element) {
+					element.scrollIntoView({ behavior: "smooth" });
+				}
+			}, 100);
+		}
+	}, [isLoading, response]);
 
 	if (isLoading) {
 		return (
@@ -62,7 +76,9 @@ function PostPage() {
 				onDeleted={() => navigate({ to: "/app" })}
 			/>
 			<hr className="my-6 border-border" />
-			<CommentSection postId={id} currentUserId={session.userId} currentUserRole={session.role} />
+			<div id="comments">
+				<CommentSection postId={id} currentUserId={session.userId} currentUserRole={session.role} />
+			</div>
 		</div>
 	);
 }
