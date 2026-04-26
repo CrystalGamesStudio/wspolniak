@@ -89,7 +89,7 @@ export function Feed({
 					</div>
 
 					<a
-						href={`/app/post/${post.id}`}
+						href={`/app/post/${post.id}#comments`}
 						className="mt-3 flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
 					>
 						<MessageCircleIcon className="size-4" />

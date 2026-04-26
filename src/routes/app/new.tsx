@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { ArrowLeft } from "lucide-react";
+import { MobileNav } from "@/components/app/mobile-nav";
 import { NewPostForm } from "@/components/app/new-post-form";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
@@ -56,8 +58,18 @@ function NewPostPage() {
 	});
 
 	return (
-		<div className="mx-auto max-w-lg bg-background px-4 py-6">
-			<h1 className="mb-6 text-2xl font-bold text-foreground">Nowy post</h1>
+		<div className="mx-auto max-w-lg bg-background px-4 py-6 pb-20 sm:pb-6">
+			<div className="mb-6 flex items-center gap-4">
+				<button
+					type="button"
+					onClick={() => navigate({ to: "/app" })}
+					className="rounded-full p-2 hover:bg-muted"
+					title="Wróć do feeda"
+				>
+					<ArrowLeft className="h-5 w-5 text-foreground" />
+				</button>
+				<h1 className="text-2xl font-bold text-foreground">Nowy post</h1>
+			</div>
 
 			{mutation.isError && (
 				<Alert variant="destructive" className="mb-4">
@@ -66,6 +78,7 @@ function NewPostPage() {
 			)}
 
 			<NewPostForm onSubmit={(data) => mutation.mutate(data)} isSubmitting={mutation.isPending} />
+			<MobileNav />
 		</div>
 	);
 }

@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { useForm } from "@tanstack/react-form";
 import { useMutation } from "@tanstack/react-query";
-import { Copy } from "lucide-react";
+import { Check, Copy } from "lucide-react";
+import { useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,6 +41,7 @@ async function submitSetup(data: {
 }
 
 export function SetupPage() {
+	const [copied, setCopied] = useState(false);
 	const mutation = useMutation({
 		mutationFn: submitSetup,
 	});
@@ -67,9 +69,13 @@ export function SetupPage() {
 						<Button
 							variant="ghost"
 							size="icon"
-							onClick={() => navigator.clipboard.writeText(mutation.data.magicLink)}
+							onClick={() => {
+								navigator.clipboard.writeText(mutation.data.magicLink);
+								setCopied(true);
+								setTimeout(() => setCopied(false), 2000);
+							}}
 						>
-							<Copy className="h-4 w-4" />
+							{copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
 						</Button>
 					</div>
 				</div>
