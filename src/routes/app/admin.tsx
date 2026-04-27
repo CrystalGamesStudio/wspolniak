@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { Check, Copy, Link, Pencil, Plus, Trash2, X } from "lucide-react";
+import { Check, Copy, Link, Pencil, Plus, Share2, Trash2, X } from "lucide-react";
 import { useState } from "react";
 import { ThemeToggle } from "@/components/theme";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 
 interface Member {
@@ -34,6 +35,8 @@ function AdminPage() {
 	const [copiedLink, setCopiedLink] = useState<string | null>(null);
 	const [lastMagicLink, setLastMagicLink] = useState<{ name: string; link: string } | null>(null);
 	const [editingShareCode, setEditingShareCode] = useState(false);
+	const [shareDialogOpen, setShareDialogOpen] = useState(false);
+	const [addDialogOpen, setAddDialogOpen] = useState(false);
 	const [shareCodeInput, setShareCodeInput] = useState("");
 
 	const shareCodeQuery = useQuery({
@@ -90,6 +93,7 @@ function AdminPage() {
 		onSuccess: async (data) => {
 			setLastMagicLink({ name: data.data.user.name, link: data.data.magicLink });
 			setNewName("");
+			setAddDialogOpen(false);
 			await queryClient.invalidateQueries({ queryKey: ["admin", "members"] });
 		},
 	});
@@ -147,107 +151,167 @@ function AdminPage() {
 	}
 
 	return (
-		<div className="mx-auto max-w-2xl bg-background px-4 py-6">
+		<div className="mx-auto max-w-2xl bg-background px-4 py-6 pb-20 sm:pb-6">
 			<div className="mb-6 flex items-center justify-between">
 				<h1 className="text-2xl font-bold text-foreground">Zarządzanie rodziną</h1>
 				<div className="flex items-center gap-2">
-					<ThemeToggle size="sm" />
+					<Button
+						variant="outline"
+						size="icon"
+						className="h-12 w-12"
+						onClick={() => setAddDialogOpen(true)}
+						title="Dodaj członka"
+					>
+						<Plus className="h-7 w-7" />
+					</Button>
+					<Button
+						variant="outline"
+						size="icon"
+						className="h-12 w-12"
+						onClick={() => setShareDialogOpen(true)}
+						title="Udostępnianie"
+					>
+						<Share2 className="h-7 w-7" />
+					</Button>
+					<ThemeToggle size="lg" />
 					<a href="/app">
-						<Button variant="outline" size="sm">
+						<Button variant="outline" size="lg">
 							Wróć
 						</Button>
 					</a>
 				</div>
 			</div>
 
-			<div className="mb-6 rounded-lg border border-border bg-card p-4">
-				<div className="mb-3 flex items-center justify-between">
-					<h2 className="text-sm font-medium text-foreground">Kod dostępu /share</h2>
-					{!editingShareCode && (
-						<Button size="sm" variant="ghost" onClick={startEditShareCode} title="Zmień kod">
-							<Pencil className="h-4 w-4" />
-						</Button>
+			<Dialog
+				open={shareDialogOpen}
+				onOpenChange={(open) => {
+					setShareDialogOpen(open);
+					if (!open) {
+						setEditingShareCode(false);
+						shareCodeMutation.reset();
+					}
+				}}
+			>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Kod dostępu /share</DialogTitle>
+					</DialogHeader>
+
+					{shareCodeMutation.isError && (
+						<Alert variant="destructive">{shareCodeMutation.error.message}</Alert>
 					)}
-				</div>
 
-				{shareCodeMutation.isError && (
-					<Alert variant="destructive" className="mb-3">
-						{shareCodeMutation.error.message}
-					</Alert>
-				)}
-
-				{editingShareCode ? (
-					<form onSubmit={handleSaveShareCode} className="flex gap-2">
-						<Input
-							value={shareCodeInput}
-							onChange={(e) => setShareCodeInput(e.target.value)}
-							placeholder="np. 7843"
-							className="flex-1"
-							maxLength={20}
-							autoFocus
-						/>
-						<Button
-							type="submit"
-							size="sm"
-							disabled={!shareCodeInput.trim() || shareCodeMutation.isPending}
-						>
-							{shareCodeMutation.isPending ? "Zapisuję..." : "Zapisz"}
-						</Button>
-						<Button
-							type="button"
-							size="sm"
-							variant="ghost"
-							onClick={() => {
-								setEditingShareCode(false);
-								shareCodeMutation.reset();
-							}}
-						>
-							<X className="h-4 w-4" />
-						</Button>
-					</form>
-				) : (
-					<>
-						<div className="flex items-center gap-2">
-							<code className="rounded bg-muted px-2 py-1 text-sm font-bold text-foreground">
-								{currentShareCode ?? "Brak"}
-							</code>
-							{currentShareCode && (
-								<Button
-									size="sm"
-									variant="outline"
-									onClick={() => copyToClipboard(currentShareCode)}
-									title="Kopiuj kod"
-								>
-									{copiedLink === currentShareCode ? (
-										<Check className="h-4 w-4" />
-									) : (
-										<Copy className="h-4 w-4" />
-									)}
-								</Button>
-							)}
-						</div>
-						{currentShareCode && (
-							<div className="mt-3 flex items-center gap-2">
-								<code className="flex-1 overflow-x-auto rounded bg-muted px-2 py-1 text-xs text-muted-foreground">
-									{shareUrl}
+					{editingShareCode ? (
+						<form onSubmit={handleSaveShareCode} className="flex gap-2">
+							<Input
+								value={shareCodeInput}
+								onChange={(e) => setShareCodeInput(e.target.value)}
+								placeholder="np. 7843"
+								className="flex-1"
+								maxLength={20}
+								autoFocus
+							/>
+							<Button
+								type="submit"
+								size="sm"
+								disabled={!shareCodeInput.trim() || shareCodeMutation.isPending}
+							>
+								{shareCodeMutation.isPending ? "Zapisuję..." : "Zapisz"}
+							</Button>
+							<Button
+								type="button"
+								size="sm"
+								variant="ghost"
+								onClick={() => {
+									setEditingShareCode(false);
+									shareCodeMutation.reset();
+								}}
+							>
+								<X className="h-4 w-4" />
+							</Button>
+						</form>
+					) : (
+						<>
+							<div className="flex items-center gap-2">
+								<code className="rounded bg-muted px-2 py-1 text-sm font-bold text-foreground">
+									{currentShareCode ?? "Brak"}
 								</code>
-								<Button
-									size="sm"
-									variant="outline"
-									onClick={() => copyToClipboard(shareUrl)}
-									title="Kopiuj link"
-								>
-									{copiedLink === shareUrl ? (
-										<Check className="h-4 w-4" />
-									) : (
-										<Copy className="h-4 w-4" />
-									)}
+								{currentShareCode && (
+									<Button
+										size="sm"
+										variant="outline"
+										onClick={() => copyToClipboard(currentShareCode)}
+										title="Kopiuj kod"
+									>
+										{copiedLink === currentShareCode ? (
+											<Check className="h-4 w-4" />
+										) : (
+											<Copy className="h-4 w-4" />
+										)}
+									</Button>
+								)}
+								<Button size="sm" variant="ghost" onClick={startEditShareCode} title="Zmień kod">
+									<Pencil className="h-4 w-4" />
 								</Button>
 							</div>
-						)}
-					</>
-				)}
-			</div>
+							{currentShareCode && (
+								<div className="flex items-center gap-2">
+									<code className="flex-1 overflow-x-auto rounded bg-muted px-2 py-1 text-xs text-muted-foreground">
+										{shareUrl}
+									</code>
+									<Button
+										size="sm"
+										variant="outline"
+										onClick={() => copyToClipboard(shareUrl)}
+										title="Kopiuj link"
+									>
+										{copiedLink === shareUrl ? (
+											<Check className="h-4 w-4" />
+										) : (
+											<Copy className="h-4 w-4" />
+										)}
+									</Button>
+								</div>
+							)}
+						</>
+					)}
+				</DialogContent>
+			</Dialog>
+
+			<Dialog
+				open={addDialogOpen}
+				onOpenChange={(open) => {
+					setAddDialogOpen(open);
+					if (!open) {
+						setNewName("");
+						createMutation.reset();
+					}
+				}}
+			>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Dodaj członka</DialogTitle>
+					</DialogHeader>
+
+					{createMutation.isError && (
+						<Alert variant="destructive">{createMutation.error.message}</Alert>
+					)}
+
+					<form onSubmit={handleCreate} className="flex gap-2">
+						<Input
+							value={newName}
+							onChange={(e) => setNewName(e.target.value)}
+							placeholder="Imię nowego członka..."
+							className="flex-1"
+							autoFocus
+						/>
+						<Button type="submit" disabled={!newName.trim() || createMutation.isPending}>
+							<Plus className="mr-1 h-4 w-4" />
+							{createMutation.isPending ? "Dodaję..." : "Dodaj"}
+						</Button>
+					</form>
+				</DialogContent>
+			</Dialog>
 
 			{lastMagicLink && (
 				<div className="mb-6 rounded-lg border border-border bg-card p-4">
@@ -270,25 +334,6 @@ function AdminPage() {
 						Wyślij ten link osobie — po kliknięciu zostanie zalogowana.
 					</p>
 				</div>
-			)}
-
-			<form onSubmit={handleCreate} className="mb-6 flex gap-2">
-				<Input
-					value={newName}
-					onChange={(e) => setNewName(e.target.value)}
-					placeholder="Imię nowego członka..."
-					className="flex-1"
-				/>
-				<Button type="submit" disabled={!newName.trim() || createMutation.isPending}>
-					<Plus className="mr-1 h-4 w-4" />
-					{createMutation.isPending ? "Dodaję..." : "Dodaj"}
-				</Button>
-			</form>
-
-			{createMutation.isError && (
-				<Alert variant="destructive" className="mb-4">
-					{createMutation.error.message}
-				</Alert>
 			)}
 
 			{membersQuery.isLoading && <p className="text-center text-muted-foreground">Ładowanie...</p>}
