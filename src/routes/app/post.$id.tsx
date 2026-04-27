@@ -61,7 +61,7 @@ function PostPage() {
 	}
 
 	return (
-		<div className="mx-auto max-w-2xl bg-background px-4 py-6">
+		<div className="mx-auto max-w-2xl bg-background px-4 py-6 pb-20 sm:pb-6">
 			<div className="mb-4 flex items-center justify-between">
 				<a href="/app" className="text-sm text-muted-foreground hover:text-foreground">
 					&larr; Wróć do feedu

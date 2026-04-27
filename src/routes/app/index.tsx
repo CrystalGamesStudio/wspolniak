@@ -4,7 +4,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef } from "react";
 import { Feed } from "@/components/app/feed";
 import { FeedbackButton } from "@/components/app/feedback-button";
-import { MobileNav } from "@/components/app/mobile-nav";
 import { PullToRefresh } from "@/components/app/pull-to-refresh";
 import { Button } from "@/components/ui/button";
 
@@ -118,7 +117,6 @@ function FeedPage() {
 					loadMoreRef={loadMoreRef}
 				/>
 			</div>
-			<MobileNav role={session.role} />
 		</PullToRefresh>
 	);
 }

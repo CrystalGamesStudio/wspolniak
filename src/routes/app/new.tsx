@@ -2,7 +2,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
-import { MobileNav } from "@/components/app/mobile-nav";
 import { NewPostForm } from "@/components/app/new-post-form";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
@@ -46,7 +45,6 @@ export const Route = createFileRoute("/app/new")({
 });
 
 function NewPostPage() {
-	const { session } = Route.useRouteContext();
 	const navigate = useNavigate();
 	const queryClient = useQueryClient();
 
@@ -79,7 +77,6 @@ function NewPostPage() {
 			)}
 
 			<NewPostForm onSubmit={(data) => mutation.mutate(data)} isSubmitting={mutation.isPending} />
-			<MobileNav role={session.role} />
 		</div>
 	);
 }
