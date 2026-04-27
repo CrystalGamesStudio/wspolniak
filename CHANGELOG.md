@@ -1,3 +1,13 @@
+# [1.13.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.12.12...v1.13.0) (2026-04-27)
+
+
+### Features
+
+* **app:** add mobile navbar, feedback system, and UX improvements ([5644563](https://github.com/CrystalGamesStudio/wspolniak/commit/5644563207e89d88a54eee252c0537b0e11ee680)), closes [#comments](https://github.com/CrystalGamesStudio/wspolniak/issues/comments)
+* **share:** add share page with QR code login flow and admin management ([7d88353](https://github.com/CrystalGamesStudio/wspolniak/commit/7d883533263181fd56c239108cefdf214fa41eaf))
+* **ui:** enhance mobile UX and add post navigation ([c24b071](https://github.com/CrystalGamesStudio/wspolniak/commit/c24b071c5cdb3cbdfe7e110cba45eea4fec085e3))
+* **ui:** move mobile nav to layout, add share/add dialogs in admin ([a2c55f6](https://github.com/CrystalGamesStudio/wspolniak/commit/a2c55f6c6eec889f7c818e6aff0ce5f2ac3e80a4))
+
 ## [1.12.12](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.12.11...v1.12.12) (2026-04-25)
 
 
