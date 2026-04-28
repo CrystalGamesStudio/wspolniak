@@ -1,0 +1,1 @@
+ALTER TABLE "instance_config" ADD COLUMN "share_code" text;
