@@ -1,3 +1,10 @@
+## [1.17.2](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.17.1...v1.17.2) (2026-04-28)
+
+
+### Bug Fixes
+
+* **qr:** constrain left column width and prevent QR code squishing ([dfe41ef](https://github.com/CrystalGamesStudio/wspolniak/commit/dfe41ef1b10bf6bb6ae3474dcedfc6c3724bd79d))
+
 ## [1.17.1](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.17.0...v1.17.1) (2026-04-28)
 
 
