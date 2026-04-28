@@ -62,6 +62,7 @@ describe("POST /api/setup", () => {
 			role: "admin",
 			tokenHash: "hashed-token",
 			deletedAt: null,
+			note: null,
 			createdAt: new Date(),
 		});
 

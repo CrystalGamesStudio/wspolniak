@@ -4,6 +4,7 @@ import {
 	listActiveMembers,
 	regenerateMemberToken,
 	softDeleteMember,
+	updateMemberNote,
 } from "@/db/identity/queries";
 import { getShareCode, setShareCode } from "@/db/instance/queries";
 import { createHono } from "@/hono/factory";
@@ -39,6 +40,7 @@ adminEndpoint.get("/members", async (c) => {
 		id: m.id,
 		name: m.name,
 		role: m.role,
+		note: m.note,
 		createdAt: m.createdAt,
 	}));
 	return c.json({ data });
@@ -57,6 +59,14 @@ adminEndpoint.delete("/members/:id", async (c) => {
 	const userId = c.req.param("id");
 	await softDeleteMember(userId);
 	return c.json({ data: { deleted: true } });
+});
+
+adminEndpoint.put("/members/:id/note", async (c) => {
+	const userId = c.req.param("id");
+	const body = await c.req.json<{ note?: string }>();
+	const note = body.note?.trim() || null;
+	const user = await updateMemberNote(userId, note);
+	return c.json({ data: { id: user.id, note: user.note } });
 });
 
 adminEndpoint.get("/share-code", async (c) => {

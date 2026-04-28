@@ -1,7 +1,20 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { Check, Copy, Info, Link, Pencil, Plus, QrCode, Share2, Trash2, X } from "lucide-react";
+import {
+	ArrowLeft,
+	Check,
+	Copy,
+	Info,
+	Link,
+	NotebookPen,
+	Pencil,
+	Plus,
+	QrCode,
+	Share2,
+	Trash2,
+	X,
+} from "lucide-react";
 import { useState } from "react";
 import { QrCodeDialog } from "@/components/admin/qr-code-dialog";
 import { ThemeToggle } from "@/components/theme";
@@ -14,6 +27,7 @@ interface Member {
 	id: string;
 	name: string;
 	role: string;
+	note: string | null;
 	createdAt: string;
 }
 
@@ -30,6 +44,7 @@ export const Route = createFileRoute("/app/admin")({
 	component: AdminPage,
 });
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: admin page with multiple mutations and dialogs
 function AdminPage() {
 	const queryClient = useQueryClient();
 	const [newName, setNewName] = useState("");
@@ -122,6 +137,20 @@ function AdminPage() {
 		},
 	});
 
+	const noteMutation = useMutation({
+		mutationFn: async ({ id, note }: { id: string; note: string }) => {
+			const res = await fetch(`/api/admin/members/${id}/note`, {
+				method: "PUT",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ note }),
+			});
+			if (!res.ok) throw new Error("Nie udało się zapisać notatki");
+		},
+		onSuccess: async () => {
+			await queryClient.invalidateQueries({ queryKey: ["admin", "members"] });
+		},
+	});
+
 	async function copyToClipboard(text: string) {
 		await navigator.clipboard.writeText(text);
 		setCopiedLink(text);
@@ -183,6 +212,7 @@ function AdminPage() {
 					<ThemeToggle size="lg" />
 					<a href="/app">
 						<Button variant="outline" size="lg">
+							<ArrowLeft className="h-5 w-5" />
 							Wróć
 						</Button>
 					</a>
@@ -379,9 +409,11 @@ function AdminPage() {
 							hasShareCode={Boolean(currentShareCode)}
 							isRegenerating={regenerateMutation.isPending}
 							isDeleting={deleteMutation.isPending}
+							isSavingNote={noteMutation.isPending}
 							onShowQr={() => setQrTarget(member)}
 							onRegenerate={() => regenerateMutation.mutate({ id: member.id, name: member.name })}
 							onDelete={() => deleteMutation.mutate(member.id)}
+							onSaveNote={(note) => noteMutation.mutate({ id: member.id, note })}
 						/>
 					))}
 				</div>
@@ -395,9 +427,11 @@ interface MemberRowProps {
 	hasShareCode: boolean;
 	isRegenerating: boolean;
 	isDeleting: boolean;
+	isSavingNote: boolean;
 	onShowQr: () => void;
 	onRegenerate: () => void;
 	onDelete: () => void;
+	onSaveNote: (note: string) => void;
 }
 
 function MemberRow({
@@ -405,48 +439,95 @@ function MemberRow({
 	hasShareCode,
 	isRegenerating,
 	isDeleting,
+	isSavingNote,
 	onShowQr,
 	onRegenerate,
 	onDelete,
+	onSaveNote,
 }: MemberRowProps) {
+	const [editingNote, setEditingNote] = useState(false);
+	const [noteInput, setNoteInput] = useState(member.note ?? "");
+
 	return (
-		<div className="flex items-center justify-between rounded-lg border border-border bg-card p-3">
-			<div>
-				<span className="font-medium text-foreground">{member.name}</span>
-				<span className="ml-2 rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
-					{member.role}
-				</span>
-			</div>
-			{member.role !== "admin" && (
+		<div className="rounded-lg border border-border bg-card p-3">
+			<div className="flex items-center justify-between">
+				<div className="flex items-center gap-1">
+					<span className="font-medium text-foreground">{member.name}</span>
+					<span className="rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
+						{member.role}
+					</span>
+					{member.note && !editingNote && (
+						<span className="ml-1 text-xs text-muted-foreground">({member.note})</span>
+					)}
+				</div>
 				<div className="flex gap-1">
 					<Button
 						size="sm"
 						variant="ghost"
-						onClick={onShowQr}
-						disabled={!hasShareCode}
-						title={hasShareCode ? "Kod QR" : "Najpierw ustaw kod /share"}
+						onClick={() => {
+							setNoteInput(member.note ?? "");
+							setEditingNote(!editingNote);
+						}}
+						title="Notatka"
 					>
-						<QrCode className="h-4 w-4" />
+						<NotebookPen className="h-4 w-4" />
 					</Button>
-					<Button
-						size="sm"
-						variant="ghost"
-						onClick={onRegenerate}
-						disabled={isRegenerating}
-						title="Nowy link logowania"
-					>
-						<Link className="h-4 w-4" />
-					</Button>
-					<Button
-						size="sm"
-						variant="ghost"
-						onClick={onDelete}
-						disabled={isDeleting}
-						title="Usuń członka"
-					>
-						<Trash2 className="h-4 w-4 text-destructive" />
-					</Button>
+					{member.role !== "admin" && (
+						<>
+							<Button
+								size="sm"
+								variant="ghost"
+								onClick={onShowQr}
+								disabled={!hasShareCode}
+								title={hasShareCode ? "Kod QR" : "Najpierw ustaw kod /share"}
+							>
+								<QrCode className="h-4 w-4" />
+							</Button>
+							<Button
+								size="sm"
+								variant="ghost"
+								onClick={onRegenerate}
+								disabled={isRegenerating}
+								title="Nowy link logowania"
+							>
+								<Link className="h-4 w-4" />
+							</Button>
+							<Button
+								size="sm"
+								variant="ghost"
+								onClick={onDelete}
+								disabled={isDeleting}
+								title="Usuń członka"
+							>
+								<Trash2 className="h-4 w-4 text-destructive" />
+							</Button>
+						</>
+					)}
 				</div>
+			</div>
+			{editingNote && (
+				<form
+					onSubmit={(e) => {
+						e.preventDefault();
+						onSaveNote(noteInput);
+						setEditingNote(false);
+					}}
+					className="mt-2 flex gap-2"
+				>
+					<Input
+						value={noteInput}
+						onChange={(e) => setNoteInput(e.target.value)}
+						placeholder="Dodaj notatkę..."
+						className="flex-1"
+						autoFocus
+						onKeyDown={(e) => {
+							if (e.key === "Escape") setEditingNote(false);
+						}}
+					/>
+					<Button type="submit" size="sm" disabled={isSavingNote}>
+						{isSavingNote ? "..." : "OK"}
+					</Button>
+				</form>
 			)}
 		</div>
 	);
