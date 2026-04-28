@@ -1,3 +1,10 @@
+# [1.14.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.13.0...v1.14.0) (2026-04-28)
+
+
+### Features
+
+* **share:** add per-member QR codes with deep-link auto-prefill ([09910f4](https://github.com/CrystalGamesStudio/wspolniak/commit/09910f4ab7b8e6accb205ec6d495d1d1255a2f5e))
+
 # [1.13.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.12.12...v1.13.0) (2026-04-27)
 
 
