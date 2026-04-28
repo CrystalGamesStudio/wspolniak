@@ -15,6 +15,13 @@
       "when": 1776941068305,
       "tag": "0001_orange_power_man",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1777359121448,
+      "tag": "0002_robust_pestilence",
+      "breakpoints": true
     }
   ]
 }
