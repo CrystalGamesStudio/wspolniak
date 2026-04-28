@@ -74,9 +74,7 @@ export function FeedbackButton({
 					<DialogHeader>
 						<DialogTitle>Feedback</DialogTitle>
 						<DialogDescription>
-							{submitted
-								? "Dzięki za feedback! Odpowiemy najszybciej jak to możliwe."
-								: "Podziel się swoją opinią, zgłoś błąd lub zasugeruj nową funkcję."}
+							{submitted && "Dzięki za feedback! Odpowiemy najszybciej jak to możliwe."}
 						</DialogDescription>
 					</DialogHeader>
 

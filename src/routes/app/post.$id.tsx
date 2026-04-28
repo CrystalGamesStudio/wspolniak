@@ -63,7 +63,10 @@ function PostPage() {
 	return (
 		<div className="mx-auto max-w-2xl bg-background px-4 py-6 pb-20 sm:pb-6">
 			<div className="mb-4 flex items-center justify-between">
-				<a href="/app" className="text-sm text-muted-foreground hover:text-foreground">
+				<a
+					href="/app"
+					className="rounded-md px-2 py-1 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+				>
 					&larr; Wróć do feedu
 				</a>
 				<ThemeToggle size="sm" />
