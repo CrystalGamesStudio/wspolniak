@@ -366,4 +366,8 @@ code {
   .screen-only {
     display: none !important;
   }
+  [data-tsdevtools],
+  .tsqd-parent-container {
+    display: none !important;
+  }
 }
