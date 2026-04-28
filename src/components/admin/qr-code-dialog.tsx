@@ -87,6 +87,7 @@ export function QrCodeDialog({ open, onOpenChange, url, memberName }: QrCodeDial
 						{dataUrl && (
 							<img src={dataUrl} alt={`Kod QR dla ${memberName}`} className="h-48 w-48" />
 						)}
+						<p className="text-xs break-all text-gray-600">{url}</p>
 						<div className="text-center text-sm leading-relaxed">
 							<p className="font-semibold">Jak się zalogować:</p>
 							<ol className="mt-2 list-decimal text-left pl-6">
