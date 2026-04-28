@@ -91,12 +91,12 @@ export function QrCodeDialog({ open, onOpenChange, url, memberName }: QrCodeDial
 					<div className="flex flex-col gap-6 p-8">
 						<h2 className="text-center text-2xl font-bold">{memberName}</h2>
 						<div className="flex items-center gap-6">
-							<div className="flex flex-col items-start gap-2">
+							<div className="flex flex-col items-start gap-2 max-w-40">
 								<img src="/logo/WspolniakLogoLIGHT.png" alt="Wspólniak" className="h-28" />
-								<p className="text-xs break-all text-gray-600">{url}</p>
+								<p className="text-xs break-all text-gray-600 line-clamp-3">{url}</p>
 							</div>
 							{dataUrl && (
-								<div className="relative h-48 w-48">
+								<div className="relative h-48 w-48 shrink-0">
 									<img src={dataUrl} alt={`Kod QR dla ${memberName}`} className="h-48 w-48" />
 									<img
 										src="/logo/WspolniakIconLIGHT.png"
