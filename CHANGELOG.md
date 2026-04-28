@@ -1,3 +1,10 @@
+## [1.16.3](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.16.2...v1.16.3) (2026-04-28)
+
+
+### Bug Fixes
+
+* **qr:** hide TanStack devtools in print view ([3afab0f](https://github.com/CrystalGamesStudio/wspolniak/commit/3afab0fd8ab8906944b315e144f5b1d54e5e3121))
+
 ## [1.16.2](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.16.1...v1.16.2) (2026-04-28)
 
 
