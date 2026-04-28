@@ -103,7 +103,8 @@ describe("findUserByTokenHash", () => {
 	});
 
 	it("returns null for unknown token hash", async () => {
-		const mockWhere = vi.fn().mockResolvedValue([]);
+		const mockOrderBy = vi.fn().mockResolvedValue([]);
+		const mockWhere = vi.fn().mockReturnValue({ orderBy: mockOrderBy });
 		const mockFrom = vi.fn().mockReturnValue({ where: mockWhere });
 		const mockSelect = vi.fn().mockReturnValue({ from: mockFrom });
 		mockGetDb.mockReturnValue({ select: mockSelect } as never);
@@ -114,7 +115,8 @@ describe("findUserByTokenHash", () => {
 	});
 
 	it("returns null for soft-deleted user", async () => {
-		const mockWhere = vi.fn().mockResolvedValue([]);
+		const mockOrderBy = vi.fn().mockResolvedValue([]);
+		const mockWhere = vi.fn().mockReturnValue({ orderBy: mockOrderBy });
 		const mockFrom = vi.fn().mockReturnValue({ where: mockWhere });
 		const mockSelect = vi.fn().mockReturnValue({ from: mockFrom });
 		mockGetDb.mockReturnValue({ select: mockSelect } as never);
@@ -145,7 +147,8 @@ describe("listActiveMembers", () => {
 				createdAt: new Date(),
 			},
 		];
-		const mockWhere = vi.fn().mockResolvedValue(activeUsers);
+		const mockOrderBy = vi.fn().mockResolvedValue(activeUsers);
+		const mockWhere = vi.fn().mockReturnValue({ orderBy: mockOrderBy });
 		const mockFrom = vi.fn().mockReturnValue({ where: mockWhere });
 		const mockSelect = vi.fn().mockReturnValue({ from: mockFrom });
 		mockGetDb.mockReturnValue({ select: mockSelect } as never);
@@ -157,7 +160,8 @@ describe("listActiveMembers", () => {
 	});
 
 	it("returns empty array when no active users exist", async () => {
-		const mockWhere = vi.fn().mockResolvedValue([]);
+		const mockOrderBy = vi.fn().mockResolvedValue([]);
+		const mockWhere = vi.fn().mockReturnValue({ orderBy: mockOrderBy });
 		const mockFrom = vi.fn().mockReturnValue({ where: mockWhere });
 		const mockSelect = vi.fn().mockReturnValue({ from: mockFrom });
 		mockGetDb.mockReturnValue({ select: mockSelect } as never);
@@ -195,7 +199,8 @@ describe("regenerateMemberToken", () => {
 
 describe("softDeleteMember", () => {
 	it("sets deletedAt timestamp on the user", async () => {
-		const mockWhere = vi.fn().mockResolvedValue([]);
+		const mockOrderBy = vi.fn().mockResolvedValue([]);
+		const mockWhere = vi.fn().mockReturnValue({ orderBy: mockOrderBy });
 		const mockSet = vi.fn().mockReturnValue({ where: mockWhere });
 		const mockUpdate = vi.fn().mockReturnValue({ set: mockSet });
 		mockGetDb.mockReturnValue({ update: mockUpdate } as never);

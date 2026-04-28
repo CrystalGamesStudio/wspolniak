@@ -62,10 +62,10 @@ function NewPostPage() {
 				<button
 					type="button"
 					onClick={() => navigate({ to: "/app" })}
-					className="rounded-full p-2 hover:bg-muted"
+					className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
 					title="Wróć do feeda"
 				>
-					<ArrowLeft className="h-5 w-5 text-foreground" />
+					<ArrowLeft className="h-5 w-5" />
 				</button>
 				<h1 className="text-2xl font-bold text-foreground">Nowy post</h1>
 			</div>

@@ -188,34 +188,36 @@ function AdminPage() {
 
 	return (
 		<div className="mx-auto max-w-2xl bg-background px-4 py-6 pb-20 sm:pb-6">
-			<div className="mb-6 flex items-center justify-between">
-				<h1 className="text-2xl font-bold text-foreground">Zarządzanie rodziną</h1>
+			<div className="mb-6 flex items-center gap-2">
+				<a href="/app">
+					<button
+						type="button"
+						className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+						title="Wróć"
+					>
+						<ArrowLeft className="h-5 w-5" />
+					</button>
+				</a>
+				<h1 className="text-2xl font-bold text-foreground">Zarządzanie</h1>
+				<div className="flex-1" />
 				<div className="flex items-center gap-2">
 					<Button
-						variant="outline"
-						size="icon"
-						className="h-12 w-12"
+						variant="ghost"
+						size="lg"
 						onClick={() => setAddDialogOpen(true)}
 						title="Dodaj członka"
 					>
-						<Plus className="h-7 w-7" />
+						<Plus className="h-4 w-4" />
 					</Button>
 					<Button
-						variant="outline"
-						size="icon"
-						className="h-12 w-12"
+						variant="ghost"
+						size="lg"
 						onClick={() => setShareDialogOpen(true)}
 						title="Udostępnianie"
 					>
-						<Share2 className="h-7 w-7" />
+						<Share2 className="h-4 w-4" />
 					</Button>
 					<ThemeToggle size="lg" />
-					<a href="/app">
-						<Button variant="outline" size="lg">
-							<ArrowLeft className="h-5 w-5" />
-							Wróć
-						</Button>
-					</a>
 				</div>
 			</div>
 
@@ -384,7 +386,11 @@ function AdminPage() {
 				</div>
 			)}
 
-			{membersQuery.isLoading && <p className="text-center text-muted-foreground">Ładowanie...</p>}
+			{membersQuery.isLoading && (
+				<div className="flex items-center justify-center py-8">
+					<div className="size-8 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
+				</div>
+			)}
 
 			{membersQuery.data && !currentShareCode && (
 				<button
@@ -456,22 +462,24 @@ function MemberRow({
 					<span className="rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
 						{member.role}
 					</span>
-					{member.note && !editingNote && (
+					{member.role !== "admin" && member.note && !editingNote && (
 						<span className="ml-1 text-xs text-muted-foreground">({member.note})</span>
 					)}
 				</div>
 				<div className="flex gap-1">
-					<Button
-						size="sm"
-						variant="ghost"
-						onClick={() => {
-							setNoteInput(member.note ?? "");
-							setEditingNote(!editingNote);
-						}}
-						title="Notatka"
-					>
-						<NotebookPen className="h-4 w-4" />
-					</Button>
+					{member.role !== "admin" && (
+						<Button
+							size="sm"
+							variant="ghost"
+							onClick={() => {
+								setNoteInput(member.note ?? "");
+								setEditingNote(!editingNote);
+							}}
+							title="Notatka"
+						>
+							<NotebookPen className="h-4 w-4" />
+						</Button>
+					)}
 					{member.role !== "admin" && (
 						<>
 							<Button

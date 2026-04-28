@@ -68,10 +68,10 @@ export function CommentSection({ postId, currentUserId, currentUserRole }: Comme
 				Komentarze ({comments.length})
 			</h2>
 
-			{isLoading && <p className="text-sm text-muted-foreground">Ładowanie komentarzy...</p>}
-
-			{comments.length === 0 && !isLoading && (
-				<p className="text-sm text-muted-foreground">Brak komentarzy — napisz pierwszy!</p>
+			{isLoading && (
+				<div className="flex items-center justify-center py-4">
+					<div className="size-6 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
+				</div>
 			)}
 
 			<div className="space-y-3">

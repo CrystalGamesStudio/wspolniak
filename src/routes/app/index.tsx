@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
+import { Plus, SlidersHorizontal } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { Feed } from "@/components/app/feed";
 import { FeedbackButton } from "@/components/app/feedback-button";
@@ -78,7 +79,7 @@ function FeedPage() {
 	if (isLoading) {
 		return (
 			<div className="flex min-h-screen items-center justify-center bg-background">
-				<p className="text-muted-foreground">Ładowanie...</p>
+				<div className="size-8 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
 			</div>
 		);
 	}
@@ -98,11 +99,17 @@ function FeedPage() {
 					<div className="hidden sm:flex sm:items-center sm:gap-2">
 						{session.role === "admin" && (
 							<a href="/app/admin">
-								<Button variant="outline">Rodzina</Button>
+								<Button variant="outline">
+									<SlidersHorizontal className="h-4 w-4" />
+									Admin
+								</Button>
 							</a>
 						)}
 						<a href="/app/new">
-							<Button>Nowy post</Button>
+							<Button>
+								<Plus className="h-4 w-4" />
+								Nowy post
+							</Button>
 						</a>
 						<FeedbackButton variant="ghost" />
 					</div>

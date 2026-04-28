@@ -150,6 +150,6 @@ describe("Feed", () => {
 			wrapper: createWrapper(),
 		});
 
-		expect(screen.getByText(/ładowanie/i)).toBeDefined();
+		expect(document.querySelector(".animate-spin")).not.toBeNull();
 	});
 });

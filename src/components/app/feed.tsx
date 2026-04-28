@@ -44,7 +44,7 @@ export function Feed({
 	if (posts.length === 0) {
 		return (
 			<div className="py-12 text-center">
-				<p className="text-muted-foreground">Brak postów — bądź pierwszy!</p>
+				<p className="text-muted-foreground">Brak postów</p>
 			</div>
 		);
 	}
@@ -91,14 +91,14 @@ export function Feed({
 					<div className="mt-3 flex items-center justify-between">
 						<a
 							href={`/app/post/${post.id}#comments`}
-							className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+							className="flex items-center gap-1 rounded-md px-2 py-1 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
 						>
 							<MessageCircleIcon className="size-6 sm:size-4" />
 							{post.commentCount ?? 0}
 						</a>
 						<a
 							href={`/app/post/${post.id}`}
-							className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+							className="flex items-center gap-1 rounded-md px-2 py-1 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
 							aria-label="Otwórz pełny post"
 						>
 							<ExternalLinkIcon className="size-6 sm:size-4" />
@@ -110,7 +110,9 @@ export function Feed({
 
 			<div ref={loadMoreRef}>
 				{isFetchingNextPage && (
-					<p className="py-4 text-center text-muted-foreground">Ładowanie...</p>
+					<div className="flex items-center justify-center py-4">
+						<div className="size-6 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
+					</div>
 				)}
 				{!hasNextPage && posts.length > 0 && !isFetchingNextPage && (
 					<p className="py-4 text-center text-muted-foreground">Koniec</p>

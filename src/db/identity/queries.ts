@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import type { InferSelectModel } from "drizzle-orm";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, asc, eq, isNull } from "drizzle-orm";
 import { getDb } from "@/db/setup";
 import { generateToken } from "./crypto";
 import { users } from "./table";
@@ -31,7 +31,7 @@ export async function createMember(name: string) {
 }
 
 export async function listActiveMembers(): Promise<User[]> {
-	return getDb().select().from(users).where(isNull(users.deletedAt));
+	return getDb().select().from(users).where(isNull(users.deletedAt)).orderBy(asc(users.createdAt));
 }
 
 export async function regenerateMemberToken(userId: string) {
