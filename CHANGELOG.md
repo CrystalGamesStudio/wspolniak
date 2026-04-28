@@ -1,3 +1,10 @@
+## [1.16.1](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.16.0...v1.16.1) (2026-04-28)
+
+
+### Bug Fixes
+
+* **qr:** add URL below QR code in print and switch to A5 paper ([debc3d6](https://github.com/CrystalGamesStudio/wspolniak/commit/debc3d686241a9f596061bceb7b52b24322fd533))
+
 # [1.16.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.15.1...v1.16.0) (2026-04-28)
 
 
