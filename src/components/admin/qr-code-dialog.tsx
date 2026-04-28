@@ -81,13 +81,17 @@ export function QrCodeDialog({ open, onOpenChange, url, memberName }: QrCodeDial
 				</div>
 
 				<div className="print-area hidden">
-					<div className="flex flex-col items-center gap-6 p-8">
-						<img src="/logo/WspolniakLogo.png" alt="Wspólniak" className="h-12" />
-						<h2 className="text-2xl font-bold">{memberName}</h2>
-						{dataUrl && (
-							<img src={dataUrl} alt={`Kod QR dla ${memberName}`} className="h-48 w-48" />
-						)}
-						<p className="text-xs break-all text-gray-600">{url}</p>
+					<div className="flex flex-col gap-6 p-8">
+						<h2 className="text-center text-2xl font-bold">{memberName}</h2>
+						<div className="flex items-center gap-6">
+							<div className="flex flex-col items-center gap-2">
+								<img src="/logo/WspolniakLogoLIGHT.png" alt="Wspólniak" className="h-16" />
+								<p className="text-xs break-all text-gray-600">{url}</p>
+							</div>
+							{dataUrl && (
+								<img src={dataUrl} alt={`Kod QR dla ${memberName}`} className="h-48 w-48" />
+							)}
+						</div>
 						<div className="text-center text-sm leading-relaxed">
 							<p className="font-semibold">Jak się zalogować:</p>
 							<ol className="mt-2 list-decimal text-left pl-6">
