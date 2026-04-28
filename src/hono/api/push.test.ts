@@ -54,6 +54,7 @@ describe("POST /api/app/push/subscribe", () => {
 			role: "member",
 			tokenHash: "hash",
 			deletedAt: null,
+			note: null,
 			createdAt: new Date(),
 		});
 	});
@@ -137,6 +138,7 @@ describe("DELETE /api/app/push/subscribe", () => {
 			role: "member",
 			tokenHash: "hash",
 			deletedAt: null,
+			note: null,
 			createdAt: new Date(),
 		});
 	});

@@ -74,6 +74,7 @@ describe("POST /api/app/posts", () => {
 			role: "member",
 			tokenHash: "hash",
 			deletedAt: null,
+			note: null,
 			createdAt: new Date(),
 		});
 	});
@@ -207,6 +208,7 @@ describe("GET /api/app/posts", () => {
 			role: "member",
 			tokenHash: "hash",
 			deletedAt: null,
+			note: null,
 			createdAt: new Date(),
 		});
 	});
@@ -230,6 +232,7 @@ describe("GET /api/app/posts/:id", () => {
 			role: "member",
 			tokenHash: "hash",
 			deletedAt: null,
+			note: null,
 			createdAt: new Date(),
 		});
 	});
@@ -282,6 +285,7 @@ describe("GET /api/app/posts (paginated)", () => {
 			role: "member",
 			tokenHash: "hash",
 			deletedAt: null,
+			note: null,
 			createdAt: new Date(),
 		});
 		mockCountComments.mockResolvedValue(new Map());
@@ -395,6 +399,7 @@ const samplePost = {
 	authorId: "u1",
 	description: "Stary opis",
 	deletedAt: null,
+	note: null,
 	createdAt: now,
 	updatedAt: now,
 	author: { id: "u1", name: "Tomek" },
@@ -411,6 +416,7 @@ describe("PATCH /api/app/posts/:id", () => {
 			role: "member",
 			tokenHash: "hash",
 			deletedAt: null,
+			note: null,
 			createdAt: new Date(),
 		});
 	});
@@ -443,6 +449,7 @@ describe("PATCH /api/app/posts/:id", () => {
 			role: "admin",
 			tokenHash: "hash",
 			deletedAt: null,
+			note: null,
 			createdAt: new Date(),
 		});
 		mockGetPost.mockResolvedValue(samplePost);
@@ -470,6 +477,7 @@ describe("PATCH /api/app/posts/:id", () => {
 			role: "member",
 			tokenHash: "hash",
 			deletedAt: null,
+			note: null,
 			createdAt: new Date(),
 		});
 		mockGetPost.mockResolvedValue(samplePost);
@@ -550,6 +558,7 @@ describe("DELETE /api/app/posts/:id", () => {
 			role: "member",
 			tokenHash: "hash",
 			deletedAt: null,
+			note: null,
 			createdAt: new Date(),
 		});
 	});
@@ -577,6 +586,7 @@ describe("DELETE /api/app/posts/:id", () => {
 			role: "admin",
 			tokenHash: "hash",
 			deletedAt: null,
+			note: null,
 			createdAt: new Date(),
 		});
 		mockGetPost.mockResolvedValue(samplePost);
@@ -600,6 +610,7 @@ describe("DELETE /api/app/posts/:id", () => {
 			role: "member",
 			tokenHash: "hash",
 			deletedAt: null,
+			note: null,
 			createdAt: new Date(),
 		});
 		mockGetPost.mockResolvedValue(samplePost);

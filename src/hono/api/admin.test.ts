@@ -58,6 +58,7 @@ beforeEach(() => {
 		role: "admin",
 		tokenHash: "hash",
 		deletedAt: null,
+		note: null,
 		createdAt: new Date(),
 	});
 });
@@ -71,6 +72,7 @@ describe("POST /api/admin/members", () => {
 				role: "member",
 				tokenHash: "hash",
 				deletedAt: null,
+				note: null,
 				createdAt: new Date(),
 			},
 			plaintextToken: "raw-token",
@@ -121,6 +123,7 @@ describe("GET /api/admin/members", () => {
 				role: "admin",
 				tokenHash: "h1",
 				deletedAt: null,
+				note: null,
 				createdAt: new Date(),
 			},
 			{
@@ -129,6 +132,7 @@ describe("GET /api/admin/members", () => {
 				role: "member",
 				tokenHash: "h2",
 				deletedAt: null,
+				note: null,
 				createdAt: new Date(),
 			},
 		];
@@ -199,6 +203,7 @@ describe("admin authorization", () => {
 			role: "member",
 			tokenHash: "hash",
 			deletedAt: null,
+			note: null,
 			createdAt: new Date(),
 		});
 

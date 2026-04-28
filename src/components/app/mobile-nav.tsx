@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { Link } from "@tanstack/react-router";
-import { Plus, RefreshCw, Users } from "lucide-react";
+import { Plus, RefreshCw, SlidersHorizontal } from "lucide-react";
 import { FeedbackButton } from "@/components/app/feedback-button";
 import { ThemeToggle } from "@/components/theme";
 import { Button } from "@/components/ui/button";
@@ -16,8 +16,8 @@ export function MobileNav({ role }: MobileNavProps) {
 			<div className="flex items-center justify-around px-2 py-2">
 				{role === "admin" && (
 					<Link to="/app/admin" className="flex flex-col items-center gap-1">
-						<Users className="h-5 w-5 text-foreground" />
-						<span className="text-[10px] text-muted-foreground">Rodzina</span>
+						<SlidersHorizontal className="h-5 w-5 text-foreground" />
+						<span className="text-[10px] text-muted-foreground">Admin</span>
 					</Link>
 				)}
 
@@ -32,8 +32,8 @@ export function MobileNav({ role }: MobileNavProps) {
 				</button>
 
 				<Link to="/app/new" className="flex flex-col items-center gap-1">
-					<Button size="lg" className="h-12 w-12 rounded-full px-0">
-						<Plus className="h-7 w-7" />
+					<Button size="lg" className="h-12 w-12 overflow-visible rounded-full px-0">
+						<Plus className="h-14 w-14" />
 					</Button>
 					<span className="text-[10px] text-muted-foreground">Dodaj</span>
 				</Link>

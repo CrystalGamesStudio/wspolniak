@@ -56,6 +56,7 @@ describe("POST /api/app/images/upload-url", () => {
 			role: "member",
 			tokenHash: "hash",
 			deletedAt: null,
+			note: null,
 			createdAt: new Date(),
 		});
 		mockCreateUpload.mockResolvedValue({

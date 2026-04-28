@@ -36,6 +36,7 @@ describe("GET /api/app/me", () => {
 			role: "admin",
 			tokenHash: "hash",
 			deletedAt: null,
+			note: null,
 			createdAt: new Date(),
 		});
 
