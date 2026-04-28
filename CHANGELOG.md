@@ -1,3 +1,10 @@
+# [1.16.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.15.1...v1.16.0) (2026-04-28)
+
+
+### Features
+
+* **qr:** add custom print template with logo and instructions ([e3e2d2a](https://github.com/CrystalGamesStudio/wspolniak/commit/e3e2d2a9f4dc63e7f06fef47c8f510978880709c))
+
 ## [1.15.1](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.15.0...v1.15.1) (2026-04-28)
 
 
