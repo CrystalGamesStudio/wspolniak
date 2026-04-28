@@ -1,3 +1,10 @@
+## [1.16.2](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.16.1...v1.16.2) (2026-04-28)
+
+
+### Bug Fixes
+
+* **qr:** light logo left of QR, URL below logo, restore instructions ([0927ec0](https://github.com/CrystalGamesStudio/wspolniak/commit/0927ec0a6b703dad0d9fec8ebc896f6d1712c979))
+
 ## [1.16.1](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.16.0...v1.16.1) (2026-04-28)
 
 
