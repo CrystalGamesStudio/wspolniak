@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { Check, Copy, Link, Pencil, Plus, Share2, Trash2, X } from "lucide-react";
+import { Check, Copy, Info, Link, Pencil, Plus, QrCode, Share2, Trash2, X } from "lucide-react";
 import { useState } from "react";
+import { QrCodeDialog } from "@/components/admin/qr-code-dialog";
 import { ThemeToggle } from "@/components/theme";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -38,6 +39,7 @@ function AdminPage() {
 	const [shareDialogOpen, setShareDialogOpen] = useState(false);
 	const [addDialogOpen, setAddDialogOpen] = useState(false);
 	const [shareCodeInput, setShareCodeInput] = useState("");
+	const [qrTarget, setQrTarget] = useState<Member | null>(null);
 
 	const shareCodeQuery = useQuery({
 		queryKey: ["admin", "share-code"],
@@ -136,6 +138,11 @@ function AdminPage() {
 
 	const shareUrl = typeof window !== "undefined" ? `${window.location.origin}/share` : "";
 	const currentShareCode = shareCodeQuery.data;
+
+	const qrUrl =
+		qrTarget && currentShareCode && typeof window !== "undefined"
+			? `${window.location.origin}/share?code=${encodeURIComponent(currentShareCode)}&member=${encodeURIComponent(qrTarget.id)}`
+			: "";
 
 	function startEditShareCode() {
 		setShareCodeInput(currentShareCode ?? "");
@@ -313,6 +320,17 @@ function AdminPage() {
 				</DialogContent>
 			</Dialog>
 
+			{qrTarget && (
+				<QrCodeDialog
+					open={true}
+					onOpenChange={(open) => {
+						if (!open) setQrTarget(null);
+					}}
+					url={qrUrl}
+					memberName={qrTarget.name}
+				/>
+			)}
+
 			{lastMagicLink && (
 				<div className="mb-6 rounded-lg border border-border bg-card p-4">
 					<p className="mb-2 text-sm font-medium text-foreground">
@@ -338,43 +356,96 @@ function AdminPage() {
 
 			{membersQuery.isLoading && <p className="text-center text-muted-foreground">Ładowanie...</p>}
 
+			{membersQuery.data && !currentShareCode && (
+				<button
+					type="button"
+					onClick={() => setShareDialogOpen(true)}
+					className="mb-4 flex w-full items-start gap-2 rounded-lg border border-border bg-muted/50 p-3 text-left text-sm text-muted-foreground hover:bg-muted"
+				>
+					<Info className="mt-0.5 h-4 w-4 shrink-0" />
+					<span>
+						<strong className="text-foreground">Kody QR są wyłączone.</strong> Aby je włączyć, ustaw
+						najpierw kod dostępu w sekcji <strong>Udostępnianie</strong>. Kliknij, aby otworzyć.
+					</span>
+				</button>
+			)}
+
 			{membersQuery.data && (
 				<div className="space-y-2">
 					{membersQuery.data.map((member) => (
-						<div
+						<MemberRow
 							key={member.id}
-							className="flex items-center justify-between rounded-lg border border-border bg-card p-3"
-						>
-							<div>
-								<span className="font-medium text-foreground">{member.name}</span>
-								<span className="ml-2 rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
-									{member.role}
-								</span>
-							</div>
-							{member.role !== "admin" && (
-								<div className="flex gap-1">
-									<Button
-										size="sm"
-										variant="ghost"
-										onClick={() => regenerateMutation.mutate({ id: member.id, name: member.name })}
-										disabled={regenerateMutation.isPending}
-										title="Nowy link logowania"
-									>
-										<Link className="h-4 w-4" />
-									</Button>
-									<Button
-										size="sm"
-										variant="ghost"
-										onClick={() => deleteMutation.mutate(member.id)}
-										disabled={deleteMutation.isPending}
-										title="Usuń członka"
-									>
-										<Trash2 className="h-4 w-4 text-destructive" />
-									</Button>
-								</div>
-							)}
-						</div>
+							member={member}
+							hasShareCode={Boolean(currentShareCode)}
+							isRegenerating={regenerateMutation.isPending}
+							isDeleting={deleteMutation.isPending}
+							onShowQr={() => setQrTarget(member)}
+							onRegenerate={() => regenerateMutation.mutate({ id: member.id, name: member.name })}
+							onDelete={() => deleteMutation.mutate(member.id)}
+						/>
 					))}
+				</div>
+			)}
+		</div>
+	);
+}
+
+interface MemberRowProps {
+	member: Member;
+	hasShareCode: boolean;
+	isRegenerating: boolean;
+	isDeleting: boolean;
+	onShowQr: () => void;
+	onRegenerate: () => void;
+	onDelete: () => void;
+}
+
+function MemberRow({
+	member,
+	hasShareCode,
+	isRegenerating,
+	isDeleting,
+	onShowQr,
+	onRegenerate,
+	onDelete,
+}: MemberRowProps) {
+	return (
+		<div className="flex items-center justify-between rounded-lg border border-border bg-card p-3">
+			<div>
+				<span className="font-medium text-foreground">{member.name}</span>
+				<span className="ml-2 rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
+					{member.role}
+				</span>
+			</div>
+			{member.role !== "admin" && (
+				<div className="flex gap-1">
+					<Button
+						size="sm"
+						variant="ghost"
+						onClick={onShowQr}
+						disabled={!hasShareCode}
+						title={hasShareCode ? "Kod QR" : "Najpierw ustaw kod /share"}
+					>
+						<QrCode className="h-4 w-4" />
+					</Button>
+					<Button
+						size="sm"
+						variant="ghost"
+						onClick={onRegenerate}
+						disabled={isRegenerating}
+						title="Nowy link logowania"
+					>
+						<Link className="h-4 w-4" />
+					</Button>
+					<Button
+						size="sm"
+						variant="ghost"
+						onClick={onDelete}
+						disabled={isDeleting}
+						title="Usuń członka"
+					>
+						<Trash2 className="h-4 w-4 text-destructive" />
+					</Button>
 				</div>
 			)}
 		</div>
