@@ -1,3 +1,10 @@
+## [1.15.1](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.15.0...v1.15.1) (2026-04-28)
+
+
+### Bug Fixes
+
+* **ui:** improve buttons, loaders, and admin panel UX ([33ef93a](https://github.com/CrystalGamesStudio/wspolniak/commit/33ef93a6a4e023d5836e4d634b8c2ade5aa29388))
+
 # [1.15.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.14.0...v1.15.0) (2026-04-28)
 
 
