@@ -1,3 +1,10 @@
+## [1.17.1](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.17.0...v1.17.1) (2026-04-28)
+
+
+### Bug Fixes
+
+* **qr:** align print logo to left ([36eb8ad](https://github.com/CrystalGamesStudio/wspolniak/commit/36eb8addcf6c93a4d8d73186533065e9127f8095))
+
 # [1.17.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.16.4...v1.17.0) (2026-04-28)
 
 
