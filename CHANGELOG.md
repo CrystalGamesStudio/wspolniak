@@ -1,3 +1,10 @@
+# [1.17.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.16.4...v1.17.0) (2026-04-28)
+
+
+### Features
+
+* **qr:** add centered logo overlay on QR code in dialog and print ([783af99](https://github.com/CrystalGamesStudio/wspolniak/commit/783af99886b9cd4b5eece2ab728a76f0147a2b9e))
+
 ## [1.16.4](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.16.3...v1.16.4) (2026-04-28)
 
 
