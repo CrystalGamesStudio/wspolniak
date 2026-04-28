@@ -71,11 +71,18 @@ export function QrCodeDialog({ open, onOpenChange, url, memberName }: QrCodeDial
 
 				<div className="flex flex-col items-center gap-4 screen-only">
 					{dataUrl && (
-						<img
-							src={dataUrl}
-							alt={`Kod QR dla ${memberName}`}
-							className="h-64 w-64 rounded-md bg-card"
-						/>
+						<div className="relative h-64 w-64">
+							<img
+								src={dataUrl}
+								alt={`Kod QR dla ${memberName}`}
+								className="h-64 w-64 rounded-md bg-card"
+							/>
+							<img
+								src="/logo/WspolniakIconLIGHT.png"
+								alt=""
+								className="absolute top-1/2 left-1/2 h-12 w-12 -translate-x-1/2 -translate-y-1/2 rounded-md bg-card p-1"
+							/>
+						</div>
 					)}
 					<p className="text-center text-xs text-muted-foreground break-all">{url}</p>
 				</div>
@@ -89,7 +96,14 @@ export function QrCodeDialog({ open, onOpenChange, url, memberName }: QrCodeDial
 								<p className="text-xs break-all text-gray-600">{url}</p>
 							</div>
 							{dataUrl && (
-								<img src={dataUrl} alt={`Kod QR dla ${memberName}`} className="h-48 w-48" />
+								<div className="relative h-48 w-48">
+									<img src={dataUrl} alt={`Kod QR dla ${memberName}`} className="h-48 w-48" />
+									<img
+										src="/logo/WspolniakIconLIGHT.png"
+										alt=""
+										className="absolute top-1/2 left-1/2 h-10 w-10 -translate-x-1/2 -translate-y-1/2 rounded-md bg-white p-1"
+									/>
+								</div>
 							)}
 						</div>
 						<div className="text-center text-sm leading-relaxed text-black">
