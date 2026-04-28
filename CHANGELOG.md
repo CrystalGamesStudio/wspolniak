@@ -1,3 +1,10 @@
+# [1.15.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.14.0...v1.15.0) (2026-04-28)
+
+
+### Features
+
+* **admin:** add member notes, update nav icons and back button ([78d6b73](https://github.com/CrystalGamesStudio/wspolniak/commit/78d6b73aa26bb65e6379a30d5321f30a791817ad))
+
 # [1.14.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.13.0...v1.14.0) (2026-04-28)
 
 
