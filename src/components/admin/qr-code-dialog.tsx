@@ -69,7 +69,7 @@ export function QrCodeDialog({ open, onOpenChange, url, memberName }: QrCodeDial
 					<DialogTitle>Kod QR dla {memberName}</DialogTitle>
 				</DialogHeader>
 
-				<div className="flex flex-col items-center gap-4">
+				<div className="flex flex-col items-center gap-4 screen-only">
 					{dataUrl && (
 						<img
 							src={dataUrl}
@@ -80,7 +80,25 @@ export function QrCodeDialog({ open, onOpenChange, url, memberName }: QrCodeDial
 					<p className="text-center text-xs text-muted-foreground break-all">{url}</p>
 				</div>
 
-				<div className="flex flex-wrap justify-center gap-2">
+				<div className="print-area hidden">
+					<div className="flex flex-col items-center gap-6 p-8">
+						<img src="/logo/WspolniakLogo.png" alt="Wspólniak" className="h-12" />
+						<h2 className="text-2xl font-bold">{memberName}</h2>
+						{dataUrl && (
+							<img src={dataUrl} alt={`Kod QR dla ${memberName}`} className="h-48 w-48" />
+						)}
+						<div className="text-center text-sm leading-relaxed">
+							<p className="font-semibold">Jak się zalogować:</p>
+							<ol className="mt-2 list-decimal text-left pl-6">
+								<li>Zeskanuj kod QR aparatem telefonu</li>
+								<li>lub wejdź na stronę i wpisz kod dostępu</li>
+								<li>Gotowe — jesteś zalogowany!</li>
+							</ol>
+						</div>
+					</div>
+				</div>
+
+				<div className="flex flex-wrap justify-center gap-2 screen-only">
 					<Button variant="outline" onClick={handleDownload} disabled={!dataUrl}>
 						<Download className="mr-1 h-4 w-4" />
 						Pobierz PNG

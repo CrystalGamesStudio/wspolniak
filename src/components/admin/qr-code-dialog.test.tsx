@@ -21,7 +21,7 @@ describe("QrCodeDialog", () => {
 			/>,
 		);
 
-		await screen.findByRole("img", { name: /Kasia/i });
+		await screen.findAllByRole("img", { name: /Kasia/i });
 		const printBtn = screen.getByRole("button", { name: /Drukuj/i });
 		await user.click(printBtn);
 
@@ -57,7 +57,7 @@ describe("QrCodeDialog", () => {
 			/>,
 		);
 
-		await screen.findByRole("img", { name: /Kasia/i });
+		await screen.findAllByRole("img", { name: /Kasia/i });
 		const shareBtn = screen.getByRole("button", { name: /Udostępnij/i });
 		await user.click(shareBtn);
 
@@ -83,7 +83,7 @@ describe("QrCodeDialog", () => {
 			/>,
 		);
 
-		await screen.findByRole("img", { name: /Kasia Nowak/i });
+		await screen.findAllByRole("img", { name: /Kasia Nowak/i });
 		const downloadBtn = screen.getByRole("button", { name: /Pobierz/i });
 		await user.click(downloadBtn);
 
@@ -106,8 +106,9 @@ describe("QrCodeDialog", () => {
 		);
 
 		await waitFor(() => {
-			const img = screen.getByRole("img", { name: /Kasia/i }) as HTMLImageElement;
-			expect(img.src).toMatch(/^data:image\/png;base64,/);
+			const imgs = screen.getAllByRole("img", { name: /Kasia/i }) as HTMLImageElement[];
+			const qrImg = imgs.find((img) => img.src.startsWith("data:image/png;base64,"));
+			expect(qrImg).toBeDefined();
 		});
 	});
 });
