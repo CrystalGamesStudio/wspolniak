@@ -1,3 +1,10 @@
+## [1.16.4](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.16.3...v1.16.4) (2026-04-28)
+
+
+### Bug Fixes
+
+* **qr:** enlarge logo and darken instruction text in print template ([99e6490](https://github.com/CrystalGamesStudio/wspolniak/commit/99e6490491aa9048563f30c7f07da1ca254cd997))
+
 ## [1.16.3](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.16.2...v1.16.3) (2026-04-28)
 
 
