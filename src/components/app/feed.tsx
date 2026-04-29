@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { ExternalLinkIcon, MessageCircleIcon } from "lucide-react";
 import { PostActions } from "@/components/app/post-actions";
+import { Spinner } from "@/components/ui/spinner";
 import { getImageUrl } from "@/images/client";
 
 interface FeedImage {
@@ -109,11 +110,9 @@ export function Feed({
 			))}
 
 			<div ref={loadMoreRef}>
-				{isFetchingNextPage && (
-					<div className="flex items-center justify-center py-4">
-						<div className="size-6 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
-					</div>
-				)}
+				<div className="flex items-center justify-center py-4">
+					<Spinner loading={isFetchingNextPage} size={6} />
+				</div>
 				{!hasNextPage && posts.length > 0 && !isFetchingNextPage && (
 					<p className="py-4 text-center text-muted-foreground">Koniec</p>
 				)}
