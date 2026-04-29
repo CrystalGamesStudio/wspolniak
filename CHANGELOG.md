@@ -1,3 +1,10 @@
+# [1.18.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.17.2...v1.18.0) (2026-04-29)
+
+
+### Features
+
+* **ui:** add Spinner and LoaderIcon with 1.5s minimum display time ([4cb6735](https://github.com/CrystalGamesStudio/wspolniak/commit/4cb67355836274c74bca4643e9bc470ee5506b49))
+
 ## [1.17.2](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.17.1...v1.17.2) (2026-04-28)
 
 
