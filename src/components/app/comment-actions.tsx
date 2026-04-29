@@ -18,6 +18,7 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { LoaderIcon } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 
 interface CommentActionsProps {
@@ -133,6 +134,7 @@ export function CommentActions({ postId, commentId, body }: CommentActionsProps)
 							disabled={editMutation.isPending || !editValue.trim()}
 							className="h-12 text-base sm:h-auto sm:text-sm flex-1 sm:flex-none"
 						>
+							<LoaderIcon loading={editMutation.isPending} />
 							{editMutation.isPending ? "Zapisywanie..." : "Zapisz"}
 						</Button>
 					</DialogFooter>
@@ -164,6 +166,7 @@ export function CommentActions({ postId, commentId, body }: CommentActionsProps)
 							disabled={deleteMutation.isPending}
 							className="h-12 text-base sm:h-auto sm:text-sm flex-1 sm:flex-none"
 						>
+							<LoaderIcon loading={deleteMutation.isPending} />
 							{deleteMutation.isPending ? "Usuwanie..." : "Usuń"}
 						</Button>
 					</DialogFooter>

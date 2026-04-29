@@ -22,6 +22,7 @@ import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { LoaderIcon, Spinner } from "@/components/ui/spinner";
 
 interface Member {
 	id: string;
@@ -255,6 +256,7 @@ function AdminPage() {
 								size="sm"
 								disabled={!shareCodeInput.trim() || shareCodeMutation.isPending}
 							>
+								<LoaderIcon loading={shareCodeMutation.isPending} />
 								{shareCodeMutation.isPending ? "Zapisuję..." : "Zapisz"}
 							</Button>
 							<Button
@@ -345,7 +347,11 @@ function AdminPage() {
 							autoFocus
 						/>
 						<Button type="submit" disabled={!newName.trim() || createMutation.isPending}>
-							<Plus className="mr-1 h-4 w-4" />
+							{createMutation.isPending ? (
+								<LoaderIcon loading={createMutation.isPending} />
+							) : (
+								<Plus className="h-4 w-4" />
+							)}
 							{createMutation.isPending ? "Dodaję..." : "Dodaj"}
 						</Button>
 					</form>
@@ -386,11 +392,9 @@ function AdminPage() {
 				</div>
 			)}
 
-			{membersQuery.isLoading && (
-				<div className="flex items-center justify-center py-8">
-					<div className="size-8 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
-				</div>
-			)}
+			<div className="flex items-center justify-center py-8">
+				<Spinner loading={membersQuery.isLoading} size={8} />
+			</div>
 
 			{membersQuery.data && !currentShareCode && (
 				<button

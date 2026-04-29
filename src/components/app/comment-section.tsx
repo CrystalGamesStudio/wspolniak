@@ -5,6 +5,7 @@ import { useState } from "react";
 import { CommentActions } from "@/components/app/comment-actions";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { LoaderIcon, Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 
 interface CommentWithAuthor {
@@ -68,11 +69,9 @@ export function CommentSection({ postId, currentUserId, currentUserRole }: Comme
 				Komentarze ({comments.length})
 			</h2>
 
-			{isLoading && (
-				<div className="flex items-center justify-center py-4">
-					<div className="size-6 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
-				</div>
-			)}
+			<div className="flex items-center justify-center py-4">
+				<Spinner loading={isLoading} size={6} />
+			</div>
 
 			<div className="space-y-3">
 				{comments.map((comment) => {
@@ -124,6 +123,7 @@ export function CommentSection({ postId, currentUserId, currentUserRole }: Comme
 						}}
 						disabled={mutation.isPending || !newComment.trim()}
 					>
+						<LoaderIcon loading={mutation.isPending} />
 						{mutation.isPending ? "Wysyłanie..." : "Skomentuj"}
 					</Button>
 				</div>

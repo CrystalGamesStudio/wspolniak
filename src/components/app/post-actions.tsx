@@ -18,6 +18,7 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { LoaderIcon } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 
 interface PostActionsProps {
@@ -134,6 +135,7 @@ export function PostActions({ postId, description, onDeleted }: PostActionsProps
 							disabled={editMutation.isPending}
 							className="h-12 text-base sm:h-auto sm:text-sm flex-1 sm:flex-none"
 						>
+							<LoaderIcon loading={editMutation.isPending} />
 							{editMutation.isPending ? "Zapisywanie..." : "Zapisz"}
 						</Button>
 					</DialogFooter>
@@ -167,6 +169,7 @@ export function PostActions({ postId, description, onDeleted }: PostActionsProps
 							disabled={deleteMutation.isPending}
 							className="h-12 text-base sm:h-auto sm:text-sm flex-1 sm:flex-none"
 						>
+							<LoaderIcon loading={deleteMutation.isPending} />
 							{deleteMutation.isPending ? "Usuwanie..." : "Usuń"}
 						</Button>
 					</DialogFooter>

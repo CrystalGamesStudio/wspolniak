@@ -7,6 +7,7 @@ import { Feed } from "@/components/app/feed";
 import { FeedbackButton } from "@/components/app/feedback-button";
 import { PullToRefresh } from "@/components/app/pull-to-refresh";
 import { Button } from "@/components/ui/button";
+import { Spinner, useMinDisplay } from "@/components/ui/spinner";
 
 interface FeedPost {
 	id: string;
@@ -76,10 +77,12 @@ function FeedPage() {
 		return () => observer.disconnect();
 	}, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-	if (isLoading) {
+	const showingSpinner = useMinDisplay(isLoading);
+
+	if (showingSpinner) {
 		return (
 			<div className="flex min-h-screen items-center justify-center bg-background">
-				<div className="size-8 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
+				<Spinner size={8} />
 			</div>
 		);
 	}

@@ -4,6 +4,7 @@ import { type ChangeEvent, type FormEvent, useCallback, useMemo, useRef, useStat
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { LoaderIcon } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 
 const ACCEPTED_TYPES = "image/jpeg,image/png,image/webp,image/heic,image/heif";
@@ -149,6 +150,7 @@ export function NewPostForm({ onSubmit, isSubmitting }: NewPostFormProps) {
 			)}
 
 			<Button type="submit" className="w-full" disabled={!canSubmit}>
+				<LoaderIcon loading={isSubmitting} />
 				{isSubmitting ? "Publikowanie..." : "Opublikuj"}
 			</Button>
 		</form>

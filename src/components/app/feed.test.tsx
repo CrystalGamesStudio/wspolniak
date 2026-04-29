@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { Feed } from "./feed";
 
@@ -18,6 +18,9 @@ const defaultProps = {
 };
 
 describe("Feed", () => {
+	beforeEach(() => vi.useFakeTimers());
+	afterEach(() => vi.useRealTimers());
+
 	it("renders posts with author name and description", () => {
 		const now = new Date().toISOString();
 		const posts = [
@@ -130,7 +133,7 @@ describe("Feed", () => {
 		expect(screen.queryByText(/koniec/i)).toBeNull();
 	});
 
-	it("shows loading indicator when fetching next page", () => {
+	it("shows loading indicator when fetching next page", async () => {
 		const now = new Date().toISOString();
 		const posts = [
 			{
@@ -150,6 +153,7 @@ describe("Feed", () => {
 			wrapper: createWrapper(),
 		});
 
+		await act(() => vi.advanceTimersByTimeAsync(1500));
 		expect(document.querySelector(".animate-spin")).not.toBeNull();
 	});
 });

@@ -5,6 +5,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { LoaderIcon } from "@/components/ui/spinner";
 
 interface VerifyResponse {
 	members: { id: string; name: string }[];
@@ -145,6 +146,7 @@ export function SharePage({ initialCode = "", preselectedMemberId }: SharePagePr
 						className="w-full"
 						disabled={!code.trim() || verifyMutation.isPending}
 					>
+						<LoaderIcon loading={verifyMutation.isPending} />
 						{verifyMutation.isPending ? "Sprawdzanie..." : "Dalej"}
 					</Button>
 				</form>
