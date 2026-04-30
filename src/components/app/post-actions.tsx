@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { MoreHorizontalIcon, PencilIcon, TrashIcon } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -50,6 +50,7 @@ export function PostActions({ postId, description, onDeleted }: PostActionsProps
 	const [editOpen, setEditOpen] = useState(false);
 	const [deleteOpen, setDeleteOpen] = useState(false);
 	const [editValue, setEditValue] = useState(description ?? "");
+	const deleteButtonRef = useRef<HTMLButtonElement>(null);
 
 	const editMutation = useMutation({
 		mutationFn: (newDescription: string | null) => editPost(postId, newDescription),
@@ -143,7 +144,13 @@ export function PostActions({ postId, description, onDeleted }: PostActionsProps
 			</Dialog>
 
 			<Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-				<DialogContent className="max-h-[90vh] overflow-y-auto">
+				<DialogContent
+					className="max-h-[90vh] overflow-y-auto"
+					onOpenAutoFocus={(e) => {
+						e.preventDefault();
+						deleteButtonRef.current?.focus();
+					}}
+				>
 					<DialogHeader>
 						<DialogTitle>Usuń post</DialogTitle>
 						<DialogDescription>
@@ -164,6 +171,7 @@ export function PostActions({ postId, description, onDeleted }: PostActionsProps
 							Anuluj
 						</Button>
 						<Button
+							ref={deleteButtonRef}
 							variant="destructive"
 							onClick={() => deleteMutation.mutate()}
 							disabled={deleteMutation.isPending}
