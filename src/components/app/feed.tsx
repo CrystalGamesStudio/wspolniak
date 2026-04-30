@@ -66,7 +66,11 @@ export function Feed({
 						)}
 					</div>
 
-					{post.description && <p className="mb-3 text-foreground">{post.description}</p>}
+					{post.description && (
+						<p className="mb-3 whitespace-pre-wrap break-words text-foreground">
+							{post.description}
+						</p>
+					)}
 
 					<div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
 						{post.images.map((image) => (

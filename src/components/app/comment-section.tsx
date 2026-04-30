@@ -94,7 +94,9 @@ export function CommentSection({ postId, currentUserId, currentUserRole }: Comme
 									</div>
 								)}
 							</div>
-							<p className="text-sm text-foreground">{comment.body}</p>
+							<p className="whitespace-pre-wrap break-words text-sm text-foreground">
+								{comment.body}
+							</p>
 						</div>
 					);
 				})}

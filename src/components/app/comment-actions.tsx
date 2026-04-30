@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { MoreHorizontalIcon, PencilIcon, TrashIcon } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -52,6 +52,7 @@ export function CommentActions({ postId, commentId, body }: CommentActionsProps)
 	const [editOpen, setEditOpen] = useState(false);
 	const [deleteOpen, setDeleteOpen] = useState(false);
 	const [editValue, setEditValue] = useState(body);
+	const deleteButtonRef = useRef<HTMLButtonElement>(null);
 
 	const editMutation = useMutation({
 		mutationFn: (newBody: string) => editComment(postId, commentId, newBody),
@@ -142,7 +143,13 @@ export function CommentActions({ postId, commentId, body }: CommentActionsProps)
 			</Dialog>
 
 			<Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-				<DialogContent className="max-h-[90vh] overflow-y-auto">
+				<DialogContent
+					className="max-h-[90vh] overflow-y-auto"
+					onOpenAutoFocus={(e) => {
+						e.preventDefault();
+						deleteButtonRef.current?.focus();
+					}}
+				>
 					<DialogHeader>
 						<DialogTitle>Usuń komentarz</DialogTitle>
 						<DialogDescription>Czy na pewno chcesz usunąć ten komentarz?</DialogDescription>
@@ -161,6 +168,7 @@ export function CommentActions({ postId, commentId, body }: CommentActionsProps)
 							Anuluj
 						</Button>
 						<Button
+							ref={deleteButtonRef}
 							variant="destructive"
 							onClick={() => deleteMutation.mutate()}
 							disabled={deleteMutation.isPending}

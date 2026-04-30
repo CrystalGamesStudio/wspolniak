@@ -57,7 +57,9 @@ export function PostView({
 				)}
 			</div>
 
-			{post.description && <p className="text-foreground">{post.description}</p>}
+			{post.description && (
+				<p className="whitespace-pre-wrap break-words text-foreground">{post.description}</p>
+			)}
 
 			<div className="space-y-2">
 				{post.images.map((image) => (
