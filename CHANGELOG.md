@@ -1,3 +1,10 @@
+## [1.18.1](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.18.0...v1.18.1) (2026-04-30)
+
+
+### Bug Fixes
+
+* **ui:** preserve line breaks in text and auto-focus confirm buttons ([6f36fb0](https://github.com/CrystalGamesStudio/wspolniak/commit/6f36fb09fc4221de88091dde6e0da316dbbdfc6a))
+
 # [1.18.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.17.2...v1.18.0) (2026-04-29)
 
 
