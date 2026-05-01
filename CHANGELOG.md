@@ -1,3 +1,10 @@
+# [1.19.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.18.1...v1.19.0) (2026-05-01)
+
+
+### Features
+
+* **pwa:** add dark/tinted apple-touch-icons and update PWA assets ([dceb9ee](https://github.com/CrystalGamesStudio/wspolniak/commit/dceb9eeb9f5766777d5786d1639f08d0e77f5234))
+
 ## [1.18.1](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.18.0...v1.18.1) (2026-04-30)
 
 
