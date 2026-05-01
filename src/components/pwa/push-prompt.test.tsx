@@ -42,23 +42,23 @@ describe("PushPrompt", () => {
 
 	it("renders banner when standalone, permission default, not subscribed", () => {
 		render(<PushPrompt isStandalone />);
-		expect(screen.getByText("Włącz powiadomienia o nowych zdjęciach")).toBeDefined();
+		expect(screen.getByText("Włącz powiadomienia")).toBeDefined();
 	});
 
 	it("does not render when previously dismissed", () => {
 		storage.setItem("push-prompt-dismissed", "true");
 		render(<PushPrompt isStandalone />);
-		expect(screen.queryByText("Włącz powiadomienia o nowych zdjęciach")).toBeNull();
+		expect(screen.queryByText("Włącz powiadomienia")).toBeNull();
 	});
 
 	it("hides banner and persists dismissal on close", async () => {
 		const user = userEvent.setup();
 		render(<PushPrompt isStandalone />);
 
-		const closeButton = screen.getByRole("button", { name: /zamknij/i });
+		const closeButton = screen.getByRole("button", { name: /nie teraz/i });
 		await user.click(closeButton);
 
-		expect(screen.queryByText("Włącz powiadomienia o nowych zdjęciach")).toBeNull();
+		expect(screen.queryByText("Włącz powiadomienia")).toBeNull();
 		expect(storage.setItem).toHaveBeenCalledWith("push-prompt-dismissed", "true");
 	});
 
@@ -81,7 +81,7 @@ describe("PushPrompt", () => {
 
 	it("does not render when not standalone", () => {
 		render(<PushPrompt isStandalone={false} />);
-		expect(screen.queryByText("Włącz powiadomienia o nowych zdjęciach")).toBeNull();
+		expect(screen.queryByText("Włącz powiadomienia")).toBeNull();
 	});
 
 	it.each([
@@ -95,7 +95,7 @@ describe("PushPrompt", () => {
 			unsubscribe: vi.fn(),
 		});
 		render(<PushPrompt isStandalone />);
-		expect(screen.queryByText("Włącz powiadomienia o nowych zdjęciach")).toBeNull();
+		expect(screen.queryByText("Włącz powiadomienia")).toBeNull();
 	});
 
 	it("does not render when already subscribed", () => {
@@ -106,6 +106,6 @@ describe("PushPrompt", () => {
 			unsubscribe: vi.fn(),
 		});
 		render(<PushPrompt isStandalone />);
-		expect(screen.queryByText("Włącz powiadomienia o nowych zdjęciach")).toBeNull();
+		expect(screen.queryByText("Włącz powiadomienia")).toBeNull();
 	});
 });

@@ -69,7 +69,7 @@ function PostPage() {
 				>
 					&larr; Wróć do feedu
 				</a>
-				<ThemeToggle size="sm" />
+				<ThemeToggle size="sm" className="hidden sm:block" />
 			</div>
 			<PostView
 				post={response.data as never}

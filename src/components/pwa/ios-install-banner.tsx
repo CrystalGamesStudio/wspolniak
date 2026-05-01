@@ -1,7 +1,15 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-import { Plus, Share, X } from "lucide-react";
+import { Plus, Share } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
 
 const STORAGE_KEY = "ios-install-banner-dismissed";
 
@@ -23,21 +31,27 @@ export function IOSInstallBanner({ isIOSSafari, isStandalone }: IOSInstallBanner
 	}
 
 	return (
-		<div className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-card p-4 shadow-lg">
-			<div className="mx-auto flex max-w-md items-start gap-3">
-				<div className="flex-1 space-y-2">
-					<p className="font-semibold text-foreground">Dodaj do ekranu głównego</p>
-					<p className="text-sm text-muted-foreground">
+		<Dialog
+			open
+			onOpenChange={(open) => {
+				if (!open) handleDismiss();
+			}}
+		>
+			<DialogContent>
+				<DialogHeader>
+					<DialogTitle>Dodaj do ekranu głównego</DialogTitle>
+					<DialogDescription>
 						Aby zainstalować aplikację, naciśnij ikonę{" "}
 						<Share className="inline-block h-4 w-4" aria-hidden="true" /> Udostępnij, a następnie
 						wybierz <Plus className="inline-block h-4 w-4" aria-hidden="true" /> Dodaj do ekranu
 						głównego.
-					</p>
-				</div>
-				<Button variant="ghost" size="icon" onClick={handleDismiss} aria-label="Zamknij">
-					<X className="h-4 w-4" />
-				</Button>
-			</div>
-		</div>
+					</DialogDescription>
+				</DialogHeader>
+				<p className="text-sm text-muted-foreground">Jeśli masz pytania, podejdź do Adama.</p>
+				<DialogFooter>
+					<Button onClick={handleDismiss}>OK, rozumiem</Button>
+				</DialogFooter>
+			</DialogContent>
+		</Dialog>
 	);
 }

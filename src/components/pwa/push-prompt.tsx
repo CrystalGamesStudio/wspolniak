@@ -1,7 +1,15 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-import { Bell, X } from "lucide-react";
+import { Bell } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
 import { usePushSubscription } from "@/pwa/use-push-subscription";
 
 const STORAGE_KEY = "push-prompt-dismissed";
@@ -27,19 +35,30 @@ export function PushPrompt({ isStandalone }: PushPromptProps) {
 	}
 
 	return (
-		<div className="fixed inset-x-0 bottom-0 z-50 flex items-center justify-between gap-2 border-t border-border bg-card p-3 shadow-lg">
-			<div className="flex items-center gap-2">
-				<Bell className="h-4 w-4 text-muted-foreground" />
-				<span className="text-sm text-foreground">Włącz powiadomienia o nowych zdjęciach</span>
-			</div>
-			<div className="flex items-center gap-1">
-				<Button size="sm" onClick={subscribe}>
-					Włącz
-				</Button>
-				<Button variant="ghost" size="icon" onClick={handleDismiss} aria-label="Zamknij">
-					<X className="h-4 w-4" />
-				</Button>
-			</div>
-		</div>
+		<Dialog
+			open
+			onOpenChange={(open) => {
+				if (!open) handleDismiss();
+			}}
+		>
+			<DialogContent>
+				<DialogHeader>
+					<DialogTitle>Włącz powiadomienia</DialogTitle>
+					<DialogDescription>
+						Otrzymuj powiadomienia o nowych zdjęciach od rodziny.
+					</DialogDescription>
+				</DialogHeader>
+				<p className="text-sm text-muted-foreground">Jeśli masz pytania, podejdź do Adama.</p>
+				<DialogFooter>
+					<Button variant="outline" onClick={handleDismiss}>
+						Nie teraz
+					</Button>
+					<Button onClick={subscribe}>
+						<Bell className="mr-1 h-4 w-4" />
+						Włącz
+					</Button>
+				</DialogFooter>
+			</DialogContent>
+		</Dialog>
 	);
 }

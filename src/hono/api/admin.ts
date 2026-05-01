@@ -7,7 +7,7 @@ import {
 	updateMemberNote,
 } from "@/db/identity/queries";
 import { getShareCode, setShareCode } from "@/db/instance/queries";
-import { createHono } from "@/hono/factory";
+import { createHono, getOrigin } from "@/hono/factory";
 import { adminMiddleware } from "@/hono/middleware/admin";
 import { authMiddleware } from "@/hono/middleware/auth";
 
@@ -25,8 +25,7 @@ adminEndpoint.post("/members", async (c) => {
 	}
 
 	const { user, plaintextToken } = await createMember(name);
-	const url = new URL(c.req.url);
-	const magicLink = `${url.origin}/app/u/${plaintextToken}`;
+	const magicLink = `${getOrigin(c)}/app/u/${plaintextToken}`;
 
 	return c.json(
 		{ data: { user: { id: user.id, name: user.name, role: user.role }, magicLink } },
@@ -49,8 +48,7 @@ adminEndpoint.get("/members", async (c) => {
 adminEndpoint.post("/members/:id/regenerate", async (c) => {
 	const userId = c.req.param("id");
 	const { plaintextToken } = await regenerateMemberToken(userId);
-	const url = new URL(c.req.url);
-	const magicLink = `${url.origin}/app/u/${plaintextToken}`;
+	const magicLink = `${getOrigin(c)}/app/u/${plaintextToken}`;
 
 	return c.json({ data: { magicLink } });
 });

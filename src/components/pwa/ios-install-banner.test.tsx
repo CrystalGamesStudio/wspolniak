@@ -51,7 +51,7 @@ describe("IOSInstallBanner", () => {
 		const user = userEvent.setup();
 		render(<IOSInstallBanner isIOSSafari isStandalone={false} />);
 
-		const closeButton = screen.getByRole("button", { name: /zamknij/i });
+		const closeButton = screen.getByRole("button", { name: /ok, rozumiem/i });
 		await user.click(closeButton);
 
 		expect(screen.queryByText("Dodaj do ekranu głównego")).toBeNull();

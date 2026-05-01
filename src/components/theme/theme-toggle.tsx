@@ -8,6 +8,7 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
 import { useTheme } from "./theme-provider";
 
 interface ThemeToggleProps {
@@ -15,6 +16,7 @@ interface ThemeToggleProps {
 	size?: "sm" | "default" | "lg";
 	showLabel?: boolean;
 	align?: "start" | "center" | "end";
+	className?: string;
 }
 
 export function ThemeToggle({
@@ -22,59 +24,36 @@ export function ThemeToggle({
 	size = "default",
 	showLabel = false,
 	align = "end",
+	className,
 }: ThemeToggleProps) {
 	const { theme, setTheme, resolvedTheme } = useTheme();
-
-	// Animation variants for icons
-	const iconVariants = {
-		sun: "transition-all duration-500 ease-in-out",
-		moon: "transition-all duration-500 ease-in-out",
-		system: "transition-all duration-300 ease-in-out",
-	};
 
 	const getCurrentIcon = () => {
 		if (theme === "system") {
 			return (
-				<Monitor
-					className={`h-4 w-4 ${iconVariants.system} rotate-0 scale-100`}
-					aria-hidden="true"
-				/>
+				<Monitor className="h-4 w-4 transition-all duration-300 ease-in-out" aria-hidden="true" />
 			);
 		}
 
 		if (resolvedTheme === "dark") {
 			return (
-				<Moon className={`h-4 w-4 ${iconVariants.moon} rotate-0 scale-100`} aria-hidden="true" />
+				<Moon className="h-4 w-4 transition-all duration-500 ease-in-out" aria-hidden="true" />
 			);
 		}
 
-		return <Sun className={`h-4 w-4 ${iconVariants.sun} rotate-0 scale-100`} aria-hidden="true" />;
+		return <Sun className="h-4 w-4 transition-all duration-500 ease-in-out" aria-hidden="true" />;
 	};
 
 	const themeOptions = [
+		{ value: "light" as const, label: "Jasny", icon: Sun, description: "Zawsze jasny motyw" },
+		{ value: "dark" as const, label: "Ciemny", icon: Moon, description: "Zawsze ciemny motyw" },
 		{
-			value: "light",
-			label: "Jasny",
-			icon: Sun,
-			description: "Zawsze jasny motyw",
-		},
-		{
-			value: "dark",
-			label: "Ciemny",
-			icon: Moon,
-			description: "Zawsze ciemny motyw",
-		},
-		{
-			value: "system",
+			value: "system" as const,
 			label: "Systemowy",
 			icon: Monitor,
 			description: "Motyw z ustawień systemu",
 		},
-	] as const;
-
-	const handleThemeSelect = (newTheme: typeof theme) => {
-		setTheme(newTheme);
-	};
+	];
 
 	return (
 		<DropdownMenu>
@@ -82,12 +61,11 @@ export function ThemeToggle({
 				<Button
 					variant={variant}
 					size={size}
-					className={`
-            relative overflow-hidden transition-all duration-200 ease-in-out
-            hover:scale-105 active:scale-95
-            focus:ring-2 focus:ring-ring focus:ring-offset-2
-            ${showLabel ? "gap-2" : "aspect-square"}
-          `}
+					className={cn(
+						"relative overflow-hidden transition-all duration-200 ease-in-out hover:scale-105 active:scale-95 focus:ring-2 focus:ring-ring focus:ring-offset-2",
+						showLabel ? "gap-2" : "aspect-square",
+						className,
+					)}
 					aria-label="Zmień motyw"
 				>
 					<div className="relative flex items-center justify-center">{getCurrentIcon()}</div>
@@ -117,31 +95,27 @@ export function ThemeToggle({
 						return (
 							<DropdownMenuItem
 								key={option.value}
-								onClick={() => handleThemeSelect(option.value)}
-								className={`
-                  flex items-center gap-3 px-3 py-2.5 cursor-pointer
-                  transition-all duration-200 ease-in-out
-                  hover:bg-accent/80 focus:bg-accent/80
-                  rounded-md group
-                  ${isSelected ? "bg-accent/60 text-accent-foreground" : ""}
-                `}
+								onClick={() => setTheme(option.value)}
+								className={cn(
+									"flex items-center gap-3 px-3 py-2.5 cursor-pointer transition-all duration-200 ease-in-out hover:bg-accent/80 focus:bg-accent/80 rounded-md group",
+									isSelected && "bg-accent/60 text-accent-foreground",
+								)}
 							>
 								<div className="flex items-center justify-center w-5 h-5">
 									<Icon
-										className={`
-                      h-4 w-4 transition-all duration-200
-                      ${isSelected ? "text-accent-foreground scale-110" : "text-muted-foreground"}
-                      group-hover:scale-105
-                    `}
+										className={cn(
+											"h-4 w-4 transition-all duration-200 group-hover:scale-105",
+											isSelected ? "text-accent-foreground scale-110" : "text-muted-foreground",
+										)}
 									/>
 								</div>
 
 								<div className="flex flex-col flex-1 min-w-0">
 									<span
-										className={`
-                    text-sm font-medium leading-none
-                    ${isSelected ? "text-accent-foreground" : "text-foreground"}
-                  `}
+										className={cn(
+											"text-sm font-medium leading-none",
+											isSelected ? "text-accent-foreground" : "text-foreground",
+										)}
 									>
 										{option.label}
 									</span>
@@ -162,10 +136,10 @@ export function ThemeToggle({
 					<div className="border-t border-border/50 mt-2 pt-2">
 						<div className="flex items-center gap-2 px-3 py-1.5 text-xs text-muted-foreground">
 							<div
-								className={`
-                w-2 h-2 rounded-full transition-colors duration-200
-                ${resolvedTheme === "dark" ? "bg-blue-500" : "bg-amber-500"}
-              `}
+								className={cn(
+									"w-2 h-2 rounded-full transition-colors duration-200",
+									resolvedTheme === "dark" ? "bg-blue-500" : "bg-amber-500",
+								)}
 							/>
 							Aktywny: {resolvedTheme === "dark" ? "ciemny" : "jasny"} motyw
 						</div>

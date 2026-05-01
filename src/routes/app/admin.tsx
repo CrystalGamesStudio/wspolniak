@@ -22,7 +22,7 @@ import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { LoaderIcon, Spinner } from "@/components/ui/spinner";
+import { LoaderIcon } from "@/components/ui/spinner";
 
 interface Member {
 	id: string;
@@ -56,6 +56,18 @@ function AdminPage() {
 	const [addDialogOpen, setAddDialogOpen] = useState(false);
 	const [shareCodeInput, setShareCodeInput] = useState("");
 	const [qrTarget, setQrTarget] = useState<Member | null>(null);
+
+	const configQuery = useQuery({
+		queryKey: ["config"],
+		queryFn: async () => {
+			const res = await fetch("/api/app/config");
+			if (!res.ok) throw new Error("Nie udało się pobrać konfiguracji");
+			const json = (await res.json()) as { data: { appUrl: string } };
+			return json.data.appUrl;
+		},
+	});
+
+	const appUrl = configQuery.data ?? (typeof window !== "undefined" ? window.location.origin : "");
 
 	const shareCodeQuery = useQuery({
 		queryKey: ["admin", "share-code"],
@@ -166,12 +178,12 @@ function AdminPage() {
 		createMutation.mutate(trimmed);
 	}
 
-	const shareUrl = typeof window !== "undefined" ? `${window.location.origin}/share` : "";
+	const shareUrl = `/share`;
 	const currentShareCode = shareCodeQuery.data;
 
 	const qrUrl =
-		qrTarget && currentShareCode && typeof window !== "undefined"
-			? `${window.location.origin}/share?code=${encodeURIComponent(currentShareCode)}&member=${encodeURIComponent(qrTarget.id)}`
+		qrTarget && currentShareCode
+			? `${appUrl}/share?code=${encodeURIComponent(currentShareCode)}&member=${encodeURIComponent(qrTarget.id)}`
 			: "";
 
 	function startEditShareCode() {
@@ -218,7 +230,7 @@ function AdminPage() {
 					>
 						<Share2 className="h-4 w-4" />
 					</Button>
-					<ThemeToggle size="lg" />
+					<ThemeToggle size="lg" className="hidden sm:block" />
 				</div>
 			</div>
 
@@ -391,10 +403,6 @@ function AdminPage() {
 					</p>
 				</div>
 			)}
-
-			<div className="flex items-center justify-center py-8">
-				<Spinner loading={membersQuery.isLoading} size={8} />
-			</div>
 
 			{membersQuery.data && !currentShareCode && (
 				<button

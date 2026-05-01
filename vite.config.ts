@@ -5,9 +5,11 @@ import viteReact from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 import viteTsConfigPaths from "vite-tsconfig-paths";
 
-const config = defineConfig({
+export default defineConfig({
+	server: {
+		host: "0.0.0.0",
+	},
 	plugins: [
-		// this is the plugin that enables path aliases
 		viteTsConfigPaths({
 			projects: ["./tsconfig.json"],
 		}),
@@ -25,5 +27,3 @@ const config = defineConfig({
 		}),
 	],
 });
-
-export default config;
