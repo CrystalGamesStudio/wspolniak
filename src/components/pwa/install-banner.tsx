@@ -1,7 +1,15 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-import { Download, X } from "lucide-react";
+import { Download } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
 
 const STORAGE_KEY = "install-banner-dismissed";
 
@@ -22,18 +30,36 @@ export function InstallBanner({ canInstall, promptInstall }: InstallBannerProps)
 		setDismissed(true);
 	}
 
+	function handleInstall() {
+		promptInstall();
+		handleDismiss();
+	}
+
 	return (
-		<div className="fixed inset-x-0 bottom-0 z-50 flex items-center justify-between gap-2 border-t border-border bg-card p-3 shadow-lg">
-			<span className="text-sm text-foreground">Zainstaluj aplikację Wspólniak</span>
-			<div className="flex items-center gap-1">
-				<Button size="sm" onClick={promptInstall}>
-					<Download className="mr-1 h-3 w-3" />
-					Instaluj
-				</Button>
-				<Button variant="ghost" size="icon" onClick={handleDismiss} aria-label="Zamknij">
-					<X className="h-4 w-4" />
-				</Button>
-			</div>
-		</div>
+		<Dialog
+			open
+			onOpenChange={(open) => {
+				if (!open) handleDismiss();
+			}}
+		>
+			<DialogContent>
+				<DialogHeader>
+					<DialogTitle>Zainstaluj aplikację Wspólniak</DialogTitle>
+					<DialogDescription>
+						Dodaj Wspólniak do ekranu głównego, aby mieć szybki dostęp do zdjęć rodzinnych.
+					</DialogDescription>
+				</DialogHeader>
+				<p className="text-sm text-muted-foreground">Jeśli masz pytania, podejdź do Adama.</p>
+				<DialogFooter>
+					<Button variant="outline" onClick={handleDismiss}>
+						Nie teraz
+					</Button>
+					<Button onClick={handleInstall}>
+						<Download className="mr-1 h-4 w-4" />
+						Instaluj
+					</Button>
+				</DialogFooter>
+			</DialogContent>
+		</Dialog>
 	);
 }

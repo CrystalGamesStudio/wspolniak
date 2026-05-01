@@ -22,17 +22,12 @@ export function PwaShell({ children }: { children: React.ReactNode }) {
 
 	useEffect(() => {
 		if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
-		navigator.serviceWorker.register("/sw.js").catch((error) => {
-			// biome-ignore lint/suspicious/noConsole: surface SW registration failures for PWA push diagnosis
-			console.error("[pwa] SW register failed", error);
-		});
+		navigator.serviceWorker.register("/sw.js").catch((_error) => {});
 	}, []);
-
-	const mayShowBottomBanner = canInstall || (iosSafari && !standalone) || standalone;
 
 	return (
 		<>
-			<div className={mayShowBottomBanner ? "pb-20" : undefined}>{children}</div>
+			{children}
 
 			{!online && (
 				<div className="fixed inset-x-0 top-0 z-50 flex items-center justify-center gap-2 bg-destructive p-2 text-destructive-foreground">

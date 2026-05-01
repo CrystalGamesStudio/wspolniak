@@ -5,7 +5,7 @@ import { useState } from "react";
 import { CommentActions } from "@/components/app/comment-actions";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { LoaderIcon, Spinner } from "@/components/ui/spinner";
+import { LoaderIcon } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 
 interface CommentWithAuthor {
@@ -48,7 +48,7 @@ export function CommentSection({ postId, currentUserId, currentUserRole }: Comme
 	const queryClient = useQueryClient();
 	const [newComment, setNewComment] = useState("");
 
-	const { data: comments = [], isLoading } = useQuery({
+	const { data: comments = [] } = useQuery({
 		queryKey: ["comments", postId],
 		queryFn: () => fetchComments(postId),
 	});
@@ -68,10 +68,6 @@ export function CommentSection({ postId, currentUserId, currentUserRole }: Comme
 				<MessageCircleIcon className="size-5" />
 				Komentarze ({comments.length})
 			</h2>
-
-			<div className="flex items-center justify-center py-4">
-				<Spinner loading={isLoading} size={6} />
-			</div>
 
 			<div className="space-y-3">
 				{comments.map((comment) => {

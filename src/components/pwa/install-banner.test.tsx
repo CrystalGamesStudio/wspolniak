@@ -46,7 +46,7 @@ describe("InstallBanner", () => {
 		const user = userEvent.setup();
 		render(<InstallBanner canInstall promptInstall={vi.fn()} />);
 
-		const closeButton = screen.getByRole("button", { name: /zamknij/i });
+		const closeButton = screen.getByRole("button", { name: /nie teraz/i });
 		await user.click(closeButton);
 
 		expect(screen.queryByText("Zainstaluj aplikację Wspólniak")).toBeNull();

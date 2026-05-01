@@ -3,7 +3,7 @@ import { z } from "zod/v4";
 import { generateToken } from "@/db/identity/crypto";
 import { createUser } from "@/db/identity/queries";
 import { completeSetup, isSetupCompleted } from "@/db/instance/queries";
-import { createHono } from "@/hono/factory";
+import { createHono, getOrigin } from "@/hono/factory";
 
 const setupBodySchema = z.object({
 	familyName: z.string().min(1),
@@ -30,7 +30,7 @@ setupRoute.post("/", async (c) => {
 	await completeSetup(familyName);
 	await createUser({ name: adminName, role: "admin", tokenHash: hash });
 
-	const host = new URL(c.req.url).origin;
+	const host = getOrigin(c);
 	return c.json({ magicLink: `${host}/app/u/${plaintext}` });
 });
 
