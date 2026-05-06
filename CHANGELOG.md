@@ -1,3 +1,10 @@
+## [1.19.1](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.19.0...v1.19.1) (2026-05-06)
+
+
+### Bug Fixes
+
+* **ui:** mobile enter key newline and dropdown menu positioning ([883c105](https://github.com/CrystalGamesStudio/wspolniak/commit/883c105a0fe3f19e92633f6bf101e1801d130601))
+
 # [1.19.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.18.1...v1.19.0) (2026-05-01)
 
 
