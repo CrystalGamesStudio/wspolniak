@@ -80,7 +80,7 @@ export function PostActions({ postId, description, onDeleted }: PostActionsProps
 						<span className="sr-only">Opcje posta</span>
 					</Button>
 				</DropdownMenuTrigger>
-				<DropdownMenuContent align="end" className="min-w-48">
+				<DropdownMenuContent align="end" side="top" className="min-w-48">
 					<DropdownMenuItem
 						onSelect={() => {
 							setEditValue(description ?? "");

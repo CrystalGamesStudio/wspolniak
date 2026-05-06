@@ -80,7 +80,7 @@ export function CommentActions({ postId, commentId, body }: CommentActionsProps)
 						<span className="sr-only">Opcje komentarza</span>
 					</Button>
 				</DropdownMenuTrigger>
-				<DropdownMenuContent align="end" className="min-w-48">
+				<DropdownMenuContent align="end" side="top" className="min-w-48">
 					<DropdownMenuItem
 						onSelect={() => {
 							setEditValue(body);

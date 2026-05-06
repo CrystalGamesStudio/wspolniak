@@ -100,6 +100,7 @@ export function NewPostForm({ onSubmit, isSubmitting }: NewPostFormProps) {
 					rows={24}
 					placeholder="Co się wydarzyło?"
 					className="min-h-96 resize-y"
+					enterKeyHint="enter"
 				/>
 			</div>
 
