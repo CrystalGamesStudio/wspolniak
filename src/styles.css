@@ -333,6 +333,10 @@ code {
     calc(var(--radius) * 2.6);
 }
 
+@utility pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

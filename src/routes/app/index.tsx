@@ -96,7 +96,7 @@ function FeedPage() {
 				await refetch();
 			}}
 		>
-			<div className="mx-auto max-w-2xl bg-background px-4 py-6 pb-20 sm:pb-6">
+			<div className="mx-auto max-w-2xl bg-background px-4 py-6 pb-28 sm:pb-6">
 				<div className="mb-6 flex items-center justify-between">
 					<h1 className="text-2xl font-bold text-foreground">Witaj {session.name}</h1>
 					<div className="hidden sm:flex sm:items-center sm:gap-2">

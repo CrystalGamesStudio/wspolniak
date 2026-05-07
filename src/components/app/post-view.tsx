@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
+import { Download } from "lucide-react";
 import { PostActions } from "@/components/app/post-actions";
 import { getImageUrl } from "@/images/client";
+import { downloadImage } from "@/lib/download-image";
 
 interface PostImage {
 	id: string;
@@ -62,19 +64,31 @@ export function PostView({
 			)}
 
 			<div className="space-y-2">
-				{post.images.map((image) => (
-					<img
-						key={image.id}
-						src={getImageUrl({
-							accountHash: imageAccountHash,
-							cfImageId: image.cfImageId,
-							variant: "public",
-						})}
-						alt={`Zdjęcie ${image.displayOrder + 1}`}
-						className="w-full rounded-lg"
-						loading="lazy"
-					/>
-				))}
+				{post.images.map((image) => {
+					const src = getImageUrl({
+						accountHash: imageAccountHash,
+						cfImageId: image.cfImageId,
+						variant: "public",
+					});
+					return (
+						<div key={image.id} className="group relative">
+							<img
+								src={src}
+								alt={`Zdjęcie ${image.displayOrder + 1}`}
+								className="w-full rounded-lg"
+								loading="lazy"
+							/>
+							<button
+								type="button"
+								onClick={() => downloadImage(src, `post-${image.displayOrder + 1}.jpg`)}
+								className="absolute right-2 bottom-2 rounded-full bg-background/80 p-2 text-foreground opacity-0 backdrop-blur-sm transition-opacity hover:bg-background group-hover:opacity-100"
+								aria-label={`Pobierz zdjęcie ${image.displayOrder + 1}`}
+							>
+								<Download className="h-5 w-5" />
+							</button>
+						</div>
+					);
+				})}
 			</div>
 		</article>
 	);
