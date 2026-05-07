@@ -57,7 +57,7 @@ function NewPostPage() {
 	});
 
 	return (
-		<div className="mx-auto max-w-lg bg-background px-4 py-6 pb-20 sm:pb-6">
+		<div className="mx-auto max-w-lg bg-background px-4 py-6 pb-50 sm:pb-6">
 			<div className="mb-6 flex items-center gap-4">
 				<button
 					type="button"
