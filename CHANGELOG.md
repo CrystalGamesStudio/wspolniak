@@ -1,3 +1,10 @@
+# [1.20.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.19.1...v1.20.0) (2026-05-07)
+
+
+### Features
+
+* **ui:** fix bottom bar overlap and add image download button ([d2ef08d](https://github.com/CrystalGamesStudio/wspolniak/commit/d2ef08d96baf5b90587925c43ce2b5e55b57ebd0)), closes [#36](https://github.com/CrystalGamesStudio/wspolniak/issues/36) [#37](https://github.com/CrystalGamesStudio/wspolniak/issues/37)
+
 ## [1.19.1](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.19.0...v1.19.1) (2026-05-06)
 
 
