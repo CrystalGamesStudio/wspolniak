@@ -1,4 +1,15 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
+import {
+	DndContext,
+	type DragEndEvent,
+	type DragOverEvent,
+	type DragStartEvent,
+	PointerSensor,
+	useSensor,
+	useSensors,
+} from "@dnd-kit/core";
+import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { ImagePlus, X } from "lucide-react";
 import { type ChangeEvent, type FormEvent, useCallback, useMemo, useRef, useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -6,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { LoaderIcon } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
+import { reorder } from "@/lib/reorder";
 
 const ACCEPTED_TYPES = "image/jpeg,image/png,image/webp,image/heic,image/heif";
 const MAX_FILES = 10;
@@ -17,42 +29,125 @@ interface NewPostFormProps {
 	isSubmitting: boolean;
 }
 
+function SortablePreview({
+	id,
+	url,
+	index,
+	isOver,
+	onRemove,
+}: {
+	id: string;
+	url: string;
+	index: number;
+	isOver: boolean;
+	onRemove: () => void;
+}) {
+	const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+		id,
+	});
+
+	const style: React.CSSProperties = {
+		transform: CSS.Transform.toString(transform),
+		transition,
+		zIndex: isDragging ? 50 : undefined,
+	};
+
+	return (
+		<div
+			ref={setNodeRef}
+			style={style}
+			{...attributes}
+			{...listeners}
+			role="option"
+			tabIndex={0}
+			className={`relative aspect-square touch-none ${isDragging ? "scale-90 opacity-80" : ""} ${isOver ? "ring-4 ring-green-500 ring-offset-2 rounded-md" : ""}`}
+		>
+			<img
+				src={url}
+				alt={`Podgląd ${index + 1}`}
+				className="aspect-square w-full rounded-md object-cover"
+			/>
+			<button
+				type="button"
+				onClick={(e) => {
+					e.stopPropagation();
+					onRemove();
+				}}
+				onPointerDown={(e) => e.stopPropagation()}
+				className="absolute right-1 top-1 flex size-6 items-center justify-center rounded-full bg-destructive text-destructive-foreground opacity-90 transition-opacity hover:opacity-100"
+				title="Usuń zdjęcie"
+			>
+				<X className="h-3 w-3" />
+			</button>
+		</div>
+	);
+}
+
 export function NewPostForm({ onSubmit, isSubmitting }: NewPostFormProps) {
 	const [description, setDescription] = useState("");
 	const [files, setFiles] = useState<File[]>([]);
 	const [error, setError] = useState<string | null>(null);
 	const [previews, setPreviews] = useState<string[]>([]);
+	const [overId, setOverId] = useState<string | null>(null);
 	const fileInputRef = useRef<HTMLInputElement>(null);
 
-	const handleFileChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
-		const selected = Array.from(e.target.files ?? []);
-		setError(null);
+	const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
-		if (selected.length > MAX_FILES) {
-			setError(`Maksymalnie ${MAX_FILES} zdjęć na post`);
-			return;
-		}
+	const sortableIds = useMemo(() => previews.map((_, i) => `preview-${i}`), [previews]);
 
-		const oversized = selected.find((f) => f.size > MAX_FILE_SIZE_BYTES);
-		if (oversized) {
-			setError(`Plik "${oversized.name}" przekracza ${MAX_FILE_SIZE_MB} MB`);
-			return;
-		}
-
-		setFiles(selected);
-
-		const urls = selected.map((f) => URL.createObjectURL(f));
-		setPreviews((prev) => {
-			for (const url of prev) URL.revokeObjectURL(url);
-			return urls;
-		});
+	const handleDragStart = useCallback((_event: DragStartEvent) => {
+		setOverId(null);
 	}, []);
+
+	const handleDragOver = useCallback((event: DragOverEvent) => {
+		setOverId(event.over ? String(event.over.id) : null);
+	}, []);
+
+	const handleDragEnd = useCallback((event: DragEndEvent) => {
+		setOverId(null);
+		const { active, over } = event;
+		if (!over || active.id === over.id) return;
+
+		const activeIndex = Number(String(active.id).replace("preview-", ""));
+		const overIndex = Number(String(over.id).replace("preview-", ""));
+
+		setFiles((prev) => reorder(prev, activeIndex, overIndex));
+		setPreviews((prev) => reorder(prev, activeIndex, overIndex));
+	}, []);
+
+	const handleFileChange = useCallback(
+		(e: ChangeEvent<HTMLInputElement>) => {
+			const incoming = Array.from(e.target.files ?? []);
+			if (incoming.length === 0) return;
+
+			setError(null);
+
+			const oversized = incoming.find((f) => f.size > MAX_FILE_SIZE_BYTES);
+			if (oversized) {
+				setError(`Plik "${oversized.name}" przekracza ${MAX_FILE_SIZE_MB} MB`);
+				return;
+			}
+
+			const merged = [...files, ...incoming];
+			if (merged.length > MAX_FILES) {
+				setError(`Maksymalnie ${MAX_FILES} zdjęć na post`);
+				return;
+			}
+
+			const urls = incoming.map((f) => URL.createObjectURL(f));
+			setFiles(merged);
+			setPreviews((prev) => [...prev, ...urls]);
+
+			if (fileInputRef.current) fileInputRef.current.value = "";
+		},
+		[files],
+	);
 
 	const removeFile = useCallback((index: number) => {
 		setFiles((prev) => {
 			const newFiles = prev.filter((_, i) => i !== index);
 			if (newFiles.length === 0) {
-				fileInputRef.current!.value = "";
+				if (fileInputRef.current) fileInputRef.current.value = "";
 			}
 			return newFiles;
 		});
@@ -129,25 +224,27 @@ export function NewPostForm({ onSubmit, isSubmitting }: NewPostFormProps) {
 			</div>
 
 			{previews.length > 0 && (
-				<div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-					{previews.map((url, i) => (
-						<div key={url} className="relative aspect-square">
-							<img
-								src={url}
-								alt={`Podgląd ${i + 1}`}
-								className="aspect-square w-full rounded-md object-cover"
-							/>
-							<button
-								type="button"
-								onClick={() => removeFile(i)}
-								className="absolute right-1 top-1 flex size-6 items-center justify-center rounded-full bg-destructive text-destructive-foreground opacity-90 transition-opacity hover:opacity-100"
-								title="Usuń zdjęcie"
-							>
-								<X className="h-3 w-3" />
-							</button>
+				<DndContext
+					sensors={sensors}
+					onDragStart={handleDragStart}
+					onDragOver={handleDragOver}
+					onDragEnd={handleDragEnd}
+				>
+					<SortableContext items={sortableIds} strategy={verticalListSortingStrategy}>
+						<div role="listbox" className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+							{previews.map((url, i) => (
+								<SortablePreview
+									key={sortableIds[i]}
+									id={sortableIds[i]}
+									url={url}
+									index={i}
+									isOver={overId === sortableIds[i]}
+									onRemove={() => removeFile(i)}
+								/>
+							))}
 						</div>
-					))}
-				</div>
+					</SortableContext>
+				</DndContext>
 			)}
 
 			<Button type="submit" className="w-full" disabled={!canSubmit}>
