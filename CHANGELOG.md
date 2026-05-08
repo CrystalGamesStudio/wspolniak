@@ -1,3 +1,10 @@
+# [1.24.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.23.0...v1.24.0) (2026-05-08)
+
+
+### Features
+
+* **ui:** add full post editing with image management ([e9501f1](https://github.com/CrystalGamesStudio/wspolniak/commit/e9501f1ca5fbf198852a0f595c277f65e1ae75eb)), closes [#41](https://github.com/CrystalGamesStudio/wspolniak/issues/41)
+
 # [1.23.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.22.0...v1.23.0) (2026-05-08)
 
 
