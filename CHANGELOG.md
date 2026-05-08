@@ -1,3 +1,10 @@
+# [1.25.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.24.0...v1.25.0) (2026-05-08)
+
+
+### Features
+
+* **ui:** move QR + print to share dialog, enlarge action buttons ([5a3b0f1](https://github.com/CrystalGamesStudio/wspolniak/commit/5a3b0f1becad243a8d1fd7c72fd3068e1b431067))
+
 # [1.24.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.23.0...v1.24.0) (2026-05-08)
 
 
