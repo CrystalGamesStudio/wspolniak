@@ -46,5 +46,12 @@ interface ImageUrlConfig {
 
 export function getImageUrl(config: ImageUrlConfig): string {
 	const { accountHash, cfImageId, variant = "public" } = config;
+
+	if (cfImageId.startsWith("placeholder-")) {
+		const seed = cfImageId.replace("placeholder-", "");
+		const size = variant === "thumbnail" ? "400/400" : "1200/800";
+		return `https://picsum.photos/seed/${seed}/${size}`;
+	}
+
 	return `https://imagedelivery.net/${accountHash}/${cfImageId}/${variant}`;
 }
