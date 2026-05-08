@@ -18,6 +18,7 @@ import { Route as AuthErrorRouteImport } from './routes/auth/error'
 import { Route as AppNewRouteImport } from './routes/app/new'
 import { Route as AppAdminRouteImport } from './routes/app/admin'
 import { Route as AppPostIdRouteImport } from './routes/app/post.$id'
+import { Route as AppPostIdEditRouteImport } from './routes/app/post.$id_.edit'
 
 const ShareRoute = ShareRouteImport.update({
   id: '/share',
@@ -64,6 +65,11 @@ const AppPostIdRoute = AppPostIdRouteImport.update({
   path: '/post/$id',
   getParentRoute: () => AppRoute,
 } as any)
+const AppPostIdEditRoute = AppPostIdEditRouteImport.update({
+  id: '/post/$id_/edit',
+  path: '/post/$id/edit',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -75,6 +81,7 @@ export interface FileRoutesByFullPath {
   '/auth/error': typeof AuthErrorRoute
   '/app/': typeof AppIndexRoute
   '/app/post/$id': typeof AppPostIdRoute
+  '/app/post/$id/edit': typeof AppPostIdEditRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -85,6 +92,7 @@ export interface FileRoutesByTo {
   '/auth/error': typeof AuthErrorRoute
   '/app': typeof AppIndexRoute
   '/app/post/$id': typeof AppPostIdRoute
+  '/app/post/$id/edit': typeof AppPostIdEditRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -97,6 +105,7 @@ export interface FileRoutesById {
   '/auth/error': typeof AuthErrorRoute
   '/app/': typeof AppIndexRoute
   '/app/post/$id': typeof AppPostIdRoute
+  '/app/post/$id_/edit': typeof AppPostIdEditRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -110,6 +119,7 @@ export interface FileRouteTypes {
     | '/auth/error'
     | '/app/'
     | '/app/post/$id'
+    | '/app/post/$id/edit'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -120,6 +130,7 @@ export interface FileRouteTypes {
     | '/auth/error'
     | '/app'
     | '/app/post/$id'
+    | '/app/post/$id/edit'
   id:
     | '__root__'
     | '/'
@@ -131,6 +142,7 @@ export interface FileRouteTypes {
     | '/auth/error'
     | '/app/'
     | '/app/post/$id'
+    | '/app/post/$id_/edit'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -206,6 +218,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppPostIdRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/post/$id_/edit': {
+      id: '/app/post/$id_/edit'
+      path: '/post/$id/edit'
+      fullPath: '/app/post/$id/edit'
+      preLoaderRoute: typeof AppPostIdEditRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
@@ -214,6 +233,7 @@ interface AppRouteChildren {
   AppNewRoute: typeof AppNewRoute
   AppIndexRoute: typeof AppIndexRoute
   AppPostIdRoute: typeof AppPostIdRoute
+  AppPostIdEditRoute: typeof AppPostIdEditRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -221,6 +241,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppNewRoute: AppNewRoute,
   AppIndexRoute: AppIndexRoute,
   AppPostIdRoute: AppPostIdRoute,
+  AppPostIdEditRoute: AppPostIdEditRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)

@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { LoaderIcon } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
+import { getImageUrl } from "@/images/client";
 import { reorder } from "@/lib/reorder";
 
 const ACCEPTED_TYPES = "image/jpeg,image/png,image/webp,image/heic,image/heif";
@@ -24,8 +25,29 @@ const MAX_FILES = 10;
 const MAX_FILE_SIZE_MB = 15;
 const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 
-interface NewPostFormProps {
-	onSubmit: (data: { description: string; files: File[] }) => void;
+export interface ExistingImage {
+	id: string;
+	cfImageId: string;
+}
+
+interface ImageItem {
+	key: string;
+	url: string;
+	existingId?: string;
+	fileIndex?: number;
+}
+
+interface EditPostFormProps {
+	postId: string;
+	description: string | null;
+	existingImages: ExistingImage[];
+	imageAccountHash: string;
+	onSubmit: (data: {
+		description: string;
+		files: File[];
+		removedImageIds: string[];
+		imageOrder: string[];
+	}) => void;
 	isSubmitting: boolean;
 }
 
@@ -85,17 +107,36 @@ function SortablePreview({
 	);
 }
 
-export function NewPostForm({ onSubmit, isSubmitting }: NewPostFormProps) {
-	const [description, setDescription] = useState("");
-	const [files, setFiles] = useState<File[]>([]);
+export function EditPostForm({
+	postId: _postId,
+	description: initialDescription,
+	existingImages,
+	imageAccountHash,
+	onSubmit,
+	isSubmitting,
+}: EditPostFormProps) {
+	const [description, setDescription] = useState(initialDescription ?? "");
 	const [error, setError] = useState<string | null>(null);
-	const [previews, setPreviews] = useState<string[]>([]);
 	const [overId, setOverId] = useState<string | null>(null);
 	const fileInputRef = useRef<HTMLInputElement>(null);
 
+	// Single unified list — same pattern as NewPostForm
+	const [items, setItems] = useState<ImageItem[]>(
+		existingImages.map((img) => ({
+			key: `e-${img.id}`,
+			url: getImageUrl({
+				accountHash: imageAccountHash,
+				cfImageId: img.cfImageId,
+				variant: "thumbnail",
+			}),
+			existingId: img.id,
+		})),
+	);
+	const [newFiles, setNewFiles] = useState<File[]>([]);
+
 	const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
-	const sortableIds = useMemo(() => previews.map((_, i) => `preview-${i}`), [previews]);
+	const sortableIds = useMemo(() => items.map((item) => item.key), [items]);
 
 	const handleDragStart = useCallback((_event: DragStartEvent) => {
 		setOverId(null);
@@ -105,17 +146,20 @@ export function NewPostForm({ onSubmit, isSubmitting }: NewPostFormProps) {
 		setOverId(event.over ? String(event.over.id) : null);
 	}, []);
 
-	const handleDragEnd = useCallback((event: DragEndEvent) => {
-		setOverId(null);
-		const { active, over } = event;
-		if (!over || active.id === over.id) return;
+	const handleDragEnd = useCallback(
+		(event: DragEndEvent) => {
+			setOverId(null);
+			const { active, over } = event;
+			if (!over || active.id === over.id) return;
 
-		const activeIndex = Number(String(active.id).replace("preview-", ""));
-		const overIndex = Number(String(over.id).replace("preview-", ""));
+			const activeIndex = items.findIndex((item) => item.key === String(active.id));
+			const overIndex = items.findIndex((item) => item.key === String(over.id));
+			if (activeIndex === -1 || overIndex === -1) return;
 
-		setFiles((prev) => reorder(prev, activeIndex, overIndex));
-		setPreviews((prev) => reorder(prev, activeIndex, overIndex));
-	}, []);
+			setItems((prev) => reorder(prev, activeIndex, overIndex));
+		},
+		[items],
+	);
 
 	const handleFileChange = useCallback(
 		(e: ChangeEvent<HTMLInputElement>) => {
@@ -130,53 +174,70 @@ export function NewPostForm({ onSubmit, isSubmitting }: NewPostFormProps) {
 				return;
 			}
 
-			const merged = [...files, ...incoming];
-			if (merged.length > MAX_FILES) {
+			if (items.length + incoming.length > MAX_FILES) {
 				setError(`Maksymalnie ${MAX_FILES} zdjęć na post`);
 				return;
 			}
 
-			const urls = incoming.map((f) => URL.createObjectURL(f));
-			setFiles(merged);
-			setPreviews((prev) => [...prev, ...urls]);
+			const newItems: ImageItem[] = incoming.map((f, i) => ({
+				key: `n-${newFiles.length + i}`,
+				url: URL.createObjectURL(f),
+				fileIndex: newFiles.length + i,
+			}));
+
+			setItems((prev) => [...prev, ...newItems]);
+			setNewFiles((prev) => [...prev, ...incoming]);
 
 			if (fileInputRef.current) fileInputRef.current.value = "";
 		},
-		[files],
+		[items.length, newFiles.length],
 	);
 
-	const removeFile = useCallback((index: number) => {
-		setFiles((prev) => {
-			const newFiles = prev.filter((_, i) => i !== index);
-			if (newFiles.length === 0) {
-				if (fileInputRef.current) fileInputRef.current.value = "";
+	const removeItem = useCallback(
+		(index: number) => {
+			const item = items[index];
+			if (!item) return;
+
+			// Revoke blob URL for new files
+			if (item.fileIndex !== undefined) {
+				URL.revokeObjectURL(item.url);
 			}
-			return newFiles;
-		});
-		setPreviews((prev) => {
-			const newPreviews = prev.filter((_, i) => i !== index);
-			if (prev[index]) {
-				URL.revokeObjectURL(prev[index]);
-			}
-			return newPreviews;
-		});
-	}, []);
+
+			setItems((prev) => prev.filter((_, i) => i !== index));
+		},
+		[items],
+	);
 
 	const handleSubmit = useCallback(
 		(e: FormEvent) => {
 			e.preventDefault();
-			if (files.length === 0 && !description.trim()) {
+			if (description.trim() === "" && items.length === 0) {
 				setError("Dodaj tekst lub zdjęcie");
 				return;
 			}
-			onSubmit({ description, files });
+
+			// Figure out what changed
+			const currentExistingIds = items
+				.filter((item) => item.existingId)
+				.map((item) => item.existingId!);
+
+			const removedImageIds = existingImages
+				.filter((img) => !currentExistingIds.includes(img.id))
+				.map((img) => img.id);
+
+			const newFileItems = items.filter((item) => item.fileIndex !== undefined);
+			const files = newFileItems.map((item) => newFiles[item.fileIndex!]).filter(Boolean);
+
+			const imageOrder = currentExistingIds;
+
+			onSubmit({ description, files, removedImageIds, imageOrder });
 		},
-		[description, files, onSubmit],
+		[description, items, existingImages, newFiles, onSubmit],
 	);
 
 	const canSubmit = useMemo(
-		() => (files.length > 0 || description.trim().length > 0) && !isSubmitting,
-		[files.length, description, isSubmitting],
+		() => (items.length > 0 || description.trim().length > 0) && !isSubmitting,
+		[items.length, description, isSubmitting],
 	);
 
 	return (
@@ -219,13 +280,13 @@ export function NewPostForm({ onSubmit, isSubmitting }: NewPostFormProps) {
 					onClick={() => fileInputRef.current?.click()}
 				>
 					<ImagePlus className="mr-2 h-4 w-4" />
-					{files.length > 0
-						? `Wybrano ${files.length} ${files.length === 1 ? "zdjęcie" : files.length < 5 ? "zdjęcia" : "zdjęć"}`
+					{items.length > 0
+						? `Wybrano ${items.length} ${items.length === 1 ? "zdjęcie" : items.length < 5 ? "zdjęcia" : "zdjęć"}`
 						: "Wybierz zdjęcia"}
 				</Button>
 			</div>
 
-			{previews.length > 0 && (
+			{items.length > 0 && (
 				<DndContext
 					sensors={sensors}
 					onDragStart={handleDragStart}
@@ -234,14 +295,14 @@ export function NewPostForm({ onSubmit, isSubmitting }: NewPostFormProps) {
 				>
 					<SortableContext items={sortableIds} strategy={rectSortingStrategy}>
 						<div role="listbox" className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-							{previews.map((url, i) => (
+							{items.map((item, i) => (
 								<SortablePreview
-									key={sortableIds[i]}
-									id={sortableIds[i]}
-									url={url}
+									key={item.key}
+									id={item.key}
+									url={item.url}
 									index={i}
-									isOver={overId === sortableIds[i]}
-									onRemove={() => removeFile(i)}
+									isOver={overId === item.key}
+									onRemove={() => removeItem(i)}
 								/>
 							))}
 						</div>
@@ -251,7 +312,7 @@ export function NewPostForm({ onSubmit, isSubmitting }: NewPostFormProps) {
 
 			<Button type="submit" className="w-full" disabled={!canSubmit}>
 				<LoaderIcon loading={isSubmitting} />
-				{isSubmitting ? "Publikowanie..." : "Opublikuj"}
+				{isSubmitting ? "Zapisywanie..." : "Zapisz zmiany"}
 			</Button>
 		</form>
 	);

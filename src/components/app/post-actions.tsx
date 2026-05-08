@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 import { MoreHorizontalIcon, PencilIcon, TrashIcon } from "lucide-react";
 import { useRef, useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -19,23 +20,11 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { LoaderIcon } from "@/components/ui/spinner";
-import { Textarea } from "@/components/ui/textarea";
 
 interface PostActionsProps {
 	postId: string;
 	description: string | null;
 	onDeleted?: () => void;
-}
-
-async function editPost(postId: string, description: string | null) {
-	const res = await fetch(`/api/app/posts/${postId}`, {
-		method: "PATCH",
-		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify({ description }),
-	});
-	if (res.status === 403) throw new Error("Brak uprawnień do edycji tego posta");
-	if (!res.ok) throw new Error("Nie udało się edytować posta");
-	return res.json();
 }
 
 async function deletePost(postId: string) {
@@ -45,21 +34,11 @@ async function deletePost(postId: string) {
 	return res.json();
 }
 
-export function PostActions({ postId, description, onDeleted }: PostActionsProps) {
+export function PostActions({ postId, description: _description, onDeleted }: PostActionsProps) {
 	const queryClient = useQueryClient();
-	const [editOpen, setEditOpen] = useState(false);
+	const navigate = useNavigate();
 	const [deleteOpen, setDeleteOpen] = useState(false);
-	const [editValue, setEditValue] = useState(description ?? "");
 	const deleteButtonRef = useRef<HTMLButtonElement>(null);
-
-	const editMutation = useMutation({
-		mutationFn: (newDescription: string | null) => editPost(postId, newDescription),
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["posts"] });
-			queryClient.invalidateQueries({ queryKey: ["posts", postId] });
-			setEditOpen(false);
-		},
-	});
 
 	const deleteMutation = useMutation({
 		mutationFn: () => deletePost(postId),
@@ -82,15 +61,11 @@ export function PostActions({ postId, description, onDeleted }: PostActionsProps
 				</DropdownMenuTrigger>
 				<DropdownMenuContent align="end" side="top" className="min-w-48">
 					<DropdownMenuItem
-						onSelect={() => {
-							setEditValue(description ?? "");
-							editMutation.reset();
-							setEditOpen(true);
-						}}
+						onSelect={() => navigate({ to: "/app/post/$id/edit", params: { id: postId } })}
 						className="py-3 sm:py-1.5 text-base sm:text-sm"
 					>
 						<PencilIcon />
-						Edytuj opis
+						Edytuj
 					</DropdownMenuItem>
 					<DropdownMenuItem
 						variant="destructive"
@@ -105,43 +80,6 @@ export function PostActions({ postId, description, onDeleted }: PostActionsProps
 					</DropdownMenuItem>
 				</DropdownMenuContent>
 			</DropdownMenu>
-
-			<Dialog open={editOpen} onOpenChange={setEditOpen}>
-				<DialogContent className="max-h-[90vh] overflow-y-auto">
-					<DialogHeader>
-						<DialogTitle>Edytuj opis</DialogTitle>
-					</DialogHeader>
-					{editMutation.isError && (
-						<Alert variant="destructive">
-							<AlertDescription>{editMutation.error.message}</AlertDescription>
-						</Alert>
-					)}
-					<Textarea
-						value={editValue}
-						onChange={(e) => setEditValue(e.target.value)}
-						maxLength={2000}
-						rows={4}
-						placeholder="Opis (opcjonalnie)"
-					/>
-					<DialogFooter className="gap-2 sm:gap-0">
-						<Button
-							variant="outline"
-							onClick={() => setEditOpen(false)}
-							className="h-12 text-base sm:h-auto sm:text-sm flex-1 sm:flex-none"
-						>
-							Anuluj
-						</Button>
-						<Button
-							onClick={() => editMutation.mutate(editValue || null)}
-							disabled={editMutation.isPending}
-							className="h-12 text-base sm:h-auto sm:text-sm flex-1 sm:flex-none"
-						>
-							<LoaderIcon loading={editMutation.isPending} />
-							{editMutation.isPending ? "Zapisywanie..." : "Zapisz"}
-						</Button>
-					</DialogFooter>
-				</DialogContent>
-			</Dialog>
 
 			<Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
 				<DialogContent

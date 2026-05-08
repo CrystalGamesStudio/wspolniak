@@ -188,6 +188,55 @@ export async function updatePostDescription(
 	return rows[0] ?? null;
 }
 
+export async function addPostImages(
+	postId: string,
+	cfImageIds: string[],
+	startOrder: number,
+): Promise<PostImage[]> {
+	if (cfImageIds.length === 0) return [];
+
+	const db = getDb();
+	return db
+		.insert(postImages)
+		.values(
+			cfImageIds.map((cfImageId, index) => ({
+				id: crypto.randomUUID(),
+				postId,
+				cfImageId,
+				displayOrder: startOrder + index,
+			})),
+		)
+		.returning();
+}
+
+export async function deletePostImage(postId: string, imageId: string): Promise<PostImage | null> {
+	const rows = await getDb()
+		.delete(postImages)
+		.where(and(eq(postImages.id, imageId), eq(postImages.postId, postId)))
+		.returning();
+
+	return rows[0] ?? null;
+}
+
+export async function reorderPostImages(postId: string, imageIds: string[]): Promise<PostImage[]> {
+	if (imageIds.length === 0) return [];
+
+	const db = getDb();
+	const results: PostImage[] = [];
+	for (let i = 0; i < imageIds.length; i++) {
+		const imageId = imageIds[i];
+		if (!imageId) continue;
+		const rows = await db
+			.update(postImages)
+			.set({ displayOrder: i })
+			.where(and(eq(postImages.id, imageId), eq(postImages.postId, postId)))
+			.returning();
+		const row = rows[0];
+		if (row) results.push(row);
+	}
+	return results;
+}
+
 export async function softDeletePost(id: string): Promise<Post | null> {
 	const rows = await getDb()
 		.update(posts)

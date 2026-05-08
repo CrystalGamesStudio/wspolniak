@@ -4,10 +4,13 @@ import { notifyNewPost } from "@/core/notify";
 import { createSendWebPushFromEnv } from "@/core/web-push";
 import { countCommentsByPosts } from "@/db/comments/queries";
 import {
+	addPostImages,
 	countUserPostsToday,
 	createPost,
+	deletePostImage,
 	getPostById,
 	listPaginatedPosts,
+	reorderPostImages,
 	softDeletePost,
 	updatePostDescription,
 } from "@/db/posts/queries";
@@ -147,6 +150,21 @@ postsEndpoint.patch("/:id", async (c) => {
 		return c.json({ error: "Forbidden" }, 403);
 	}
 
+	const { cfImageIds, imageOrder } = result.data;
+
+	if (imageOrder) {
+		const knownIds = new Set(post.images.map((img) => img.id));
+		const hasUnknown = imageOrder.some((id) => !knownIds.has(id));
+		if (hasUnknown) {
+			return c.json({ error: "imageOrder contains unknown image ids" }, 400);
+		}
+		await reorderPostImages(post.id, imageOrder);
+	}
+
+	if (cfImageIds && cfImageIds.length > 0) {
+		await addPostImages(post.id, cfImageIds, post.images.length);
+	}
+
 	const updated = await updatePostDescription(post.id, result.data.description);
 	return c.json({ data: updated });
 });
@@ -165,6 +183,26 @@ postsEndpoint.delete("/:id", async (c) => {
 
 	await softDeletePost(post.id);
 	return c.json({ data: { id: post.id } });
+});
+
+postsEndpoint.delete("/:id/images/:imageId", async (c) => {
+	const user = c.get("user");
+
+	const post = await getPostById(c.req.param("id"));
+	if (!post) {
+		return c.json({ error: "Not found" }, 404);
+	}
+
+	if (!canEditPost(user, post)) {
+		return c.json({ error: "Forbidden" }, 403);
+	}
+
+	const deleted = await deletePostImage(post.id, c.req.param("imageId"));
+	if (!deleted) {
+		return c.json({ error: "Not found" }, 404);
+	}
+
+	return c.json({ data: { id: deleted.id } });
 });
 
 export default postsEndpoint;
