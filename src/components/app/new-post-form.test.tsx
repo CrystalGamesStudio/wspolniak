@@ -1,6 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { NewPostForm } from "./new-post-form";
+
+function makeFile(name: string) {
+	return new File(["x"], name, { type: "image/jpeg" });
+}
 
 describe("NewPostForm", () => {
 	it("renders file picker and description input", () => {
@@ -27,5 +32,68 @@ describe("NewPostForm", () => {
 		const button = screen.getByRole("button", { name: /publikowanie/i });
 		expect(button).toBeDefined();
 		expect((button as HTMLButtonElement).disabled).toBe(true);
+	});
+
+	describe("image reorder via drag-and-drop", () => {
+		it("renders sortable items after file selection", async () => {
+			const { container } = render(<NewPostForm onSubmit={vi.fn()} isSubmitting={false} />);
+
+			const input = container.querySelector("input[type='file']") as HTMLInputElement;
+			await userEvent.upload(input, [makeFile("a.jpg"), makeFile("b.jpg"), makeFile("c.jpg")]);
+
+			const images = screen.getAllByRole("img");
+			expect(images).toHaveLength(3);
+			expect(images[0].getAttribute("alt")).toBe("Podgląd 1");
+			expect(images[1].getAttribute("alt")).toBe("Podgląd 2");
+			expect(images[2].getAttribute("alt")).toBe("Podgląd 3");
+
+			// Each preview should have a sortable drag handle
+			const list = container.querySelector("[role='listbox']");
+			expect(list).not.toBeNull();
+			const items = within(list as HTMLElement).getAllByRole("option");
+			expect(items).toHaveLength(3);
+		});
+
+		it("reorders files and submits in new order", async () => {
+			const onSubmit = vi.fn();
+			const { container } = render(<NewPostForm onSubmit={onSubmit} isSubmitting={false} />);
+
+			const input = container.querySelector("input[type='file']") as HTMLInputElement;
+			const fileA = makeFile("a.jpg");
+			const fileB = makeFile("b.jpg");
+			const fileC = makeFile("c.jpg");
+			await userEvent.upload(input, [fileA, fileB, fileC]);
+
+			// Simulate drag: move item at index 0 to index 2
+			const list = container.querySelector("[role='listbox']") as HTMLElement;
+			const items = within(list).getAllByRole("option");
+			const source = items[0] as HTMLElement;
+			const target = items[2] as HTMLElement;
+
+			const sourceRect = source.getBoundingClientRect();
+			const targetRect = target.getBoundingClientRect();
+
+			fireEvent.pointerDown(source, {
+				clientX: sourceRect.left + sourceRect.width / 2,
+				clientY: sourceRect.top + sourceRect.height / 2,
+				pointerId: 1,
+			});
+			fireEvent.pointerMove(source, {
+				clientX: targetRect.left + targetRect.width / 2,
+				clientY: targetRect.top + targetRect.height / 2,
+				pointerId: 1,
+			});
+			fireEvent.pointerUp(window, { pointerId: 1 });
+
+			// Submit the form
+			await userEvent.type(screen.getByLabelText(/tekst/i), "test");
+			await userEvent.click(screen.getByRole("button", { name: /opublikuj/i }));
+
+			expect(onSubmit).toHaveBeenCalledWith(
+				expect.objectContaining({
+					files: [fileB, fileC, fileA],
+				}),
+			);
+		});
 	});
 });
