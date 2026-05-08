@@ -1,3 +1,10 @@
+# [1.23.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.22.0...v1.23.0) (2026-05-08)
+
+
+### Features
+
+* **ui:** add drag-and-drop image reordering in new post form ([1108e03](https://github.com/CrystalGamesStudio/wspolniak/commit/1108e03dd5fe64c5a3c94c76259540c5a672f397)), closes [#40](https://github.com/CrystalGamesStudio/wspolniak/issues/40)
+
 # [1.22.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.21.0...v1.22.0) (2026-05-08)
 
 
