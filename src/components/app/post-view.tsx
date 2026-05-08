@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { Download } from "lucide-react";
+import { useState } from "react";
+import { ImageLightbox } from "@/components/app/image-lightbox";
 import { PostActions } from "@/components/app/post-actions";
 import { getImageUrl } from "@/images/client";
 import { downloadImage } from "@/lib/download-image";
@@ -39,6 +41,18 @@ export function PostView({
 }: PostViewProps) {
 	const canManage = currentUserId === post.authorId || currentUserRole === "admin";
 
+	const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+
+	const lightboxImages = post.images.map((img) => ({
+		id: img.id,
+		src: getImageUrl({
+			accountHash: imageAccountHash,
+			cfImageId: img.cfImageId,
+			variant: "public",
+		}),
+		alt: `Zdjęcie ${img.displayOrder + 1}`,
+	}));
+
 	return (
 		<article className="space-y-4">
 			<div className="flex items-center gap-2">
@@ -64,7 +78,7 @@ export function PostView({
 			)}
 
 			<div className="space-y-2">
-				{post.images.map((image) => {
+				{post.images.map((image, index) => {
 					const src = getImageUrl({
 						accountHash: imageAccountHash,
 						cfImageId: image.cfImageId,
@@ -72,12 +86,19 @@ export function PostView({
 					});
 					return (
 						<div key={image.id} className="group relative">
-							<img
-								src={src}
-								alt={`Zdjęcie ${image.displayOrder + 1}`}
-								className="w-full rounded-lg"
-								loading="lazy"
-							/>
+							<button
+								type="button"
+								onClick={() => setLightboxIndex(index)}
+								className="w-full"
+								aria-label={`Otwórz zdjęcie ${image.displayOrder + 1}`}
+							>
+								<img
+									src={src}
+									alt={`Zdjęcie ${image.displayOrder + 1}`}
+									className="w-full rounded-lg"
+									loading="lazy"
+								/>
+							</button>
 							<button
 								type="button"
 								onClick={() => downloadImage(src, `post-${image.displayOrder + 1}.jpg`)}
@@ -90,6 +111,13 @@ export function PostView({
 					);
 				})}
 			</div>
+
+			<ImageLightbox
+				images={lightboxImages}
+				initialIndex={lightboxIndex ?? 0}
+				open={lightboxIndex !== null}
+				onClose={() => setLightboxIndex(null)}
+			/>
 		</article>
 	);
 }

@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { ExternalLinkIcon, MessageCircleIcon } from "lucide-react";
+import { useState } from "react";
+import { ImageLightbox } from "@/components/app/image-lightbox";
 import { PostActions } from "@/components/app/post-actions";
 import { Spinner } from "@/components/ui/spinner";
 import { getImageUrl } from "@/images/client";
@@ -42,6 +44,20 @@ export function Feed({
 	isFetchingNextPage,
 	loadMoreRef,
 }: FeedProps) {
+	const [lightboxPostId, setLightboxPostId] = useState<string | null>(null);
+	const [lightboxIndex, setLightboxIndex] = useState(0);
+
+	const lightboxPost = posts.find((p) => p.id === lightboxPostId);
+	const lightboxImages = lightboxPost?.images.map((img) => ({
+		id: img.id,
+		src: getImageUrl({
+			accountHash: imageAccountHash,
+			cfImageId: img.cfImageId,
+			variant: "public",
+		}),
+		alt: `Zdjęcie ${img.displayOrder + 1}`,
+	}));
+
 	if (posts.length === 0) {
 		return (
 			<div className="py-12 text-center">
@@ -73,10 +89,14 @@ export function Feed({
 					)}
 
 					<div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-						{post.images.map((image) => (
-							<a
+						{post.images.map((image, index) => (
+							<button
 								key={image.id}
-								href={`/app/post/${post.id}`}
+								type="button"
+								onClick={() => {
+									setLightboxPostId(post.id);
+									setLightboxIndex(index);
+								}}
 								className="overflow-hidden rounded-md"
 							>
 								<img
@@ -89,7 +109,7 @@ export function Feed({
 									className="aspect-square w-full object-cover transition-transform hover:scale-105"
 									loading="lazy"
 								/>
-							</a>
+							</button>
 						))}
 					</div>
 
@@ -107,6 +127,7 @@ export function Feed({
 							aria-label="Otwórz pełny post"
 						>
 							<ExternalLinkIcon className="size-6 sm:size-4" />
+							<span className="sm:hidden">Otwórz</span>
 							<span className="hidden sm:inline">Otwórz pełny post</span>
 						</a>
 					</div>
@@ -121,6 +142,15 @@ export function Feed({
 					<p className="py-4 text-center text-muted-foreground">Koniec</p>
 				)}
 			</div>
+
+			{lightboxImages && lightboxImages.length > 0 && (
+				<ImageLightbox
+					images={lightboxImages}
+					initialIndex={lightboxIndex}
+					open={lightboxPostId !== null}
+					onClose={() => setLightboxPostId(null)}
+				/>
+			)}
 		</div>
 	);
 }
