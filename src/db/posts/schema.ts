@@ -18,6 +18,8 @@ export const updatePostSchema = z.object({
 		.max(2000)
 		.nullish()
 		.transform((v) => v ?? null),
+	cfImageIds: z.array(z.string().min(1)).max(10).optional(),
+	imageOrder: z.array(z.string().min(1)).max(10).optional(),
 });
 
 export type UpdatePostRequest = z.infer<typeof updatePostSchema>;

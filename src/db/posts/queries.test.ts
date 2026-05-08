@@ -1,10 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import {
+	addPostImages,
 	countUserPostsToday,
 	createPost,
+	deletePostImage,
 	getPostById,
 	listPaginatedPosts,
 	listRecentPosts,
+	reorderPostImages,
 	softDeletePost,
 	updatePostDescription,
 } from "./queries";
@@ -493,5 +496,108 @@ describe("softDeletePost", () => {
 		const result = await softDeletePost("non-existent");
 
 		expect(result).toBeNull();
+	});
+});
+
+describe("addPostImages", () => {
+	it("inserts new images with correct display order", async () => {
+		const now = new Date();
+		const newImages = [
+			{ id: "img-3", postId: "post-1", cfImageId: "cf-ccc", displayOrder: 2, createdAt: now },
+			{ id: "img-4", postId: "post-1", cfImageId: "cf-ddd", displayOrder: 3, createdAt: now },
+		];
+
+		mockDbWithInsert(new Map<unknown, { rows: unknown[] }>([[postImages, { rows: newImages }]]));
+
+		const result = await addPostImages("post-1", ["cf-ccc", "cf-ddd"], 2);
+
+		expect(result).toHaveLength(2);
+		expect(result[0]?.cfImageId).toBe("cf-ccc");
+		expect(result[0]?.displayOrder).toBe(2);
+		expect(result[1]?.cfImageId).toBe("cf-ddd");
+		expect(result[1]?.displayOrder).toBe(3);
+	});
+
+	it("returns empty array when no image ids provided", async () => {
+		const result = await addPostImages("post-1", [], 0);
+
+		expect(result).toEqual([]);
+	});
+});
+
+describe("deletePostImage", () => {
+	it("deletes image by id and postId and returns deleted row", async () => {
+		const now = new Date();
+		const deletedImage = {
+			id: "img-1",
+			postId: "post-1",
+			cfImageId: "cf-aaa",
+			displayOrder: 0,
+			createdAt: now,
+		};
+
+		const mockReturning = vi.fn().mockResolvedValue([deletedImage]);
+		const mockWhere = vi.fn().mockReturnValue({ returning: mockReturning });
+		const mockDelete = vi.fn().mockReturnValue({ where: mockWhere });
+		mockGetDb.mockReturnValue({ delete: mockDelete } as never);
+
+		const result = await deletePostImage("post-1", "img-1");
+
+		expect(result).not.toBeNull();
+		expect(result?.id).toBe("img-1");
+	});
+
+	it("returns null when image does not exist", async () => {
+		const mockReturning = vi.fn().mockResolvedValue([]);
+		const mockWhere = vi.fn().mockReturnValue({ returning: mockReturning });
+		const mockDelete = vi.fn().mockReturnValue({ where: mockWhere });
+		mockGetDb.mockReturnValue({ delete: mockDelete } as never);
+
+		const result = await deletePostImage("post-1", "non-existent");
+
+		expect(result).toBeNull();
+	});
+});
+
+describe("reorderPostImages", () => {
+	it("updates display order for all images of a post", async () => {
+		const now = new Date();
+		const imagesById = new Map([
+			[
+				"img-2",
+				{ id: "img-2", postId: "post-1", cfImageId: "cf-bbb", displayOrder: 0, createdAt: now },
+			],
+			[
+				"img-1",
+				{ id: "img-1", postId: "post-1", cfImageId: "cf-aaa", displayOrder: 1, createdAt: now },
+			],
+		]);
+
+		let callIndex = 0;
+		const order = ["img-2", "img-1"];
+		const mockReturning = vi.fn().mockImplementation(() => {
+			const id = order[callIndex++];
+			const img = id ? imagesById.get(id) : undefined;
+			return img ? [img] : [];
+		});
+		const mockSet = vi
+			.fn()
+			.mockReturnValue({ where: vi.fn().mockReturnValue({ returning: mockReturning }) });
+		const mockUpdate = vi.fn().mockReturnValue({ set: mockSet });
+		mockGetDb.mockReturnValue({ update: mockUpdate } as never);
+
+		const result = await reorderPostImages("post-1", ["img-2", "img-1"]);
+
+		expect(result).toHaveLength(2);
+		expect(result[0]?.id).toBe("img-2");
+		expect(result[0]?.displayOrder).toBe(0);
+		expect(result[1]?.id).toBe("img-1");
+		expect(result[1]?.displayOrder).toBe(1);
+	});
+
+	it("returns empty array when no image ids provided", async () => {
+		const result = await reorderPostImages("post-1", []);
+
+		expect(result).toEqual([]);
 	});
 });

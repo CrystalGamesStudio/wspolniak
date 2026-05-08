@@ -18,6 +18,9 @@ vi.mock("@/db/posts/queries", () => ({
 	countUserPostsToday: vi.fn(),
 	updatePostDescription: vi.fn(),
 	softDeletePost: vi.fn(),
+	addPostImages: vi.fn(),
+	reorderPostImages: vi.fn(),
+	deletePostImage: vi.fn(),
 }));
 
 vi.mock("@/db/comments/queries", () => ({
@@ -28,10 +31,13 @@ import { countCommentsByPosts } from "@/db/comments/queries";
 import { findActiveUserById } from "@/db/identity/queries";
 import { verifySessionCookie } from "@/db/identity/session";
 import {
+	addPostImages,
 	countUserPostsToday,
 	createPost,
+	deletePostImage,
 	getPostById,
 	listPaginatedPosts,
+	reorderPostImages,
 	softDeletePost,
 	updatePostDescription,
 } from "@/db/posts/queries";
@@ -46,6 +52,9 @@ const mockListPaginated = vi.mocked(listPaginatedPosts);
 const mockGetPost = vi.mocked(getPostById);
 const mockUpdateDescription = vi.mocked(updatePostDescription);
 const mockSoftDelete = vi.mocked(softDeletePost);
+const mockAddPostImages = vi.mocked(addPostImages);
+const mockReorderPostImages = vi.mocked(reorderPostImages);
+const mockDeletePostImage = vi.mocked(deletePostImage);
 
 function createApi() {
 	const api = new Hono<{
@@ -548,6 +557,108 @@ describe("PATCH /api/app/posts/:id", () => {
 	});
 });
 
+describe("PATCH /api/app/posts/:id — image operations", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		mockVerify.mockResolvedValue({ userId: "u1", name: "Tomek", role: "member" });
+		mockFindUser.mockResolvedValue({
+			id: "u1",
+			name: "Tomek",
+			role: "member",
+			tokenHash: "hash",
+			deletedAt: null,
+			note: null,
+			createdAt: new Date(),
+		});
+	});
+
+	it("adds new images to existing post via cfImageIds", async () => {
+		const now = new Date();
+		mockGetPost.mockResolvedValue({
+			...samplePost,
+			images: [
+				{ id: "img-1", postId: "post-1", cfImageId: "cf-aaa", displayOrder: 0, createdAt: now },
+			],
+		});
+		mockAddPostImages.mockResolvedValue([
+			{ id: "img-2", postId: "post-1", cfImageId: "cf-bbb", displayOrder: 1, createdAt: now },
+		]);
+		mockUpdateDescription.mockResolvedValue({ ...samplePost, updatedAt: now });
+
+		const api = createApi();
+		const res = await api.request(
+			"/api/app/posts/post-1",
+			authedRequest("/api/app/posts/post-1", {
+				method: "PATCH",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ cfImageIds: ["cf-bbb"] }),
+			}),
+			env,
+		);
+
+		expect(res.status).toBe(200);
+		expect(mockAddPostImages).toHaveBeenCalledWith("post-1", ["cf-bbb"], 1);
+	});
+
+	it("reorders images via imageOrder", async () => {
+		const now = new Date();
+		mockGetPost.mockResolvedValue({
+			...samplePost,
+			images: [
+				{ id: "img-1", postId: "post-1", cfImageId: "cf-aaa", displayOrder: 0, createdAt: now },
+				{ id: "img-2", postId: "post-1", cfImageId: "cf-bbb", displayOrder: 1, createdAt: now },
+			],
+		});
+		mockReorderPostImages.mockResolvedValue([
+			{ id: "img-2", postId: "post-1", cfImageId: "cf-bbb", displayOrder: 0, createdAt: now },
+			{ id: "img-1", postId: "post-1", cfImageId: "cf-aaa", displayOrder: 1, createdAt: now },
+		]);
+		mockUpdateDescription.mockResolvedValue({ ...samplePost, updatedAt: now });
+
+		const api = createApi();
+		const res = await api.request(
+			"/api/app/posts/post-1",
+			authedRequest("/api/app/posts/post-1", {
+				method: "PATCH",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ imageOrder: ["img-2", "img-1"] }),
+			}),
+			env,
+		);
+
+		expect(res.status).toBe(200);
+		expect(mockReorderPostImages).toHaveBeenCalledWith("post-1", ["img-2", "img-1"]);
+	});
+
+	it("returns 400 when imageOrder contains unknown image ids", async () => {
+		mockGetPost.mockResolvedValue({
+			...samplePost,
+			images: [
+				{
+					id: "img-1",
+					postId: "post-1",
+					cfImageId: "cf-aaa",
+					displayOrder: 0,
+					createdAt: new Date(),
+				},
+			],
+		});
+
+		const api = createApi();
+		const res = await api.request(
+			"/api/app/posts/post-1",
+			authedRequest("/api/app/posts/post-1", {
+				method: "PATCH",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ imageOrder: ["img-1", "img-hacked"] }),
+			}),
+			env,
+		);
+
+		expect(res.status).toBe(400);
+	});
+});
+
 describe("DELETE /api/app/posts/:id", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
@@ -643,6 +754,119 @@ describe("DELETE /api/app/posts/:id", () => {
 		mockVerify.mockResolvedValue(null);
 		const api = createApi();
 		const res = await api.request("/api/app/posts/post-1", { method: "DELETE" }, env);
+
+		expect(res.status).toBe(401);
+	});
+});
+
+describe("DELETE /api/app/posts/:id/images/:imageId", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		mockVerify.mockResolvedValue({ userId: "u1", name: "Tomek", role: "member" });
+		mockFindUser.mockResolvedValue({
+			id: "u1",
+			name: "Tomek",
+			role: "member",
+			tokenHash: "hash",
+			deletedAt: null,
+			note: null,
+			createdAt: new Date(),
+		});
+	});
+
+	it("allows author to delete an image from their post", async () => {
+		const now = new Date();
+		mockGetPost.mockResolvedValue({
+			...samplePost,
+			images: [
+				{ id: "img-1", postId: "post-1", cfImageId: "cf-aaa", displayOrder: 0, createdAt: now },
+			],
+		});
+		mockDeletePostImage.mockResolvedValue({
+			id: "img-1",
+			postId: "post-1",
+			cfImageId: "cf-aaa",
+			displayOrder: 0,
+			createdAt: now,
+		});
+
+		const api = createApi();
+		const res = await api.request(
+			"/api/app/posts/post-1/images/img-1",
+			authedRequest("/api/app/posts/post-1/images/img-1", { method: "DELETE" }),
+			env,
+		);
+
+		expect(res.status).toBe(200);
+		expect(mockDeletePostImage).toHaveBeenCalledWith("post-1", "img-1");
+	});
+
+	it("returns 403 for non-author", async () => {
+		mockVerify.mockResolvedValue({ userId: "u2", name: "Kasia", role: "member" });
+		mockFindUser.mockResolvedValue({
+			id: "u2",
+			name: "Kasia",
+			role: "member",
+			tokenHash: "hash",
+			deletedAt: null,
+			note: null,
+			createdAt: new Date(),
+		});
+		mockGetPost.mockResolvedValue(samplePost);
+
+		const api = createApi();
+		const res = await api.request(
+			"/api/app/posts/post-1/images/img-1",
+			authedRequest("/api/app/posts/post-1/images/img-1", { method: "DELETE" }),
+			env,
+		);
+
+		expect(res.status).toBe(403);
+		expect(mockDeletePostImage).not.toHaveBeenCalled();
+	});
+
+	it("returns 404 for non-existent post", async () => {
+		mockGetPost.mockResolvedValue(null);
+
+		const api = createApi();
+		const res = await api.request(
+			"/api/app/posts/non-existent/images/img-1",
+			authedRequest("/api/app/posts/non-existent/images/img-1", { method: "DELETE" }),
+			env,
+		);
+
+		expect(res.status).toBe(404);
+	});
+
+	it("returns 404 when image does not belong to post", async () => {
+		mockGetPost.mockResolvedValue({
+			...samplePost,
+			images: [
+				{
+					id: "img-1",
+					postId: "post-1",
+					cfImageId: "cf-aaa",
+					displayOrder: 0,
+					createdAt: new Date(),
+				},
+			],
+		});
+		mockDeletePostImage.mockResolvedValue(null);
+
+		const api = createApi();
+		const res = await api.request(
+			"/api/app/posts/post-1/images/img-999",
+			authedRequest("/api/app/posts/post-1/images/img-999", { method: "DELETE" }),
+			env,
+		);
+
+		expect(res.status).toBe(404);
+	});
+
+	it("returns 401 without session", async () => {
+		mockVerify.mockResolvedValue(null);
+		const api = createApi();
+		const res = await api.request("/api/app/posts/post-1/images/img-1", { method: "DELETE" }, env);
 
 		expect(res.status).toBe(401);
 	});
