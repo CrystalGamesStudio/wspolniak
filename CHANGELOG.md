@@ -1,3 +1,10 @@
+# [1.22.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.21.0...v1.22.0) (2026-05-08)
+
+
+### Features
+
+* **ui:** limit feed images to 2 with "+N więcej" overlay ([0a43dc3](https://github.com/CrystalGamesStudio/wspolniak/commit/0a43dc3bf26f784099e94b72e0d5d75bc46ae8b9)), closes [#39](https://github.com/CrystalGamesStudio/wspolniak/issues/39)
+
 # [1.21.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.20.0...v1.21.0) (2026-05-08)
 
 
