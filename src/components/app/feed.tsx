@@ -6,6 +6,8 @@ import { PostActions } from "@/components/app/post-actions";
 import { Spinner } from "@/components/ui/spinner";
 import { getImageUrl } from "@/images/client";
 
+const MAX_FEED_IMAGES = 2;
+
 interface FeedImage {
 	id: string;
 	postId: string;
@@ -68,71 +70,86 @@ export function Feed({
 
 	return (
 		<div className="space-y-6">
-			{posts.map((post) => (
-				<article key={post.id} className="rounded-lg border border-border bg-card p-4">
-					<div className="mb-2 flex items-center gap-2">
-						<span className="font-semibold text-foreground">{post.author.name}</span>
-						<time className="text-sm text-muted-foreground" dateTime={post.createdAt}>
-							{formatRelativeTime(post.createdAt)}
-						</time>
-						{(post.authorId === currentUserId || currentUserRole === "admin") && (
-							<div className="ml-auto">
-								<PostActions postId={post.id} description={post.description} />
+			{posts.map((post) => {
+				const visibleImages = post.images.slice(0, MAX_FEED_IMAGES);
+				const remaining = post.images.length - MAX_FEED_IMAGES;
+
+				return (
+					<article key={post.id} className="rounded-lg border border-border bg-card p-4">
+						<div className="mb-2 flex items-center gap-2">
+							<span className="font-semibold text-foreground">{post.author.name}</span>
+							<time className="text-sm text-muted-foreground" dateTime={post.createdAt}>
+								{formatRelativeTime(post.createdAt)}
+							</time>
+							{(post.authorId === currentUserId || currentUserRole === "admin") && (
+								<div className="ml-auto">
+									<PostActions postId={post.id} description={post.description} />
+								</div>
+							)}
+						</div>
+
+						{post.description && (
+							<p className="mb-3 whitespace-pre-wrap break-words text-foreground">
+								{post.description}
+							</p>
+						)}
+
+						{visibleImages.length > 0 && (
+							<div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+								{visibleImages.map((image, index) => {
+									const showOverlay = index === 1 && remaining > 0;
+									return (
+										<button
+											key={image.id}
+											type="button"
+											onClick={() => {
+												setLightboxPostId(post.id);
+												setLightboxIndex(index);
+											}}
+											className="relative overflow-hidden rounded-md"
+										>
+											<img
+												src={getImageUrl({
+													accountHash: imageAccountHash,
+													cfImageId: image.cfImageId,
+													variant: "thumbnail",
+												})}
+												alt={`Zdjęcie ${image.displayOrder + 1}`}
+												className="aspect-square w-full object-cover transition-transform hover:scale-105"
+												loading="lazy"
+											/>
+											{showOverlay && (
+												<span className="absolute inset-0 flex items-center justify-center bg-black/50 text-lg font-semibold text-white">
+													+{remaining} więcej
+												</span>
+											)}
+										</button>
+									);
+								})}
 							</div>
 						)}
-					</div>
 
-					{post.description && (
-						<p className="mb-3 whitespace-pre-wrap break-words text-foreground">
-							{post.description}
-						</p>
-					)}
-
-					<div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-						{post.images.map((image, index) => (
-							<button
-								key={image.id}
-								type="button"
-								onClick={() => {
-									setLightboxPostId(post.id);
-									setLightboxIndex(index);
-								}}
-								className="overflow-hidden rounded-md"
+						<div className="mt-3 flex items-center justify-between">
+							<a
+								href={`/app/post/${post.id}#comments`}
+								className="flex items-center gap-1 rounded-md px-2 py-1 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
 							>
-								<img
-									src={getImageUrl({
-										accountHash: imageAccountHash,
-										cfImageId: image.cfImageId,
-										variant: "thumbnail",
-									})}
-									alt={`Zdjęcie ${image.displayOrder + 1}`}
-									className="aspect-square w-full object-cover transition-transform hover:scale-105"
-									loading="lazy"
-								/>
-							</button>
-						))}
-					</div>
-
-					<div className="mt-3 flex items-center justify-between">
-						<a
-							href={`/app/post/${post.id}#comments`}
-							className="flex items-center gap-1 rounded-md px-2 py-1 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
-						>
-							<MessageCircleIcon className="size-6 sm:size-4" />
-							{post.commentCount ?? 0}
-						</a>
-						<a
-							href={`/app/post/${post.id}`}
-							className="flex items-center gap-1 rounded-md px-2 py-1 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
-							aria-label="Otwórz pełny post"
-						>
-							<ExternalLinkIcon className="size-6 sm:size-4" />
-							<span className="sm:hidden">Otwórz</span>
-							<span className="hidden sm:inline">Otwórz pełny post</span>
-						</a>
-					</div>
-				</article>
-			))}
+								<MessageCircleIcon className="size-6 sm:size-4" />
+								{post.commentCount ?? 0}
+							</a>
+							<a
+								href={`/app/post/${post.id}`}
+								className="flex items-center gap-1 rounded-md px-2 py-1 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+								aria-label="Otwórz pełny post"
+							>
+								<ExternalLinkIcon className="size-6 sm:size-4" />
+								<span className="sm:hidden">Otwórz</span>
+								<span className="hidden sm:inline">Otwórz pełny post</span>
+							</a>
+						</div>
+					</article>
+				);
+			})}
 
 			<div ref={loadMoreRef}>
 				<div className="flex items-center justify-center py-4">
