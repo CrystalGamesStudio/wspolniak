@@ -54,8 +54,8 @@ export function PostActions({ postId, description: _description, onDeleted }: Po
 		<>
 			<DropdownMenu>
 				<DropdownMenuTrigger asChild>
-					<Button variant="ghost" size="icon" className="size-12 sm:size-8">
-						<MoreHorizontalIcon className="size-6 sm:size-4" />
+					<Button variant="ghost" size="icon" className="size-12 sm:size-16">
+						<MoreHorizontalIcon className="size-6 sm:size-8" />
 						<span className="sr-only">Opcje posta</span>
 					</Button>
 				</DropdownMenuTrigger>

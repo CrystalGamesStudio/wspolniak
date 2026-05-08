@@ -5,18 +5,19 @@ import {
 	ArrowLeft,
 	Check,
 	Copy,
+	Download,
 	Info,
 	Link,
 	NotebookPen,
 	Pencil,
 	Plus,
-	QrCode,
+	Printer,
 	Share2,
 	Trash2,
 	X,
 } from "lucide-react";
-import { useState } from "react";
-import { QrCodeDialog } from "@/components/admin/qr-code-dialog";
+import QRCode from "qrcode";
+import { useEffect, useState } from "react";
 import { ThemeToggle } from "@/components/theme";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -55,7 +56,8 @@ function AdminPage() {
 	const [shareDialogOpen, setShareDialogOpen] = useState(false);
 	const [addDialogOpen, setAddDialogOpen] = useState(false);
 	const [shareCodeInput, setShareCodeInput] = useState("");
-	const [qrTarget, setQrTarget] = useState<Member | null>(null);
+	const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+	const [shareSupported, setShareSupported] = useState(false);
 
 	const configQuery = useQuery({
 		queryKey: ["config"],
@@ -178,13 +180,32 @@ function AdminPage() {
 		createMutation.mutate(trimmed);
 	}
 
-	const shareUrl = `/share`;
 	const currentShareCode = shareCodeQuery.data;
+	const fullShareUrl = currentShareCode
+		? `${appUrl}/share?code=${encodeURIComponent(currentShareCode)}`
+		: "";
 
-	const qrUrl =
-		qrTarget && currentShareCode
-			? `${appUrl}/share?code=${encodeURIComponent(currentShareCode)}&member=${encodeURIComponent(qrTarget.id)}`
-			: "";
+	useEffect(() => {
+		if (!shareDialogOpen || !fullShareUrl) {
+			setQrDataUrl(null);
+			return;
+		}
+		let cancelled = false;
+		QRCode.toDataURL(fullShareUrl, { errorCorrectionLevel: "M", margin: 2, width: 320 }).then(
+			(png) => {
+				if (!cancelled) setQrDataUrl(png);
+			},
+		);
+		return () => {
+			cancelled = true;
+		};
+	}, [shareDialogOpen, fullShareUrl]);
+
+	useEffect(() => {
+		if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
+			setShareSupported(true);
+		}
+	}, []);
 
 	function startEditShareCode() {
 		setShareCodeInput(currentShareCode ?? "");
@@ -197,6 +218,27 @@ function AdminPage() {
 		if (!trimmed) return;
 		shareCodeMutation.reset();
 		shareCodeMutation.mutate(trimmed);
+	}
+
+	function handleQrDownload() {
+		if (!qrDataUrl) return;
+		const anchor = document.createElement("a");
+		anchor.href = qrDataUrl;
+		anchor.download = "qr-wspolniak-share.png";
+		anchor.click();
+	}
+
+	async function handleQrShare() {
+		if (!fullShareUrl) return;
+		try {
+			await navigator.share({
+				title: "Logowanie do Wspólniaka",
+				text: "Kod dostępu do Wspólniaka",
+				url: fullShareUrl,
+			});
+		} catch {
+			// user cancelled or share failed
+		}
 	}
 
 	return (
@@ -308,24 +350,86 @@ function AdminPage() {
 								</Button>
 							</div>
 							{currentShareCode && (
-								<div className="flex items-center gap-2">
-									<code className="flex-1 overflow-x-auto rounded bg-muted px-2 py-1 text-xs text-muted-foreground">
-										{shareUrl}
-									</code>
-									<Button
-										size="sm"
-										variant="outline"
-										onClick={() => copyToClipboard(shareUrl)}
-										title="Kopiuj link"
-									>
-										{copiedLink === shareUrl ? (
-											<Check className="h-4 w-4" />
-										) : (
-											<Copy className="h-4 w-4" />
+								<div className="flex flex-col items-center gap-4 pt-2 screen-only">
+									{qrDataUrl && (
+										<div className="relative h-64 w-64">
+											<img
+												src={qrDataUrl}
+												alt="Kod QR /share"
+												className="h-64 w-64 rounded-md bg-card"
+											/>
+											<img
+												src="/logo/WspolniakIconLIGHT.png"
+												alt=""
+												className="absolute top-1/2 left-1/2 h-12 w-12 -translate-x-1/2 -translate-y-1/2 rounded-md bg-card p-1"
+											/>
+										</div>
+									)}
+									<div className="flex flex-wrap justify-center gap-2">
+										<Button variant="outline" onClick={handleQrDownload} disabled={!qrDataUrl}>
+											<Download className="mr-1 h-4 w-4" />
+											Pobierz PNG
+										</Button>
+										<Button variant="outline" onClick={() => window.print()} disabled={!qrDataUrl}>
+											<Printer className="mr-1 h-4 w-4" />
+											Drukuj
+										</Button>
+										{shareSupported && (
+											<Button variant="outline" onClick={handleQrShare} disabled={!qrDataUrl}>
+												<Share2 className="mr-1 h-4 w-4" />
+												Udostępnij
+											</Button>
 										)}
-									</Button>
+									</div>
 								</div>
 							)}
+							<div className="print-area hidden">
+								<div className="flex flex-col gap-2">
+									<h2 className="text-center text-xl font-bold text-black">Wspólniak</h2>
+									<div className="flex items-start gap-4">
+										<div className="flex flex-col items-start gap-1">
+											<img src="/logo/WspolniakLogoLIGHT.png" alt="Wspólniak" className="h-48" />
+											<p className="text-xs break-all text-gray-600">{appUrl}/share</p>
+										</div>
+										<div className="flex-1" />
+										{qrDataUrl && (
+											<div className="relative h-48 w-48 shrink-0">
+												<img src={qrDataUrl} alt="Kod QR /share" className="h-48 w-48" />
+												<img
+													src="/logo/WspolniakIconLIGHT.png"
+													alt=""
+													className="absolute top-1/2 left-1/2 h-10 w-10 -translate-x-1/2 -translate-y-1/2 rounded-md bg-white p-1"
+												/>
+											</div>
+										)}
+									</div>
+									<div className="flex items-start gap-4">
+										<div className="text-left text-sm leading-relaxed text-black">
+											<p className="font-semibold">Jak się zalogować:</p>
+											<ul className="mt-1 text-left pl-5 list-decimal space-y-0.5">
+												<li>Zeskanuj kod QR aparatem telefonu</li>
+												<li>Wybierz swoje imię z listy</li>
+												<li>Gotowe — jesteś zalogowany!</li>
+											</ul>
+										</div>
+										<div className="flex-1" />
+										<div className="text-right text-sm text-black">
+											{currentShareCode && (
+												<p>
+													Kod: <strong>{currentShareCode}</strong>
+												</p>
+											)}
+											<p>
+												<strong>
+													W razie pytań
+													<br />
+													podejdź do Adama
+												</strong>
+											</p>
+										</div>
+									</div>
+								</div>
+							</div>
 						</>
 					)}
 				</DialogContent>
@@ -370,17 +474,6 @@ function AdminPage() {
 				</DialogContent>
 			</Dialog>
 
-			{qrTarget && (
-				<QrCodeDialog
-					open={true}
-					onOpenChange={(open) => {
-						if (!open) setQrTarget(null);
-					}}
-					url={qrUrl}
-					memberName={qrTarget.name}
-				/>
-			)}
-
 			{lastMagicLink && (
 				<div className="mb-6 rounded-lg border border-border bg-card p-4">
 					<p className="mb-2 text-sm font-medium text-foreground">
@@ -412,8 +505,8 @@ function AdminPage() {
 				>
 					<Info className="mt-0.5 h-4 w-4 shrink-0" />
 					<span>
-						<strong className="text-foreground">Kody QR są wyłączone.</strong> Aby je włączyć, ustaw
-						najpierw kod dostępu w sekcji <strong>Udostępnianie</strong>. Kliknij, aby otworzyć.
+						<strong className="text-foreground">Udostępnianie jest wyłączone.</strong> Ustaw kod
+						dostępu w sekcji <strong>Udostępnianie</strong>. Kliknij, aby otworzyć.
 					</span>
 				</button>
 			)}
@@ -424,11 +517,9 @@ function AdminPage() {
 						<MemberRow
 							key={member.id}
 							member={member}
-							hasShareCode={Boolean(currentShareCode)}
 							isRegenerating={regenerateMutation.isPending}
 							isDeleting={deleteMutation.isPending}
 							isSavingNote={noteMutation.isPending}
-							onShowQr={() => setQrTarget(member)}
 							onRegenerate={() => regenerateMutation.mutate({ id: member.id, name: member.name })}
 							onDelete={() => deleteMutation.mutate(member.id)}
 							onSaveNote={(note) => noteMutation.mutate({ id: member.id, note })}
@@ -442,11 +533,9 @@ function AdminPage() {
 
 interface MemberRowProps {
 	member: Member;
-	hasShareCode: boolean;
 	isRegenerating: boolean;
 	isDeleting: boolean;
 	isSavingNote: boolean;
-	onShowQr: () => void;
 	onRegenerate: () => void;
 	onDelete: () => void;
 	onSaveNote: (note: string) => void;
@@ -454,11 +543,9 @@ interface MemberRowProps {
 
 function MemberRow({
 	member,
-	hasShareCode,
 	isRegenerating,
 	isDeleting,
 	isSavingNote,
-	onShowQr,
 	onRegenerate,
 	onDelete,
 	onSaveNote,
@@ -494,15 +581,6 @@ function MemberRow({
 					)}
 					{member.role !== "admin" && (
 						<>
-							<Button
-								size="sm"
-								variant="ghost"
-								onClick={onShowQr}
-								disabled={!hasShareCode}
-								title={hasShareCode ? "Kod QR" : "Najpierw ustaw kod /share"}
-							>
-								<QrCode className="h-4 w-4" />
-							</Button>
 							<Button
 								size="sm"
 								variant="ghost"
