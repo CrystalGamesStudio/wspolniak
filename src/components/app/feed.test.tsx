@@ -133,6 +133,57 @@ describe("Feed", () => {
 		expect(screen.queryByText(/koniec/i)).toBeNull();
 	});
 
+	it("renders at most 2 images per post", () => {
+		const now = new Date().toISOString();
+		const posts = [
+			{
+				id: "post-1",
+				authorId: "u1",
+				description: null,
+				createdAt: now,
+				updatedAt: now,
+				author: { id: "u1", name: "Tomek" },
+				images: Array.from({ length: 5 }, (_, i) => ({
+					id: `img-${i}`,
+					postId: "post-1",
+					cfImageId: `cf-${i}`,
+					displayOrder: i,
+					createdAt: now,
+				})),
+			},
+		];
+
+		render(<Feed posts={posts} {...defaultProps} />, { wrapper: createWrapper() });
+
+		const images = screen.getAllByRole("img");
+		expect(images).toHaveLength(2);
+	});
+
+	it("shows '+N więcej' overlay when post has more than 2 images", () => {
+		const now = new Date().toISOString();
+		const posts = [
+			{
+				id: "post-1",
+				authorId: "u1",
+				description: null,
+				createdAt: now,
+				updatedAt: now,
+				author: { id: "u1", name: "Tomek" },
+				images: Array.from({ length: 5 }, (_, i) => ({
+					id: `img-${i}`,
+					postId: "post-1",
+					cfImageId: `cf-${i}`,
+					displayOrder: i,
+					createdAt: now,
+				})),
+			},
+		];
+
+		render(<Feed posts={posts} {...defaultProps} />, { wrapper: createWrapper() });
+
+		expect(screen.getByText("+3 więcej")).toBeDefined();
+	});
+
 	it("shows loading indicator when fetching next page", async () => {
 		const now = new Date().toISOString();
 		const posts = [
