@@ -1,3 +1,10 @@
+# [1.21.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.20.0...v1.21.0) (2026-05-08)
+
+
+### Features
+
+* **ui:** add image lightbox with swipe, keyboard nav and download ([4ef598d](https://github.com/CrystalGamesStudio/wspolniak/commit/4ef598dc1a959cec2938782c7e4e9c5abfe24269))
+
 # [1.20.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.19.1...v1.20.0) (2026-05-07)
 
 
