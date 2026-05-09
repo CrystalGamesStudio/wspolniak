@@ -1,3 +1,10 @@
+## [1.25.1](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.25.0...v1.25.1) (2026-05-09)
+
+
+### Bug Fixes
+
+* resolve QR share crash, lightbox download, and feed image ordering ([cc706a9](https://github.com/CrystalGamesStudio/wspolniak/commit/cc706a9bd1f9185d4969144470af3d48110896d0)), closes [#42](https://github.com/CrystalGamesStudio/wspolniak/issues/42)
+
 # [1.25.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.24.0...v1.25.0) (2026-05-08)
 
 
