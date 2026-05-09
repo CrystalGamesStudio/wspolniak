@@ -1,3 +1,10 @@
+# [1.26.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.25.1...v1.26.0) (2026-05-09)
+
+
+### Features
+
+* **ui:** add desktop sidebar navigation and enlarge mobile tap targets ([3c76497](https://github.com/CrystalGamesStudio/wspolniak/commit/3c76497229b38a5f176491ae2b045ce3a23c3f0a))
+
 ## [1.25.1](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.25.0...v1.25.1) (2026-05-09)
 
 
