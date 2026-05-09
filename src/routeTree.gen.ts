@@ -16,6 +16,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app/index'
 import { Route as AuthErrorRouteImport } from './routes/auth/error'
 import { Route as AppNewRouteImport } from './routes/app/new'
+import { Route as AppFeedbackRouteImport } from './routes/app/feedback'
 import { Route as AppAdminRouteImport } from './routes/app/admin'
 import { Route as AppPostIdRouteImport } from './routes/app/post.$id'
 import { Route as AppPostIdEditRouteImport } from './routes/app/post.$id_.edit'
@@ -55,6 +56,11 @@ const AppNewRoute = AppNewRouteImport.update({
   path: '/new',
   getParentRoute: () => AppRoute,
 } as any)
+const AppFeedbackRoute = AppFeedbackRouteImport.update({
+  id: '/feedback',
+  path: '/feedback',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppAdminRoute = AppAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -77,6 +83,7 @@ export interface FileRoutesByFullPath {
   '/setup': typeof SetupRoute
   '/share': typeof ShareRoute
   '/app/admin': typeof AppAdminRoute
+  '/app/feedback': typeof AppFeedbackRoute
   '/app/new': typeof AppNewRoute
   '/auth/error': typeof AuthErrorRoute
   '/app/': typeof AppIndexRoute
@@ -88,6 +95,7 @@ export interface FileRoutesByTo {
   '/setup': typeof SetupRoute
   '/share': typeof ShareRoute
   '/app/admin': typeof AppAdminRoute
+  '/app/feedback': typeof AppFeedbackRoute
   '/app/new': typeof AppNewRoute
   '/auth/error': typeof AuthErrorRoute
   '/app': typeof AppIndexRoute
@@ -101,6 +109,7 @@ export interface FileRoutesById {
   '/setup': typeof SetupRoute
   '/share': typeof ShareRoute
   '/app/admin': typeof AppAdminRoute
+  '/app/feedback': typeof AppFeedbackRoute
   '/app/new': typeof AppNewRoute
   '/auth/error': typeof AuthErrorRoute
   '/app/': typeof AppIndexRoute
@@ -115,6 +124,7 @@ export interface FileRouteTypes {
     | '/setup'
     | '/share'
     | '/app/admin'
+    | '/app/feedback'
     | '/app/new'
     | '/auth/error'
     | '/app/'
@@ -126,6 +136,7 @@ export interface FileRouteTypes {
     | '/setup'
     | '/share'
     | '/app/admin'
+    | '/app/feedback'
     | '/app/new'
     | '/auth/error'
     | '/app'
@@ -138,6 +149,7 @@ export interface FileRouteTypes {
     | '/setup'
     | '/share'
     | '/app/admin'
+    | '/app/feedback'
     | '/app/new'
     | '/auth/error'
     | '/app/'
@@ -204,6 +216,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppNewRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/feedback': {
+      id: '/app/feedback'
+      path: '/feedback'
+      fullPath: '/app/feedback'
+      preLoaderRoute: typeof AppFeedbackRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/admin': {
       id: '/app/admin'
       path: '/admin'
@@ -230,6 +249,7 @@ declare module '@tanstack/react-router' {
 
 interface AppRouteChildren {
   AppAdminRoute: typeof AppAdminRoute
+  AppFeedbackRoute: typeof AppFeedbackRoute
   AppNewRoute: typeof AppNewRoute
   AppIndexRoute: typeof AppIndexRoute
   AppPostIdRoute: typeof AppPostIdRoute
@@ -238,6 +258,7 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppAdminRoute: AppAdminRoute,
+  AppFeedbackRoute: AppFeedbackRoute,
   AppNewRoute: AppNewRoute,
   AppIndexRoute: AppIndexRoute,
   AppPostIdRoute: AppPostIdRoute,

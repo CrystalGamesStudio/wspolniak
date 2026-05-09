@@ -132,14 +132,14 @@ export function Feed({
 						<div className="mt-3 flex items-center justify-between">
 							<a
 								href={`/app/post/${post.id}#comments`}
-								className="flex items-center gap-1 rounded-md px-2 py-1 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+								className="flex items-center gap-1.5 rounded-md px-3 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground sm:gap-1 sm:px-2 sm:py-1"
 							>
 								<MessageCircleIcon className="size-6 sm:size-4" />
 								{post.commentCount ?? 0}
 							</a>
 							<a
 								href={`/app/post/${post.id}`}
-								className="flex items-center gap-1 rounded-md px-2 py-1 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+								className="flex items-center gap-1.5 rounded-md px-3 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground sm:gap-1 sm:px-2 sm:py-1"
 								aria-label="Otwórz pełny post"
 							>
 								<ExternalLinkIcon className="size-6 sm:size-4" />
