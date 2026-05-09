@@ -5,8 +5,8 @@ import { SharePage } from "@/components/share/share-page";
 import { getSession } from "@/core/functions/session";
 
 const searchSchema = z.object({
-	code: z.string().optional(),
-	member: z.string().optional(),
+	code: z.coerce.string().optional(),
+	member: z.coerce.string().optional(),
 });
 
 export const Route = createFileRoute("/share")({

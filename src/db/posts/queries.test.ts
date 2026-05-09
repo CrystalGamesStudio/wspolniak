@@ -278,7 +278,8 @@ describe("getPostById", () => {
 			},
 		];
 
-		const mockWhere = vi.fn().mockResolvedValue(mockRows);
+		const mockOrderBy = vi.fn().mockResolvedValue(mockRows);
+		const mockWhere = vi.fn().mockReturnValue({ orderBy: mockOrderBy });
 		const mockLeftJoin2 = vi.fn().mockReturnValue({ where: mockWhere });
 		const mockLeftJoin1 = vi.fn().mockReturnValue({ leftJoin: mockLeftJoin2 });
 		const mockFrom = vi.fn().mockReturnValue({ leftJoin: mockLeftJoin1 });
@@ -294,7 +295,8 @@ describe("getPostById", () => {
 	});
 
 	it("returns null for non-existent post", async () => {
-		const mockWhere = vi.fn().mockResolvedValue([]);
+		const mockOrderBy = vi.fn().mockResolvedValue([]);
+		const mockWhere = vi.fn().mockReturnValue({ orderBy: mockOrderBy });
 		const mockLeftJoin2 = vi.fn().mockReturnValue({ where: mockWhere });
 		const mockLeftJoin1 = vi.fn().mockReturnValue({ leftJoin: mockLeftJoin2 });
 		const mockFrom = vi.fn().mockReturnValue({ leftJoin: mockLeftJoin1 });
