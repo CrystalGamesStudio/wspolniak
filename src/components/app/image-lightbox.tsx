@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-import { ChevronLeft, ChevronRight, Download, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, Loader2, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { downloadImage } from "@/lib/download-image";
 
 interface LightboxImage {
 	id: string;
@@ -21,6 +22,8 @@ export function ImageLightbox({ images, initialIndex = 0, open, onClose }: Image
 	const [visible, setVisible] = useState(false);
 	const [animatingOut, setAnimatingOut] = useState(false);
 	const [currentIndex, setCurrentIndex] = useState(initialIndex);
+	const [downloading, setDownloading] = useState(false);
+	const [downloadProgress, setDownloadProgress] = useState(0);
 	const touchStartRef = useRef<{ x: number; y: number } | null>(null);
 	const wheelAccumRef = useRef(0);
 
@@ -131,16 +134,35 @@ export function ImageLightbox({ images, initialIndex = 0, open, onClose }: Image
 			</div>
 
 			<div className="fixed right-2 top-2 flex gap-2 p-2 sm:right-4 sm:top-4">
-				<a
-					href={image.src}
-					download
-					onClick={(e) => e.stopPropagation()}
-					className="flex items-center gap-2 rounded-full bg-white/10 px-4 py-3 text-white backdrop-blur-sm transition-colors hover:bg-white/20 sm:px-3 sm:py-2"
+				<button
+					type="button"
+					disabled={downloading}
+					onClick={(e) => {
+						e.stopPropagation();
+						setDownloading(true);
+						setDownloadProgress(0);
+						downloadImage(image.src, `wspolniak-${image.id}.jpg`, (loaded, total) => {
+							setDownloadProgress(Math.round((loaded / total) * 100));
+						}).finally(() => setDownloading(false));
+					}}
+					className="relative flex items-center gap-2 overflow-hidden rounded-full bg-white/10 px-4 py-3 text-white backdrop-blur-sm transition-colors hover:bg-white/20 disabled:cursor-wait sm:px-3 sm:py-2"
 					aria-label="Pobierz zdjęcie"
 				>
-					<Download className="h-8 w-8 sm:h-5 sm:w-5" />
-					<span className="text-base font-medium sm:text-sm">Pobierz</span>
-				</a>
+					{downloading && (
+						<div
+							className="absolute inset-y-0 left-0 bg-white/20 transition-all duration-200"
+							style={{ width: `${downloadProgress}%` }}
+						/>
+					)}
+					{downloading ? (
+						<Loader2 className="relative h-8 w-8 animate-spin sm:h-5 sm:w-5" />
+					) : (
+						<Download className="relative h-8 w-8 sm:h-5 sm:w-5" />
+					)}
+					<span className="relative text-base font-medium sm:text-sm">
+						{downloading ? `${downloadProgress}%` : "Pobierz"}
+					</span>
+				</button>
 				<button
 					type="button"
 					onClick={handleClose}

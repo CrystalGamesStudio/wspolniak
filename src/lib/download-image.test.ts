@@ -5,7 +5,12 @@ function mockFetchSuccess() {
 	const mockBlob = new Blob(["fake-image-data"], { type: "image/jpeg" });
 	vi.stubGlobal(
 		"fetch",
-		vi.fn().mockResolvedValue({ ok: true, blob: () => Promise.resolve(mockBlob) }),
+		vi.fn().mockResolvedValue({
+			ok: true,
+			blob: () => Promise.resolve(mockBlob),
+			headers: { get: () => null },
+			body: null,
+		}),
 	);
 }
 

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import type { InferSelectModel } from "drizzle-orm";
-import { and, count, desc, eq, gte, isNull, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, isNull, sql } from "drizzle-orm";
 import { users } from "@/db/identity/table";
 import { getDb } from "@/db/setup";
 import { postImages, posts } from "./table";
@@ -91,7 +91,7 @@ export async function listRecentPosts(limit: number): Promise<PostWithAuthorAndI
 		.leftJoin(users, eq(posts.authorId, users.id))
 		.leftJoin(postImages, eq(posts.id, postImages.postId))
 		.where(isNull(posts.deletedAt))
-		.orderBy(desc(posts.createdAt))
+		.orderBy(desc(posts.createdAt), asc(postImages.displayOrder))
 		.limit(limit);
 
 	return aggregatePostRows(rows);
@@ -131,7 +131,7 @@ export async function listPaginatedPosts(
 		.leftJoin(users, eq(posts.authorId, users.id))
 		.leftJoin(postImages, eq(posts.id, postImages.postId))
 		.where(and(...conditions))
-		.orderBy(desc(posts.createdAt), desc(posts.id))
+		.orderBy(desc(posts.createdAt), desc(posts.id), asc(postImages.displayOrder))
 		.limit(fetchLimit);
 
 	const allPosts = aggregatePostRows(rows);
@@ -155,7 +155,8 @@ export async function getPostById(id: string): Promise<PostWithAuthorAndImages |
 		.from(posts)
 		.leftJoin(users, eq(posts.authorId, users.id))
 		.leftJoin(postImages, eq(posts.id, postImages.postId))
-		.where(and(eq(posts.id, id), isNull(posts.deletedAt)));
+		.where(and(eq(posts.id, id), isNull(posts.deletedAt)))
+		.orderBy(asc(postImages.displayOrder));
 
 	const first = rows[0];
 	if (!first) return null;
