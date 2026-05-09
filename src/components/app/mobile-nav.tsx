@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { Link } from "@tanstack/react-router";
-import { Plus, RefreshCw, SlidersHorizontal } from "lucide-react";
-import { FeedbackButton } from "@/components/app/feedback-button";
+import { MessageSquare, Plus, RefreshCw, SlidersHorizontal } from "lucide-react";
 import { ThemeToggle } from "@/components/theme";
 import { Button } from "@/components/ui/button";
 
@@ -43,10 +42,10 @@ export function MobileNav({ role }: MobileNavProps) {
 					<span className="text-xs text-muted-foreground">Tryb</span>
 				</div>
 
-				<div className="flex flex-col items-center gap-1.5">
-					<FeedbackButton variant="ghost" size="icon" className="size-11 rounded-full" />
+				<Link to="/app/feedback" className="flex flex-col items-center gap-1.5 rounded-md p-1.5">
+					<MessageSquare className="h-6 w-6 text-foreground" />
 					<span className="text-xs text-muted-foreground">Feedback</span>
-				</div>
+				</Link>
 			</div>
 		</nav>
 	);

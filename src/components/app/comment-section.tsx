@@ -114,7 +114,7 @@ export function CommentSection({ postId, currentUserId, currentUserRole }: Comme
 				<div className="flex items-center justify-between">
 					<span className="text-xs text-muted-foreground">{newComment.length}/1000</span>
 					<Button
-						size="sm"
+						className="h-11 sm:h-8"
 						onClick={() => {
 							mutation.reset();
 							mutation.mutate(newComment);

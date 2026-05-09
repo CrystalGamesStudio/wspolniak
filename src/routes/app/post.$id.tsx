@@ -61,7 +61,7 @@ function PostPage() {
 	}
 
 	return (
-		<div className="mx-auto max-w-2xl bg-background px-4 py-6 pb-50 sm:pb-6">
+		<div className="max-w-2xl bg-background px-4 py-6 pb-50 sm:pb-6">
 			<div className="mb-4 flex items-center justify-between">
 				<a
 					href="/app"

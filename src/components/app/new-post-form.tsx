@@ -215,7 +215,7 @@ export function NewPostForm({ onSubmit, isSubmitting }: NewPostFormProps) {
 				<Button
 					type="button"
 					variant="outline"
-					className="w-full"
+					className="h-11 w-full sm:h-9"
 					onClick={() => fileInputRef.current?.click()}
 				>
 					<ImagePlus className="mr-2 h-4 w-4" />
@@ -249,7 +249,7 @@ export function NewPostForm({ onSubmit, isSubmitting }: NewPostFormProps) {
 				</DndContext>
 			)}
 
-			<Button type="submit" className="w-full" disabled={!canSubmit}>
+			<Button type="submit" className="h-11 w-full sm:h-9" disabled={!canSubmit}>
 				<LoaderIcon loading={isSubmitting} />
 				{isSubmitting ? "Publikowanie..." : "Opublikuj"}
 			</Button>
