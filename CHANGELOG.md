@@ -1,3 +1,10 @@
+# [1.28.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.27.0...v1.28.0) (2026-05-10)
+
+
+### Features
+
+* **network:** improve offline and poor connectivity UX ([7a7d238](https://github.com/CrystalGamesStudio/wspolniak/commit/7a7d2387b4299d39667d92ea96381ebba84b0c8b)), closes [#48](https://github.com/CrystalGamesStudio/wspolniak/issues/48)
+
 # [1.27.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.26.2...v1.27.0) (2026-05-10)
 
 
