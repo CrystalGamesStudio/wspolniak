@@ -3,12 +3,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { MessageCircleIcon } from "lucide-react";
 import { useState } from "react";
 import { CommentActions } from "@/components/app/comment-actions";
+import { optimisticCommentMutation } from "@/components/app/optimistic-comments";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { LoaderIcon } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 
-interface CommentWithAuthor {
+export interface CommentWithAuthor {
 	id: string;
 	postId: string;
 	authorId: string;
@@ -53,12 +54,18 @@ export function CommentSection({ postId, currentUserId, currentUserRole }: Comme
 		queryFn: () => fetchComments(postId),
 	});
 
+	const optimistic = optimisticCommentMutation(queryClient, postId, {
+		id: currentUserId,
+		name: "",
+	});
+
 	const mutation = useMutation({
 		mutationFn: (body: string) => addComment(postId, body),
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["comments", postId] });
-			queryClient.invalidateQueries({ queryKey: ["posts"] });
+		onMutate: optimistic.onMutate,
+		onError: optimistic.onError,
+		onSuccess: async () => {
 			setNewComment("");
+			await optimistic.onSuccess();
 		},
 	});
 
