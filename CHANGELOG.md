@@ -1,3 +1,10 @@
+## [1.26.1](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.26.0...v1.26.1) (2026-05-10)
+
+
+### Bug Fixes
+
+* paginate posts by ID, not by joined rows, to fix infinite scroll ([0e4857b](https://github.com/CrystalGamesStudio/wspolniak/commit/0e4857bfc3c795266fa59d424cc2017d6669de9a)), closes [#45](https://github.com/CrystalGamesStudio/wspolniak/issues/45)
+
 # [1.26.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.25.1...v1.26.0) (2026-05-09)
 
 
