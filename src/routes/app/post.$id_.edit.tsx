@@ -5,6 +5,7 @@ import { ArrowLeft } from "lucide-react";
 import { useCallback } from "react";
 import { EditPostForm } from "@/components/app/edit-post-form";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { compressImage } from "@/images/compress";
 
 interface PostImage {
 	id: string;
@@ -36,8 +37,9 @@ async function uploadFile(file: File): Promise<string> {
 	if (!urlRes.ok) throw new Error("Nie udało się uzyskać URL do uploadu");
 	const { data } = (await urlRes.json()) as { data: { cfImageId: string; uploadURL: string } };
 
+	const compressed = await compressImage(file);
 	const form = new FormData();
-	form.append("file", file);
+	form.append("file", compressed);
 	const uploadRes = await fetch(data.uploadURL, { method: "POST", body: form });
 	if (!uploadRes.ok) throw new Error(`Upload nie powiódł się dla: ${file.name}`);
 
