@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import type { InferSelectModel } from "drizzle-orm";
-import { and, asc, count, desc, eq, gte, isNull, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, inArray, isNull, sql } from "drizzle-orm";
 import { users } from "@/db/identity/table";
 import { getDb } from "@/db/setup";
 import { postImages, posts } from "./table";
@@ -111,7 +111,6 @@ export async function listPaginatedPosts(
 	input: PaginatedPostsInput,
 ): Promise<PaginatedPostsResult> {
 	const { limit, cursor } = input;
-	const fetchLimit = limit + 1;
 
 	const conditions = [isNull(posts.deletedAt)];
 	if (cursor) {
@@ -121,6 +120,22 @@ export async function listPaginatedPosts(
 		);
 	}
 
+	// Step 1: Get post IDs with limit (no image join — limit applies to posts, not rows)
+	const postIdRows = await getDb()
+		.select({ id: posts.id })
+		.from(posts)
+		.where(and(...conditions))
+		.orderBy(desc(posts.createdAt), desc(posts.id))
+		.limit(limit + 1);
+
+	const hasMore = postIdRows.length > limit;
+	const targetIds = postIdRows.slice(0, limit).map((r) => r.id);
+
+	if (targetIds.length === 0) {
+		return { posts: [], nextCursor: null };
+	}
+
+	// Step 2: Fetch full data with images for those post IDs
 	const rows = await getDb()
 		.select({
 			post: posts,
@@ -130,14 +145,10 @@ export async function listPaginatedPosts(
 		.from(posts)
 		.leftJoin(users, eq(posts.authorId, users.id))
 		.leftJoin(postImages, eq(posts.id, postImages.postId))
-		.where(and(...conditions))
-		.orderBy(desc(posts.createdAt), desc(posts.id), asc(postImages.displayOrder))
-		.limit(fetchLimit);
+		.where(inArray(posts.id, targetIds))
+		.orderBy(desc(posts.createdAt), desc(posts.id), asc(postImages.displayOrder));
 
-	const allPosts = aggregatePostRows(rows);
-	const hasMore = allPosts.length > limit;
-	const resultPosts = hasMore ? allPosts.slice(0, limit) : allPosts;
-
+	const resultPosts = aggregatePostRows(rows);
 	const lastPost = resultPosts[resultPosts.length - 1];
 	const nextCursor =
 		hasMore && lastPost ? { createdAt: lastPost.createdAt.toISOString(), id: lastPost.id } : null;
