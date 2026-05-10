@@ -4,7 +4,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef } from "react";
 import { Feed } from "@/components/app/feed";
 import { PullToRefresh } from "@/components/app/pull-to-refresh";
-import { Spinner, useMinDisplay } from "@/components/ui/spinner";
+import { Spinner } from "@/components/ui/spinner";
 
 interface FeedPost {
 	id: string;
@@ -74,9 +74,7 @@ function FeedPage() {
 		return () => observer.disconnect();
 	}, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-	const showingSpinner = useMinDisplay(isLoading);
-
-	if (showingSpinner) {
+	if (isLoading) {
 		return (
 			<div className="flex min-h-screen items-center justify-center bg-background">
 				<Spinner size={8} />
