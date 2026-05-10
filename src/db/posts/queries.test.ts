@@ -333,17 +333,6 @@ describe("countUserPostsToday", () => {
 	});
 });
 
-function mockSelectChain(mockRows: unknown[]) {
-	const mockLimit = vi.fn().mockResolvedValue(mockRows);
-	const mockOrderBy = vi.fn().mockReturnValue({ limit: mockLimit });
-	const mockWhere = vi.fn().mockReturnValue({ orderBy: mockOrderBy });
-	const mockLeftJoin2 = vi.fn().mockReturnValue({ where: mockWhere });
-	const mockLeftJoin1 = vi.fn().mockReturnValue({ leftJoin: mockLeftJoin2 });
-	const mockFrom = vi.fn().mockReturnValue({ leftJoin: mockLeftJoin1 });
-	const mockSelect = vi.fn().mockReturnValue({ from: mockFrom });
-	mockGetDb.mockReturnValue({ select: mockSelect } as never);
-}
-
 function _makePostRow(id: string, authorName: string, createdAt: Date, imageId?: string) {
 	return {
 		post: {
@@ -361,9 +350,80 @@ function _makePostRow(id: string, authorName: string, createdAt: Date, imageId?:
 	};
 }
 
+function _mockPaginatedSelectChain(idRows: { id: string }[], fullRows: unknown[]) {
+	const mockLimit = vi.fn().mockResolvedValue(idRows);
+	const mockOrderBy1 = vi.fn().mockReturnValue({ limit: mockLimit });
+	const mockWhere1 = vi.fn().mockReturnValue({ orderBy: mockOrderBy1 });
+	const mockFrom1 = vi.fn().mockReturnValue({ where: mockWhere1 });
+	const mockSelect1 = vi.fn().mockReturnValue({ from: mockFrom1 });
+
+	const mockOrderBy2 = vi.fn().mockResolvedValue(fullRows);
+	const mockWhere2 = vi.fn().mockReturnValue({ orderBy: mockOrderBy2 });
+	const mockLeftJoin2b = vi.fn().mockReturnValue({ where: mockWhere2 });
+	const mockLeftJoin1b = vi.fn().mockReturnValue({ leftJoin: mockLeftJoin2b });
+	const mockFrom2 = vi.fn().mockReturnValue({ leftJoin: mockLeftJoin1b });
+	const mockSelect2 = vi.fn().mockReturnValue({ from: mockFrom2 });
+
+	mockGetDb
+		.mockReturnValueOnce({ select: mockSelect1 } as never)
+		.mockReturnValueOnce({ select: mockSelect2 } as never);
+}
+
+function _mockPaginatedEmpty() {
+	const mockLimit = vi.fn().mockResolvedValue([]);
+	const mockOrderBy = vi.fn().mockReturnValue({ limit: mockLimit });
+	const mockWhere = vi.fn().mockReturnValue({ orderBy: mockOrderBy });
+	const mockFrom = vi.fn().mockReturnValue({ where: mockWhere });
+	const mockSelect = vi.fn().mockReturnValue({ from: mockFrom });
+	mockGetDb.mockReturnValue({ select: mockSelect } as never);
+}
+
 describe("listPaginatedPosts", () => {
+	it("returns correct number of posts when each post has multiple images", async () => {
+		const now = new Date();
+		const limit = 5;
+
+		const allRows: unknown[] = [];
+		for (let i = 0; i < 10; i++) {
+			const postId = `post-${i}`;
+			const createdAt = new Date(now.getTime() - i * 60_000);
+			for (let j = 0; j < 3; j++) {
+				allRows.push({
+					post: {
+						id: postId,
+						authorId: "user-1",
+						description: `Post ${i}`,
+						deletedAt: null,
+						createdAt,
+						updatedAt: createdAt,
+					},
+					author: { id: "user-1", name: "Tomek" },
+					image: {
+						id: `img-${i}-${j}`,
+						postId,
+						cfImageId: `cf-${i}-${j}`,
+						displayOrder: j,
+						createdAt,
+					},
+				});
+			}
+		}
+
+		const idRows = Array.from({ length: limit + 1 }, (_, i) => ({ id: `post-${i}` }));
+		const targetIds = idRows.slice(0, limit).map((r) => r.id);
+		const fullRows = allRows.filter((r) =>
+			targetIds.includes((r as Record<string, Record<string, string>>).post.id),
+		);
+		_mockPaginatedSelectChain(idRows, fullRows);
+
+		const result = await listPaginatedPosts({ limit });
+
+		expect(result.posts).toHaveLength(limit);
+		expect(result.nextCursor).not.toBeNull();
+	});
+
 	it("returns empty posts and null cursor for empty feed", async () => {
-		mockSelectChain([]);
+		_mockPaginatedEmpty();
 
 		const result = await listPaginatedPosts({ limit: 20 });
 
@@ -374,10 +434,11 @@ describe("listPaginatedPosts", () => {
 	it("returns all posts and null cursor when fewer than limit", async () => {
 		const now = new Date();
 		const older = new Date(now.getTime() - 60_000);
-		mockSelectChain([
+		const rows = [
 			_makePostRow("post-2", "Tomek", now, "img-2"),
 			_makePostRow("post-1", "Tomek", older, "img-1"),
-		]);
+		];
+		_mockPaginatedSelectChain([{ id: "post-2" }, { id: "post-1" }], rows);
 
 		const result = await listPaginatedPosts({ limit: 20 });
 
@@ -387,17 +448,16 @@ describe("listPaginatedPosts", () => {
 		expect(result.nextCursor).toBeNull();
 	});
 
-	it("returns nextCursor when exactly limit+1 rows exist", async () => {
+	it("returns nextCursor when more posts exist than limit", async () => {
 		const base = new Date("2026-01-01T12:00:00Z");
-		// limit=2, so we need 3 rows (limit+1) to signal hasMore
+		const limit = 2;
 		const rows = [
 			_makePostRow("post-3", "Kasia", new Date(base.getTime() - 0), "img-3"),
 			_makePostRow("post-2", "Kasia", new Date(base.getTime() - 1000), "img-2"),
-			_makePostRow("post-1", "Kasia", new Date(base.getTime() - 2000), "img-1"),
 		];
-		mockSelectChain(rows);
+		_mockPaginatedSelectChain([{ id: "post-3" }, { id: "post-2" }, { id: "post-1" }], rows);
 
-		const result = await listPaginatedPosts({ limit: 2 });
+		const result = await listPaginatedPosts({ limit });
 
 		expect(result.posts).toHaveLength(2);
 		expect(result.posts[0]?.id).toBe("post-3");
@@ -408,12 +468,11 @@ describe("listPaginatedPosts", () => {
 
 	it("returns null cursor at exact boundary (posts === limit)", async () => {
 		const base = new Date("2026-01-01T12:00:00Z");
-		// limit=2, exactly 2 rows — no extra row means no more pages
 		const rows = [
 			_makePostRow("post-2", "Kasia", new Date(base.getTime() - 0), "img-2"),
 			_makePostRow("post-1", "Kasia", new Date(base.getTime() - 1000), "img-1"),
 		];
-		mockSelectChain(rows);
+		_mockPaginatedSelectChain([{ id: "post-2" }, { id: "post-1" }], rows);
 
 		const result = await listPaginatedPosts({ limit: 2 });
 
@@ -423,12 +482,11 @@ describe("listPaginatedPosts", () => {
 
 	it("groups multiple images under the same post in paginated results", async () => {
 		const now = new Date();
-		// Two rows for the same post (two images)
 		const rows = [
 			_makePostRow("post-1", "Tomek", now, "img-1"),
-			{ ..._makePostRow("post-1", "Tomek", now, "img-2") },
+			_makePostRow("post-1", "Tomek", now, "img-2"),
 		];
-		mockSelectChain(rows);
+		_mockPaginatedSelectChain([{ id: "post-1" }], rows);
 
 		const result = await listPaginatedPosts({ limit: 20 });
 
