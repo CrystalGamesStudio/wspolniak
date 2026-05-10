@@ -1,3 +1,10 @@
+## [1.26.2](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.26.1...v1.26.2) (2026-05-10)
+
+
+### Bug Fixes
+
+* remove artificial 1.5s delay from all loading states ([e69d813](https://github.com/CrystalGamesStudio/wspolniak/commit/e69d81391ca529ea2d7073b98320f142759360da)), closes [#46](https://github.com/CrystalGamesStudio/wspolniak/issues/46)
+
 ## [1.26.1](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.26.0...v1.26.1) (2026-05-10)
 
 
