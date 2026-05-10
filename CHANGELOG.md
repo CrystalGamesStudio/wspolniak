@@ -1,3 +1,10 @@
+# [1.29.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.28.0...v1.29.0) (2026-05-10)
+
+
+### Features
+
+* **reactions:** add post reactions DB layer and API endpoints ([33ce657](https://github.com/CrystalGamesStudio/wspolniak/commit/33ce657b037e94eaf298b71821599688c0bc5163)), closes [#49](https://github.com/CrystalGamesStudio/wspolniak/issues/49)
+
 # [1.28.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.27.0...v1.28.0) (2026-05-10)
 
 
