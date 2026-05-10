@@ -4,14 +4,16 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 import { NewPostForm } from "@/components/app/new-post-form";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { compressImage } from "@/images/compress";
 
 async function uploadFile(file: File): Promise<string> {
 	const urlRes = await fetch("/api/app/images/upload-url", { method: "POST" });
 	if (!urlRes.ok) throw new Error("Nie udało się uzyskać URL do uploadu");
 	const { data } = (await urlRes.json()) as { data: { cfImageId: string; uploadURL: string } };
 
+	const compressed = await compressImage(file);
 	const form = new FormData();
-	form.append("file", file);
+	form.append("file", compressed);
 	const uploadRes = await fetch(data.uploadURL, { method: "POST", body: form });
 	if (!uploadRes.ok) throw new Error(`Upload nie powiódł się dla: ${file.name}`);
 
