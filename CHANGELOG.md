@@ -1,3 +1,10 @@
+# [1.27.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.26.2...v1.27.0) (2026-05-10)
+
+
+### Features
+
+* **images:** add client-side compression before upload ([c315b8a](https://github.com/CrystalGamesStudio/wspolniak/commit/c315b8a9abec85c5656815f59d4f1319a4b9f7c0)), closes [#47](https://github.com/CrystalGamesStudio/wspolniak/issues/47)
+
 ## [1.26.2](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.26.1...v1.26.2) (2026-05-10)
 
 
