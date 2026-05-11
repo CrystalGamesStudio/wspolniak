@@ -50,6 +50,18 @@ function mockDesktop() {
 	);
 }
 
+function mockFetchWithCounts(counts: Record<string, number>) {
+	globalThis.fetch = vi.fn().mockImplementation((url: string) => {
+		if (url.includes("/reactions") && !url.includes("/my-reaction")) {
+			return Promise.resolve({ ok: true, json: () => Promise.resolve({ data: counts }) });
+		}
+		if (url.includes("/my-reaction")) {
+			return Promise.resolve({ ok: true, json: () => Promise.resolve({ data: null }) });
+		}
+		return Promise.resolve({ ok: true, json: () => Promise.resolve({ data: {} }) });
+	});
+}
+
 describe("ReactionButton (desktop)", () => {
 	beforeEach(() => {
 		mockDesktop();
@@ -57,29 +69,17 @@ describe("ReactionButton (desktop)", () => {
 	afterEach(() => {
 		cleanup();
 		vi.restoreAllMocks();
+		vi.unstubAllGlobals();
 	});
 
-	it("renders total reaction count", async () => {
-		vi.stubGlobal(
-			"fetch",
-			vi.fn().mockImplementation((url: string) => {
-				if (url.includes("/reactions") && !url.includes("/my-reaction")) {
-					return Promise.resolve({
-						ok: true,
-						json: () => Promise.resolve({ data: { heart: 3, thumbs_up: 2 } }),
-					});
-				}
-				return Promise.resolve({
-					ok: true,
-					json: () => Promise.resolve({ data: null }),
-				});
-			}),
-		);
+	it("shows per-emoji reaction counts instead of total", async () => {
+		mockFetchWithCounts({ heart: 3, thumbs_up: 2 });
 
 		render(<ReactionButton postId="post-1" currentUserId="u1" />, { wrapper: createWrapper() });
-		await screen.findByText(/5/);
+		await screen.findByText(/3/);
 
-		expect(screen.getByText(/5/)).toBeDefined();
+		expect(screen.getByText(/3/)).toBeDefined();
+		expect(screen.getByText(/2/)).toBeDefined();
 	});
 
 	it("highlights user's current reaction emoji", async () => {
@@ -142,19 +142,30 @@ describe("ReactionButton (desktop)", () => {
 			}),
 		);
 	});
+
+	it("shows per-emoji counts for multiple reaction types", async () => {
+		mockFetchWithCounts({ heart: 8, thumbs_up: 4 });
+
+		render(<ReactionButton postId="post-1" currentUserId="u1" />, { wrapper: createWrapper() });
+		await screen.findByText(/8/);
+
+		expect(screen.getByText(/8/)).toBeDefined();
+		expect(screen.getByText(/4/)).toBeDefined();
+	});
 });
 
 describe("ReactionButton (mobile)", () => {
 	beforeEach(() => {
 		mockMobile();
-		mockFetch();
 	});
 	afterEach(() => {
 		cleanup();
 		vi.restoreAllMocks();
+		vi.unstubAllGlobals();
 	});
 
 	it("opens bottom sheet instead of dropdown on mobile", async () => {
+		mockFetch();
 		render(<ReactionButton postId="post-1" currentUserId="u1" />, { wrapper: createWrapper() });
 
 		const trigger = await screen.findByRole("button");
@@ -165,6 +176,7 @@ describe("ReactionButton (mobile)", () => {
 	});
 
 	it("shows all 6 emojis in touch-friendly grid inside sheet", async () => {
+		mockFetch();
 		render(<ReactionButton postId="post-1" currentUserId="u1" />, { wrapper: createWrapper() });
 
 		const trigger = await screen.findByRole("button");
@@ -282,5 +294,26 @@ describe("ReactionButton (mobile)", () => {
 			(c) => (c[1] as RequestInit | undefined)?.method === "POST",
 		);
 		expect(postCalls).toHaveLength(0);
+	});
+
+	it("shows total count only on mobile", async () => {
+		globalThis.fetch = vi.fn().mockImplementation((url: string) => {
+			if (url.includes("/reactions") && !url.includes("/my-reaction")) {
+				return Promise.resolve({
+					ok: true,
+					json: () => Promise.resolve({ data: { heart: 8, thumbs_up: 4 } }),
+				});
+			}
+			return Promise.resolve({
+				ok: true,
+				json: () => Promise.resolve({ data: null }),
+			});
+		});
+
+		render(<ReactionButton postId="post-1" currentUserId="u1" />, { wrapper: createWrapper() });
+		await screen.findByText(/12/);
+
+		const trigger = screen.getByRole("button");
+		expect(trigger.textContent).toContain("12");
 	});
 });
