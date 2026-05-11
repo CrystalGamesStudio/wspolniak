@@ -23,15 +23,15 @@ describe("ReactionDisplay", () => {
 		expect(screen.queryByText("👍")).toBeNull();
 	});
 
-	it("renders nothing when all counts are 0", () => {
-		const { container } = render(<ReactionDisplay counts={{ heart: 0, thumbs_up: 0 }} />);
+	it("shows 0 when all counts are 0", () => {
+		render(<ReactionDisplay counts={{ heart: 0, thumbs_up: 0 }} />);
 
-		expect(container.innerHTML).toBe("");
+		expect(screen.getByText("0")).toBeDefined();
 	});
 
-	it("renders nothing when counts are empty", () => {
-		const { container } = render(<ReactionDisplay counts={{}} />);
+	it("shows 0 when counts are empty", () => {
+		render(<ReactionDisplay counts={{}} />);
 
-		expect(container.innerHTML).toBe("");
+		expect(screen.getByText("0")).toBeDefined();
 	});
 });
