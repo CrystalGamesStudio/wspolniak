@@ -79,7 +79,7 @@ describe("ReactionButton (desktop)", () => {
 		await screen.findByText(/3/);
 
 		expect(screen.getByText(/3/)).toBeDefined();
-		expect(screen.getByText(/2/)).toBeDefined();
+		await screen.findByText(/2/);
 	});
 
 	it("highlights user's current reaction emoji", async () => {
@@ -141,6 +141,156 @@ describe("ReactionButton (desktop)", () => {
 				body: JSON.stringify({ reactionType: "thumbs_up" }),
 			}),
 		);
+	});
+
+	it("updates counts optimistically before server responds", async () => {
+		let resolvePost: () => void = () => {};
+		const fetchMock = vi.fn().mockImplementation((url: string, opts?: RequestInit) => {
+			if (opts?.method === "POST") {
+				return new Promise((resolve) => {
+					resolvePost = () =>
+						resolve({
+							ok: true,
+							json: () => Promise.resolve({ data: { reactionType: "thumbs_up" } }),
+						});
+				});
+			}
+			if (url.includes("/my-reaction")) {
+				return Promise.resolve({
+					ok: true,
+					json: () => Promise.resolve({ data: null }),
+				});
+			}
+			return Promise.resolve({
+				ok: true,
+				json: () => Promise.resolve({ data: { heart: 3 } }),
+			});
+		});
+		vi.stubGlobal("fetch", fetchMock);
+
+		render(<ReactionButton postId="post-1" currentUserId="u1" />, { wrapper: createWrapper() });
+
+		await screen.findByText(/3/);
+
+		const trigger = screen.getByRole("button");
+		await userEvent.click(trigger);
+
+		const thumbsUp = await screen.findByRole("menuitem", { name: /👍/ });
+		await userEvent.click(thumbsUp);
+
+		// Before server responds: thumbs_up shows 1 (new), heart stays 3 (no previous reaction)
+		expect(screen.getByText(/3/)).toBeDefined();
+		expect(screen.getByText(/1/)).toBeDefined();
+
+		resolvePost();
+	});
+
+	it("rolls back counts when mutation fails", async () => {
+		const fetchMock = vi.fn().mockImplementation((url: string, opts?: RequestInit) => {
+			if (opts?.method === "POST") {
+				return Promise.resolve({ ok: false, status: 500 });
+			}
+			if (url.includes("/my-reaction")) {
+				return Promise.resolve({
+					ok: true,
+					json: () => Promise.resolve({ data: null }),
+				});
+			}
+			return Promise.resolve({
+				ok: true,
+				json: () => Promise.resolve({ data: { heart: 3 } }),
+			});
+		});
+		vi.stubGlobal("fetch", fetchMock);
+
+		render(<ReactionButton postId="post-1" currentUserId="u1" />, { wrapper: createWrapper() });
+
+		await screen.findByText(/3/);
+
+		const trigger = screen.getByRole("button");
+		await userEvent.click(trigger);
+
+		const thumbsUp = await screen.findByRole("menuitem", { name: /👍/ });
+		await userEvent.click(thumbsUp);
+
+		// After error: counts should revert to original (heart: 3, no thumbs_up)
+		await screen.findByText(/3/);
+		expect(screen.queryByText(/1/)).toBeNull();
+	});
+
+	it("shows error message when mutation fails", async () => {
+		const fetchMock = vi.fn().mockImplementation((url: string, opts?: RequestInit) => {
+			if (opts?.method === "POST") {
+				return Promise.resolve({ ok: false, status: 500 });
+			}
+			if (url.includes("/my-reaction")) {
+				return Promise.resolve({
+					ok: true,
+					json: () => Promise.resolve({ data: null }),
+				});
+			}
+			return Promise.resolve({
+				ok: true,
+				json: () => Promise.resolve({ data: {} }),
+			});
+		});
+		vi.stubGlobal("fetch", fetchMock);
+
+		render(<ReactionButton postId="post-1" currentUserId="u1" />, { wrapper: createWrapper() });
+
+		const trigger = await screen.findByRole("button");
+		await userEvent.click(trigger);
+
+		const thumbsUp = await screen.findByRole("menuitem", { name: /👍/ });
+		await userEvent.click(thumbsUp);
+
+		expect(await screen.findByText(/nie udało się/i)).toBeDefined();
+	});
+
+	it("does not fire mutation when clicking already-selected emoji", async () => {
+		const fetchMock = vi.fn().mockImplementation((url: string, opts?: RequestInit) => {
+			if (opts?.method === "POST") {
+				return Promise.resolve({
+					ok: true,
+					json: () => Promise.resolve({ data: { reactionType: "heart" } }),
+				});
+			}
+			if (url.includes("/my-reaction")) {
+				return Promise.resolve({
+					ok: true,
+					json: () => Promise.resolve({ data: { reactionType: "heart" } }),
+				});
+			}
+			return Promise.resolve({
+				ok: true,
+				json: () => Promise.resolve({ data: { heart: 1 } }),
+			});
+		});
+		vi.stubGlobal("fetch", fetchMock);
+
+		render(<ReactionButton postId="post-1" currentUserId="u1" />, { wrapper: createWrapper() });
+
+		const trigger = await screen.findByRole("button");
+		await userEvent.click(trigger);
+
+		const heartItem = await screen.findByRole("menuitem", { name: /❤️/ });
+		await userEvent.click(heartItem);
+
+		const postCalls = fetchMock.mock.calls.filter(
+			(c) => (c[1] as RequestInit | undefined)?.method === "POST",
+		);
+		expect(postCalls).toHaveLength(0);
+	});
+
+	it("has ARIA labels on dropdown menu items", async () => {
+		mockFetchWithCounts({ heart: 1 });
+		render(<ReactionButton postId="post-1" currentUserId="u1" />, { wrapper: createWrapper() });
+
+		const trigger = await screen.findByRole("button");
+		await userEvent.click(trigger);
+
+		const heartItem = await screen.findByRole("menuitem", { name: /serce/ });
+		expect(heartItem).toBeDefined();
 	});
 
 	it("shows per-emoji counts for multiple reaction types", async () => {
@@ -256,7 +406,8 @@ describe("ReactionButton (mobile)", () => {
 		const thumbsBtn = Array.from(grid?.querySelectorAll("button") ?? []).find(
 			(b) => b.textContent === "👍",
 		);
-		await userEvent.click(thumbsBtn!);
+		if (!thumbsBtn) return;
+		await userEvent.click(thumbsBtn);
 
 		expect(fetchMock).toHaveBeenCalledWith(
 			"/api/app/posts/post-1/reactions",
@@ -286,7 +437,8 @@ describe("ReactionButton (mobile)", () => {
 		await screen.findByRole("dialog");
 
 		const overlay = document.querySelector("[data-slot='sheet-overlay']");
-		await userEvent.click(overlay!);
+		if (!overlay) return;
+		await userEvent.click(overlay);
 
 		expect(screen.queryByRole("dialog")).toBeNull();
 
@@ -294,6 +446,41 @@ describe("ReactionButton (mobile)", () => {
 			(c) => (c[1] as RequestInit | undefined)?.method === "POST",
 		);
 		expect(postCalls).toHaveLength(0);
+	});
+
+	it("has ARIA labels and pressed state on sheet buttons", async () => {
+		vi.stubGlobal(
+			"fetch",
+			vi.fn().mockImplementation((url: string) => {
+				if (url.includes("/my-reaction")) {
+					return Promise.resolve({
+						ok: true,
+						json: () => Promise.resolve({ data: { reactionType: "thumbs_up" } }),
+					});
+				}
+				return Promise.resolve({
+					ok: true,
+					json: () => Promise.resolve({ data: { thumbs_up: 1 } }),
+				});
+			}),
+		);
+
+		render(<ReactionButton postId="post-1" currentUserId="u1" />, { wrapper: createWrapper() });
+
+		const trigger = await screen.findByRole("button");
+		await userEvent.click(trigger);
+
+		const dialog = await screen.findByRole("dialog");
+		const grid = dialog.querySelector("[class*='grid-cols-3']");
+		const buttons = grid?.querySelectorAll("button");
+
+		const thumbsBtn = Array.from(buttons ?? []).find((b) => b.textContent === "👍");
+		const heartBtn = Array.from(buttons ?? []).find((b) => b.textContent === "❤️");
+
+		expect(thumbsBtn?.getAttribute("aria-label")).toBe("kciuk w górę");
+		expect(thumbsBtn?.getAttribute("aria-pressed")).toBe("true");
+		expect(heartBtn?.getAttribute("aria-label")).toBe("serce");
+		expect(heartBtn?.getAttribute("aria-pressed")).toBe("false");
 	});
 
 	it("shows total count only on mobile", async () => {

@@ -17,7 +17,9 @@ interface ReactionDisplayProps {
 export function ReactionDisplay({ counts }: ReactionDisplayProps) {
 	const entries = Object.entries(counts).filter(([, count]) => count > 0);
 
-	if (entries.length === 0) return null;
+	if (entries.length === 0) {
+		return <span className="text-sm text-muted-foreground">0</span>;
+	}
 
 	return (
 		<span className="inline-flex items-center gap-1 overflow-x-auto text-sm text-muted-foreground">
