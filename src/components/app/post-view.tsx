@@ -3,6 +3,7 @@ import { Download } from "lucide-react";
 import { useState } from "react";
 import { ImageLightbox } from "@/components/app/image-lightbox";
 import { PostActions } from "@/components/app/post-actions";
+import { ReactionButton } from "@/components/app/reaction-button";
 import { getImageUrl } from "@/images/client";
 import { downloadImage } from "@/lib/download-image";
 
@@ -75,6 +76,12 @@ export function PostView({
 
 			{post.description && (
 				<p className="whitespace-pre-wrap break-words text-foreground">{post.description}</p>
+			)}
+
+			{currentUserId && (
+				<div className="flex items-center gap-2">
+					<ReactionButton postId={post.id} currentUserId={currentUserId} />
+				</div>
 			)}
 
 			<div className="space-y-2">

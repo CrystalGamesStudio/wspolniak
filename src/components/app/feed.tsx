@@ -3,6 +3,7 @@ import { ExternalLinkIcon, MessageCircleIcon } from "lucide-react";
 import { useState } from "react";
 import { ImageLightbox } from "@/components/app/image-lightbox";
 import { PostActions } from "@/components/app/post-actions";
+import { ReactionButton } from "@/components/app/reaction-button";
 import { Spinner } from "@/components/ui/spinner";
 import { getImageUrl } from "@/images/client";
 
@@ -130,13 +131,16 @@ export function Feed({
 						)}
 
 						<div className="mt-3 flex items-center justify-between">
-							<a
-								href={`/app/post/${post.id}#comments`}
-								className="flex items-center gap-1.5 rounded-md px-3 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground sm:gap-1 sm:px-2 sm:py-1"
-							>
-								<MessageCircleIcon className="size-6 sm:size-4" />
-								{post.commentCount ?? 0}
-							</a>
+							<div className="flex items-center gap-1">
+								<a
+									href={`/app/post/${post.id}#comments`}
+									className="flex items-center gap-1.5 rounded-md px-3 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground sm:gap-1 sm:px-2 sm:py-1"
+								>
+									<MessageCircleIcon className="size-6 sm:size-4" />
+									{post.commentCount ?? 0}
+								</a>
+								<ReactionButton postId={post.id} currentUserId={currentUserId} />
+							</div>
 							<a
 								href={`/app/post/${post.id}`}
 								className="flex items-center gap-1.5 rounded-md px-3 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground sm:gap-1 sm:px-2 sm:py-1"
