@@ -1,3 +1,10 @@
+# [1.33.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.32.0...v1.33.0) (2026-05-11)
+
+
+### Features
+
+* **reactions:** add states, error handling & accessibility ([f06ad00](https://github.com/CrystalGamesStudio/wspolniak/commit/f06ad00d16bc5265bc9fc031ad9ca9d7c331c6ff)), closes [#54](https://github.com/CrystalGamesStudio/wspolniak/issues/54)
+
 # [1.32.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.31.0...v1.32.0) (2026-05-11)
 
 
