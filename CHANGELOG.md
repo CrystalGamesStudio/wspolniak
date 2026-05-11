@@ -1,3 +1,10 @@
+# [1.30.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.29.0...v1.30.0) (2026-05-11)
+
+
+### Features
+
+* **reactions:** add reaction button with picker UI ([9ead312](https://github.com/CrystalGamesStudio/wspolniak/commit/9ead31236913b2bc4a37ac4b2597760ba2ac5bb9)), closes [#51](https://github.com/CrystalGamesStudio/wspolniak/issues/51)
+
 # [1.29.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.28.0...v1.29.0) (2026-05-10)
 
 
