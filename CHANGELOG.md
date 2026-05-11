@@ -1,3 +1,10 @@
+# [1.31.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.30.0...v1.31.0) (2026-05-11)
+
+
+### Features
+
+* **reactions:** add mobile bottom sheet picker for reactions ([645f936](https://github.com/CrystalGamesStudio/wspolniak/commit/645f936f191ce450aed7eda4458fac3995c792a6)), closes [#52](https://github.com/CrystalGamesStudio/wspolniak/issues/52)
+
 # [1.30.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.29.0...v1.30.0) (2026-05-11)
 
 
