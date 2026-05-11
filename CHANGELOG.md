@@ -1,3 +1,10 @@
+# [1.32.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.31.0...v1.32.0) (2026-05-11)
+
+
+### Features
+
+* **reactions:** add desktop per-emoji reaction counts ([c52bee9](https://github.com/CrystalGamesStudio/wspolniak/commit/c52bee94b498d22bb81a0f36dde8e2b61de3cce8)), closes [#53](https://github.com/CrystalGamesStudio/wspolniak/issues/53)
+
 # [1.31.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.30.0...v1.31.0) (2026-05-11)
 
 
