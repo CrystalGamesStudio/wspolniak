@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/sheet";
 import type { ReactionType } from "@/db/post-reactions/table";
 import { reactionTypes } from "@/db/post-reactions/table";
+import { ReactionDisplay } from "./reaction-display";
 
 const reactionEmojis: Record<ReactionType, string> = {
 	heart: "❤️",
@@ -135,7 +136,7 @@ export function ReactionButton({ postId }: ReactionButtonProps) {
 					type="button"
 					className="inline-flex items-center gap-1 rounded-md px-3 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground sm:px-2 sm:py-1"
 				>
-					{emoji} {total}
+					<ReactionDisplay counts={counts} />
 				</button>
 			</DropdownMenuTrigger>
 			<DropdownMenuContent>
