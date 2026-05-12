@@ -1,3 +1,10 @@
+# [1.34.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.33.0...v1.34.0) (2026-05-12)
+
+
+### Features
+
+* **videos:** add single video upload to feed (phase 1) ([fcb59ee](https://github.com/CrystalGamesStudio/wspolniak/commit/fcb59ee526dc745a6d0a30427ca3531ab4c1e0a0)), closes [#57](https://github.com/CrystalGamesStudio/wspolniak/issues/57)
+
 # [1.33.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.32.0...v1.33.0) (2026-05-11)
 
 
