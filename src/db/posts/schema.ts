@@ -8,6 +8,7 @@ export const createPostSchema = z.object({
 		.nullish()
 		.transform((v) => v ?? null),
 	cfImageIds: z.array(z.string().min(1)).max(10).optional(),
+	cfStreamUid: z.string().min(1).optional(),
 });
 
 export type CreatePostRequest = z.infer<typeof createPostSchema>;

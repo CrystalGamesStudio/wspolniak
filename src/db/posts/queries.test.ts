@@ -150,7 +150,9 @@ describe("listRecentPosts", () => {
 		const mockLeftJoin1 = vi.fn().mockReturnValue({ leftJoin: mockLeftJoin2 });
 		const mockFrom = vi.fn().mockReturnValue({ leftJoin: mockLeftJoin1 });
 		const mockSelect = vi.fn().mockReturnValue({ from: mockFrom });
-		mockGetDb.mockReturnValue({ select: mockSelect } as never);
+		mockGetDb
+			.mockReturnValueOnce({ select: mockSelect } as never)
+			.mockReturnValueOnce(mockEmptyVideoSelect());
 
 		const result = await listRecentPosts(50);
 
@@ -210,7 +212,9 @@ describe("listRecentPosts", () => {
 		const mockLeftJoin1 = vi.fn().mockReturnValue({ leftJoin: mockLeftJoin2 });
 		const mockFrom = vi.fn().mockReturnValue({ leftJoin: mockLeftJoin1 });
 		const mockSelect = vi.fn().mockReturnValue({ from: mockFrom });
-		mockGetDb.mockReturnValue({ select: mockSelect } as never);
+		mockGetDb
+			.mockReturnValueOnce({ select: mockSelect } as never)
+			.mockReturnValueOnce(mockEmptyVideoSelect());
 
 		const result = await listRecentPosts(50);
 
@@ -284,7 +288,9 @@ describe("getPostById", () => {
 		const mockLeftJoin1 = vi.fn().mockReturnValue({ leftJoin: mockLeftJoin2 });
 		const mockFrom = vi.fn().mockReturnValue({ leftJoin: mockLeftJoin1 });
 		const mockSelect = vi.fn().mockReturnValue({ from: mockFrom });
-		mockGetDb.mockReturnValue({ select: mockSelect } as never);
+		mockGetDb
+			.mockReturnValueOnce({ select: mockSelect } as never)
+			.mockReturnValueOnce(mockEmptyVideoSelect());
 
 		const result = await getPostById("post-1");
 
@@ -366,7 +372,8 @@ function _mockPaginatedSelectChain(idRows: { id: string }[], fullRows: unknown[]
 
 	mockGetDb
 		.mockReturnValueOnce({ select: mockSelect1 } as never)
-		.mockReturnValueOnce({ select: mockSelect2 } as never);
+		.mockReturnValueOnce({ select: mockSelect2 } as never)
+		.mockReturnValueOnce(mockEmptyVideoSelect());
 }
 
 function _mockPaginatedEmpty() {
@@ -378,6 +385,13 @@ function _mockPaginatedEmpty() {
 	mockGetDb.mockReturnValue({ select: mockSelect } as never);
 }
 
+function mockEmptyVideoSelect() {
+	const mockOrderBy = vi.fn().mockResolvedValue([]);
+	const mockWhere = vi.fn().mockReturnValue({ orderBy: mockOrderBy });
+	const mockFrom = vi.fn().mockReturnValue({ where: mockWhere });
+	const mockSelect = vi.fn().mockReturnValue({ from: mockFrom });
+	return { select: mockSelect } as never;
+}
 describe("listPaginatedPosts", () => {
 	it("returns correct number of posts when each post has multiple images", async () => {
 		const now = new Date();

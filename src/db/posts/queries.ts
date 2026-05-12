@@ -3,19 +3,21 @@ import type { InferSelectModel } from "drizzle-orm";
 import { and, asc, count, desc, eq, gte, inArray, isNull, sql } from "drizzle-orm";
 import { users } from "@/db/identity/table";
 import { getDb } from "@/db/setup";
-import { postImages, posts } from "./table";
+import { postImages, posts, postVideos } from "./table";
 
 export type Post = InferSelectModel<typeof posts>;
 export type PostImage = InferSelectModel<typeof postImages>;
+export type PostVideo = InferSelectModel<typeof postVideos>;
 
 interface CreatePostInput {
 	authorId: string;
 	description: string | null;
 	cfImageIds?: string[];
+	cfStreamUid?: string;
 }
 
 export async function createPost(input: CreatePostInput) {
-	const { authorId, description, cfImageIds = [] } = input;
+	const { authorId, description, cfImageIds = [], cfStreamUid } = input;
 	const db = getDb();
 
 	const postId = crypto.randomUUID();
@@ -38,6 +40,15 @@ export async function createPost(input: CreatePostInput) {
 					.returning()
 			: [];
 
+	if (cfStreamUid) {
+		await db.insert(postVideos).values({
+			id: crypto.randomUUID(),
+			postId,
+			cfStreamUid,
+			displayOrder: images.length,
+		});
+	}
+
 	return { post, images };
 }
 
@@ -49,6 +60,7 @@ interface PostWithAuthorAndImages {
 	updatedAt: Date;
 	author: { id: string; name: string };
 	images: PostImage[];
+	videos: PostVideo[];
 }
 
 type PostJoinRow = {
@@ -73,11 +85,35 @@ function aggregatePostRows(rows: PostJoinRow[]): PostWithAuthorAndImages[] {
 				updatedAt: row.post.updatedAt,
 				author: { id: row.author?.id ?? "", name: row.author?.name ?? "" },
 				images: row.image ? [row.image] : [],
+				videos: [],
 			});
 		}
 	}
 
 	return [...postsMap.values()];
+}
+
+async function attachVideosToPosts(
+	postIds: string[],
+	postsList: PostWithAuthorAndImages[],
+): Promise<void> {
+	if (postIds.length === 0) return;
+	const videoRows = await getDb()
+		.select()
+		.from(postVideos)
+		.where(inArray(postVideos.postId, postIds))
+		.orderBy(asc(postVideos.displayOrder));
+
+	const videosByPost = new Map<string, PostVideo[]>();
+	for (const v of videoRows) {
+		const list = videosByPost.get(v.postId) ?? [];
+		list.push(v);
+		videosByPost.set(v.postId, list);
+	}
+
+	for (const p of postsList) {
+		p.videos = videosByPost.get(p.id) ?? [];
+	}
 }
 
 export async function listRecentPosts(limit: number): Promise<PostWithAuthorAndImages[]> {
@@ -94,7 +130,12 @@ export async function listRecentPosts(limit: number): Promise<PostWithAuthorAndI
 		.orderBy(desc(posts.createdAt), asc(postImages.displayOrder))
 		.limit(limit);
 
-	return aggregatePostRows(rows);
+	const recent = aggregatePostRows(rows);
+	await attachVideosToPosts(
+		recent.map((p) => p.id),
+		recent,
+	);
+	return recent;
 }
 
 interface PaginatedPostsInput {
@@ -149,6 +190,10 @@ export async function listPaginatedPosts(
 		.orderBy(desc(posts.createdAt), desc(posts.id), asc(postImages.displayOrder));
 
 	const resultPosts = aggregatePostRows(rows);
+	await attachVideosToPosts(
+		resultPosts.map((p) => p.id),
+		resultPosts,
+	);
 	const lastPost = resultPosts[resultPosts.length - 1];
 	const nextCursor =
 		hasMore && lastPost ? { createdAt: lastPost.createdAt.toISOString(), id: lastPost.id } : null;
@@ -176,6 +221,12 @@ export async function getPostById(id: string): Promise<PostWithAuthorAndImages |
 		if (row.image) images.push(row.image);
 	}
 
+	const videoRows = await getDb()
+		.select()
+		.from(postVideos)
+		.where(eq(postVideos.postId, id))
+		.orderBy(asc(postVideos.displayOrder));
+
 	return {
 		id: first.post.id,
 		authorId: first.post.authorId,
@@ -184,6 +235,7 @@ export async function getPostById(id: string): Promise<PostWithAuthorAndImages |
 		updatedAt: first.post.updatedAt,
 		author: { id: first.author?.id ?? "", name: first.author?.name ?? "" },
 		images,
+		videos: videoRows,
 	};
 }
 

@@ -9,6 +9,7 @@ import postsEndpoint from "@/hono/api/posts";
 import pushEndpoint from "@/hono/api/push";
 import setupEndpoint from "@/hono/api/setup";
 import shareEndpoint from "@/hono/api/share";
+import videosEndpoint from "@/hono/api/videos";
 import { createHono } from "./factory";
 
 export const apiHono = createHono().basePath("/api");
@@ -16,6 +17,7 @@ export const apiHono = createHono().basePath("/api");
 apiHono.route("/health", healthEndpoint);
 apiHono.route("/setup", setupEndpoint);
 apiHono.route("/app/images", imagesEndpoint);
+apiHono.route("/app/videos", videosEndpoint);
 apiHono.route("/app/posts", postsEndpoint);
 apiHono.route("/app/posts", commentsEndpoint);
 apiHono.route("/app/posts", reactionsEndpoint);
