@@ -46,6 +46,7 @@ postsEndpoint.post("/", async (c) => {
 		authorId: user.userId,
 		description: result.data.description,
 		cfImageIds: result.data.cfImageIds ?? [],
+		cfStreamUid: result.data.cfStreamUid,
 	});
 
 	const baseSendPush = createSendWebPushFromEnv(c.env);

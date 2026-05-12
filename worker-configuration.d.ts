@@ -15,6 +15,7 @@ declare namespace Cloudflare {
 		CLOUDFLARE_ACCOUNT_ID: string;
 		CLOUDFLARE_IMAGES_API_TOKEN: string;
 		CLOUDFLARE_IMAGES_ACCOUNT_HASH: string;
+		CLOUDFLARE_STREAM_API_TOKEN: string;
 	}
 	interface Env {
 		APP_URL: "https://wspolniak.com" | "http://192.168.9.14:3000";
@@ -26,6 +27,7 @@ declare namespace Cloudflare {
 		CLOUDFLARE_ACCOUNT_ID: string;
 		CLOUDFLARE_IMAGES_API_TOKEN: string;
 		CLOUDFLARE_IMAGES_ACCOUNT_HASH: string;
+		CLOUDFLARE_STREAM_API_TOKEN: string;
 	}
 }
 type StringifyValues<EnvType extends Record<string, unknown>> = {
