@@ -333,58 +333,64 @@ export function NewPostForm({ onSubmit, isSubmitting }: NewPostFormProps) {
 
 			{/* Media buttons row */}
 			<div className="grid grid-cols-2 gap-2 sm:gap-4">
-				<div className="space-y-2">
-					<Label htmlFor="photos">Zdjęcia</Label>
-					<input
-						id="photos"
-						ref={imageInputRef}
-						type="file"
-						accept={ACCEPTED_IMAGE_TYPES}
-						multiple
-						onChange={handleImageFileChange}
-						className="hidden"
-					/>
-					<Button
-						type="button"
-						variant="outline"
-						className="h-11 w-full sm:h-9"
-						onClick={() => imageInputRef.current?.click()}
-						disabled={images.length >= MAX_IMAGES}
-					>
-						<ImagePlus className="mr-2 h-4 w-4" />
-						{images.length > 0
-							? `${images.length}/${MAX_IMAGES} ${images.length === 1 ? "zdjęcie" : images.length < 5 ? "zdjęcia" : "zdjęć"}`
-							: "Zdjęcia"}
-					</Button>
-				</div>
+				<input
+					ref={imageInputRef}
+					type="file"
+					accept={ACCEPTED_IMAGE_TYPES}
+					multiple
+					onChange={handleImageFileChange}
+					className="hidden"
+				/>
+				<Button
+					type="button"
+					variant="outline"
+					className="h-11 w-full sm:h-9"
+					onClick={() => imageInputRef.current?.click()}
+					disabled={images.length >= MAX_IMAGES}
+					title={images.length > 0 ? `${images.length}/${MAX_IMAGES}` : "Dodaj zdjęcia"}
+				>
+					<ImagePlus className="h-4 w-4" />
+					{images.length > 0 ? (
+						<span className="ml-2">
+							{images.length}/{MAX_IMAGES}
+						</span>
+					) : (
+						<span className="ml-2">Zdjęcia</span>
+					)}
+				</Button>
 
-				<div className="space-y-2">
-					<Label htmlFor="video">Wideo</Label>
-					<input
-						id="video"
-						ref={videoInputRef}
-						type="file"
-						accept={ACCEPTED_VIDEO_TYPES}
-						onChange={handleVideoFileChange}
-						className="hidden"
-					/>
-					<Button
-						type="button"
-						variant="outline"
-						className="h-11 w-full sm:h-9"
-						onClick={() => videoInputRef.current?.click()}
-						disabled={
-							videos.length >= MAX_VIDEOS || videos.some((v) => !v.videoUid && !v.videoError)
-						}
-					>
-						<VideoIcon className="mr-2 h-4 w-4" />
-						{videos.some((v) => !v.videoUid && !v.videoError)
+				<input
+					ref={videoInputRef}
+					type="file"
+					accept={ACCEPTED_VIDEO_TYPES}
+					onChange={handleVideoFileChange}
+					className="hidden"
+				/>
+				<Button
+					type="button"
+					variant="outline"
+					className="h-11 w-full sm:h-9"
+					onClick={() => videoInputRef.current?.click()}
+					disabled={videos.length >= MAX_VIDEOS || videos.some((v) => !v.videoUid && !v.videoError)}
+					title={
+						videos.some((v) => !v.videoUid && !v.videoError)
 							? "Upload..."
 							: videos.length > 0
-								? `${videos.length}/${MAX_VIDEOS} ${videos.length === 1 ? "wideo" : "wideo"}`
-								: "Wideo"}
-					</Button>
-				</div>
+								? `${videos.length}/${MAX_VIDEOS}`
+								: "Dodaj wideo"
+					}
+				>
+					<VideoIcon className="h-4 w-4" />
+					{videos.some((v) => !v.videoUid && !v.videoError) ? (
+						<span className="ml-2 text-xs">Upload...</span>
+					) : videos.length > 0 ? (
+						<span className="ml-2">
+							{videos.length}/{MAX_VIDEOS}
+						</span>
+					) : (
+						<span className="ml-2">Wideo</span>
+					)}
+				</Button>
 			</div>
 
 			{/* Media previews */}

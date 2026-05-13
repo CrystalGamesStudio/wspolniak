@@ -12,7 +12,7 @@ describe("NewPostForm", () => {
 		render(<NewPostForm onSubmit={vi.fn()} isSubmitting={false} />);
 
 		expect(screen.getByLabelText(/tekst/i)).toBeDefined();
-		expect(screen.getByLabelText(/zdjęcia/i)).toBeDefined();
+		expect(screen.getByRole("button", { name: /zdjęcia/i })).toBeDefined();
 		expect(screen.getByRole("button", { name: /opublikuj/i })).toBeDefined();
 	});
 

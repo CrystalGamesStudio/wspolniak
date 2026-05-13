@@ -21,6 +21,7 @@ import {
 } from "@/db/push-subscriptions/queries";
 import { createHono } from "@/hono/factory";
 import { authMiddleware } from "@/hono/middleware/auth";
+import { deleteStreamVideo } from "@/stream/client";
 
 const DAILY_POST_LIMIT = 50;
 
@@ -182,6 +183,21 @@ postsEndpoint.delete("/:id", async (c) => {
 		return c.json({ error: "Forbidden" }, 403);
 	}
 
+	// Delete all videos from Cloudflare Stream before soft-delete
+	if (post.videos && post.videos.length > 0) {
+		await Promise.all(
+			post.videos.map((video) =>
+				deleteStreamVideo({
+					accountId: c.env.CLOUDFLARE_ACCOUNT_ID,
+					apiToken: c.env.CLOUDFLARE_STREAM_API_TOKEN,
+					uid: video.cfStreamUid,
+				}).catch((_error) => {
+					// Continue anyway - post will be soft-deleted
+				}),
+			),
+		);
+	}
+
 	await softDeletePost(post.id);
 	return c.json({ data: { id: post.id } });
 });
@@ -206,4 +222,16 @@ postsEndpoint.delete("/:id/images/:imageId", async (c) => {
 	return c.json({ data: { id: deleted.id } });
 });
 
+// Public endpoint for shared posts (no auth required)
+const publicPostsEndpoint = createHono();
+
+publicPostsEndpoint.get("/:id", async (c) => {
+	const post = await getPostById(c.req.param("id"));
+	if (!post) {
+		return c.json({ error: "Not found" }, 404);
+	}
+	return c.json({ data: post, meta: { imageAccountHash: c.env.CLOUDFLARE_IMAGES_ACCOUNT_HASH } });
+});
+
+export { publicPostsEndpoint };
 export default postsEndpoint;
