@@ -1,3 +1,12 @@
+# [1.36.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.35.0...v1.36.0) (2026-05-13)
+
+
+### Features
+
+* **videos:** adaptive autoplay & playback (Phase 4) ([274ae80](https://github.com/CrystalGamesStudio/wspolniak/commit/274ae80dc3f957e9d88ec9e2e9b3e63082184cd4))
+* **videos:** add Cloudflare Stream integration for video uploads ([9cd4ed1](https://github.com/CrystalGamesStudio/wspolniak/commit/9cd4ed1c6e7fc84b4225a16c836a56daf3b56c84))
+* **videos:** support multiple videos per post (Phase 3) ([8b82409](https://github.com/CrystalGamesStudio/wspolniak/commit/8b824094e9f5fb51648a14b4e4acf473fe07dca4)), closes [#59](https://github.com/CrystalGamesStudio/wspolniak/issues/59)
+
 # [1.35.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.34.0...v1.35.0) (2026-05-13)
 
 
