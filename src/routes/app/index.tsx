@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useRef } from "react";
 import { Feed } from "@/components/app/feed";
 import { PullToRefresh } from "@/components/app/pull-to-refresh";
 import { Spinner } from "@/components/ui/spinner";
@@ -43,7 +42,6 @@ export const Route = createFileRoute("/app/")({
 
 function FeedPage() {
 	const { session } = Route.useRouteContext();
-	const loadMoreRef = useRef<HTMLDivElement>(null);
 
 	const { data, isLoading, hasNextPage, isFetchingNextPage, fetchNextPage, refetch } =
 		useInfiniteQuery({
@@ -55,24 +53,6 @@ function FeedPage() {
 				return cursor ? `${cursor.createdAt}_${cursor.id}` : undefined;
 			},
 		});
-
-	useEffect(() => {
-		const el = loadMoreRef.current;
-		if (!el) return;
-
-		const observer = new IntersectionObserver(
-			(entries) => {
-				const first = entries[0];
-				if (first?.isIntersecting && hasNextPage && !isFetchingNextPage) {
-					fetchNextPage();
-				}
-			},
-			{ rootMargin: "200px" },
-		);
-
-		observer.observe(el);
-		return () => observer.disconnect();
-	}, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
 	if (isLoading) {
 		return (
@@ -100,7 +80,7 @@ function FeedPage() {
 					currentUserRole={session.role}
 					hasNextPage={hasNextPage}
 					isFetchingNextPage={isFetchingNextPage}
-					loadMoreRef={loadMoreRef}
+					onLoadMore={() => fetchNextPage()}
 				/>
 			</div>
 		</PullToRefresh>

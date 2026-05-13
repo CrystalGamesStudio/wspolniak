@@ -51,7 +51,7 @@ self.addEventListener("fetch", (event) => {
 	if (event.request.mode === "navigate") {
 		event.respondWith(
 			caches.match(event.request).then((cached) => {
-				const fetchPromise = fetch(event.request).then((response) => {
+				const fetchPromise = fetch(event.request.url, { redirect: "follow" }).then((response) => {
 					if (response.ok) {
 						const clone = response.clone();
 						caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));

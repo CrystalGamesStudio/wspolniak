@@ -111,7 +111,7 @@ postsEndpoint.get("/", async (c) => {
 		};
 	}
 
-	const result = await listPaginatedPosts({ limit: 20, cursor });
+	const result = await listPaginatedPosts({ limit: 10, cursor });
 	const postIds = result.posts.map((p) => p.id);
 	const commentCounts = await countCommentsByPosts(postIds);
 	const postsWithComments = result.posts.map((p) => ({

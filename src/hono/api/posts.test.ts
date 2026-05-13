@@ -435,7 +435,7 @@ describe("GET /api/app/posts (paginated)", () => {
 		expect(body.data).toHaveLength(1);
 		expect(body.meta.nextCursor).not.toBeNull();
 		expect(body.meta.nextCursor?.id).toBe("post-1");
-		expect(mockListPaginated).toHaveBeenCalledWith({ limit: 20, cursor: undefined });
+		expect(mockListPaginated).toHaveBeenCalledWith({ limit: 10, cursor: undefined });
 	});
 
 	it("passes cursor from query params to listPaginatedPosts", async () => {
@@ -450,7 +450,7 @@ describe("GET /api/app/posts (paginated)", () => {
 
 		expect(res.status).toBe(200);
 		expect(mockListPaginated).toHaveBeenCalledWith({
-			limit: 20,
+			limit: 10,
 			cursor: { createdAt: "2026-01-01T12:00:00.000Z", id: "post-5" },
 		});
 	});
