@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-import { createStreamUploadUrl, getStreamThumbnailUrl } from "./client";
+import { createStreamUploadUrl, getStreamThumbnailUrl, getStreamVideoStatus } from "./client";
 
 const mockFetch = vi.fn();
 vi.stubGlobal("fetch", mockFetch);
@@ -55,5 +55,105 @@ describe("getStreamThumbnailUrl", () => {
 	it("returns thumbnail URL for a CF Stream UID", () => {
 		const url = getStreamThumbnailUrl("cf-stream-uid-123");
 		expect(url).toBe("https://videodelivery.net/cf-stream-uid-123/thumbnails/thumbnail.jpg");
+	});
+});
+
+describe("getStreamVideoStatus", () => {
+	it("returns 'ready' when CF Stream reports ready", async () => {
+		mockFetch.mockResolvedValue({
+			ok: true,
+			json: () =>
+				Promise.resolve({
+					result: {
+						uid: "cf-stream-uid-123",
+						status: { state: "ready" },
+					},
+				}),
+		});
+
+		const result = await getStreamVideoStatus({
+			accountId: "acc-1",
+			apiToken: "token-1",
+			uid: "cf-stream-uid-123",
+		});
+
+		expect(result).toEqual({
+			status: "ready",
+			thumbnailUrl: "https://videodelivery.net/cf-stream-uid-123/thumbnails/thumbnail.jpg",
+		});
+	});
+
+	it("returns 'processing' for inprogress state", async () => {
+		mockFetch.mockResolvedValue({
+			ok: true,
+			json: () =>
+				Promise.resolve({
+					result: {
+						uid: "cf-stream-uid-123",
+						status: { state: "inprogress" },
+					},
+				}),
+		});
+
+		const result = await getStreamVideoStatus({
+			accountId: "acc-1",
+			apiToken: "token-1",
+			uid: "cf-stream-uid-123",
+		});
+
+		expect(result.status).toBe("processing");
+	});
+
+	it("returns 'processing' for queued state", async () => {
+		mockFetch.mockResolvedValue({
+			ok: true,
+			json: () =>
+				Promise.resolve({
+					result: {
+						uid: "cf-stream-uid-123",
+						status: { state: "queued" },
+					},
+				}),
+		});
+
+		const result = await getStreamVideoStatus({
+			accountId: "acc-1",
+			apiToken: "token-1",
+			uid: "cf-stream-uid-123",
+		});
+
+		expect(result.status).toBe("processing");
+	});
+
+	it("returns 'error' when CF Stream reports error", async () => {
+		mockFetch.mockResolvedValue({
+			ok: true,
+			json: () =>
+				Promise.resolve({
+					result: {
+						uid: "cf-stream-uid-123",
+						status: { state: "error" },
+					},
+				}),
+		});
+
+		const result = await getStreamVideoStatus({
+			accountId: "acc-1",
+			apiToken: "token-1",
+			uid: "cf-stream-uid-123",
+		});
+
+		expect(result.status).toBe("error");
+	});
+
+	it("throws on API error", async () => {
+		mockFetch.mockResolvedValue({
+			ok: false,
+			status: 404,
+		});
+
+		await expect(
+			getStreamVideoStatus({ accountId: "acc-1", apiToken: "token-1", uid: "bad-uid" }),
+		).rejects.toThrow("Cloudflare Stream API error: 404");
 	});
 });
