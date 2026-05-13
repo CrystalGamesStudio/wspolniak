@@ -124,6 +124,7 @@ describe("POST /api/app/posts", () => {
 			authorId: "u1",
 			description: "Test",
 			cfImageIds: ["cf-aaa"],
+			cfStreamUids: [],
 		});
 	});
 
@@ -180,7 +181,7 @@ describe("POST /api/app/posts", () => {
 			authedRequest("/api/app/posts", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ description: "Video post", cfStreamUid: "stream-uid-1" }),
+				body: JSON.stringify({ description: "Video post", cfStreamUids: ["stream-uid-1"] }),
 			}),
 			env,
 		);
@@ -190,7 +191,7 @@ describe("POST /api/app/posts", () => {
 			authorId: "u1",
 			description: "Video post",
 			cfImageIds: [],
-			cfStreamUid: "stream-uid-1",
+			cfStreamUids: ["stream-uid-1"],
 		});
 	});
 
@@ -216,7 +217,7 @@ describe("POST /api/app/posts", () => {
 			authedRequest("/api/app/posts", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ cfStreamUid: "stream-uid-2" }),
+				body: JSON.stringify({ cfStreamUids: ["stream-uid-2"] }),
 			}),
 			env,
 		);
@@ -226,7 +227,7 @@ describe("POST /api/app/posts", () => {
 			authorId: "u1",
 			description: null,
 			cfImageIds: [],
-			cfStreamUid: "stream-uid-2",
+			cfStreamUids: ["stream-uid-2"],
 		});
 	});
 
