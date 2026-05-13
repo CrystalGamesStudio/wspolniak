@@ -1,3 +1,10 @@
+# [1.37.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.36.0...v1.37.0) (2026-05-13)
+
+
+### Features
+
+* **videos:** Phase 5 - management, limits & full integration ([26534a1](https://github.com/CrystalGamesStudio/wspolniak/commit/26534a1040cb4137563704fed398445c199a0275))
+
 # [1.36.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.35.0...v1.36.0) (2026-05-13)
 
 
