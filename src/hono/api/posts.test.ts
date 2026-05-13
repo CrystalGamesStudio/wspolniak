@@ -103,6 +103,7 @@ describe("POST /api/app/posts", () => {
 			images: [
 				{ id: "img-1", postId: "post-1", cfImageId: "cf-aaa", displayOrder: 0, createdAt: now },
 			],
+			videos: [],
 		});
 
 		const api = createApi();
@@ -170,6 +171,7 @@ describe("POST /api/app/posts", () => {
 				updatedAt: now,
 			},
 			images: [],
+			videos: [],
 		});
 
 		const api = createApi();
@@ -205,6 +207,7 @@ describe("POST /api/app/posts", () => {
 				updatedAt: now,
 			},
 			images: [],
+			videos: [],
 		});
 
 		const api = createApi();

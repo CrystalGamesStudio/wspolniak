@@ -10,42 +10,71 @@ import {
 } from "@dnd-kit/core";
 import { rectSortingStrategy, SortableContext, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { ImagePlus, Trash2, VideoIcon, X } from "lucide-react";
-import { type ChangeEvent, type FormEvent, useCallback, useMemo, useRef, useState } from "react";
+import { ImagePlus, VideoIcon, X } from "lucide-react";
+import {
+	type ChangeEvent,
+	type FormEvent,
+	useCallback,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { LoaderIcon } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { reorder } from "@/lib/reorder";
-import { useVideoProcessingStatus } from "@/stream/use-video-processing-status";
-import { useVideoUpload } from "@/stream/use-video-upload";
+import { uploadVideo } from "@/stream/upload-video";
 import { validateVideoFile } from "@/stream/validation";
 
 const ACCEPTED_IMAGE_TYPES = "image/jpeg,image/png,image/webp,image/heic,image/heif";
 const ACCEPTED_VIDEO_TYPES =
 	"video/mp4,video/webm,video/quicktime,video/x-msvideo,video/x-matroska,video/ogg";
-const MAX_FILES = 10;
+const MAX_IMAGES = 10;
+const MAX_VIDEOS = 3;
 const MAX_FILE_SIZE_MB = 15;
 const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 
 interface NewPostFormProps {
-	onSubmit: (data: { description: string; files: File[]; cfStreamUid?: string }) => void;
+	onSubmit: (data: { description: string; files: File[]; cfStreamUids: string[] }) => void;
 	isSubmitting: boolean;
+}
+
+type MediaType = "image" | "video";
+
+interface MediaItem {
+	id: string;
+	type: MediaType;
+	// Image fields
+	file?: File;
+	preview?: string;
+	// Video fields
+	videoUid?: string | null;
+	videoProgress?: number;
+	videoError?: string | null;
+	cleanup?: () => void;
 }
 
 function SortablePreview({
 	id,
 	url,
+	type,
 	index,
 	isOver,
 	onRemove,
+	isVideo,
+	videoProgress,
 }: {
 	id: string;
 	url: string;
+	type: MediaType;
 	index: number;
 	isOver: boolean;
 	onRemove: () => void;
+	isVideo?: boolean;
+	videoProgress?: number;
 }) {
 	const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
 		id,
@@ -67,13 +96,23 @@ function SortablePreview({
 			{...listeners}
 			role="option"
 			tabIndex={0}
-			className={`relative aspect-square touch-none ${isDragging ? "scale-90 opacity-80" : ""} ${isOver ? "ring-4 ring-green-500 ring-offset-2 rounded-md" : ""}`}
+			className={`relative touch-none ${isDragging ? "scale-90 opacity-80" : ""} ${isOver ? "ring-4 ring-green-500 ring-offset-2 rounded-md" : ""} ${type === "video" ? "aspect-video" : "aspect-square"}`}
 		>
-			<img
-				src={url}
-				alt={`Podgląd ${index + 1}`}
-				className="aspect-square w-full rounded-md object-cover"
-			/>
+			{isVideo && videoProgress !== undefined && videoProgress < 100 ? (
+				<div className="aspect-video w-full rounded-md bg-muted flex items-center justify-center">
+					<div className="text-center">
+						<LoaderIcon loading />
+						<p className="text-sm text-muted-foreground mt-2">{videoProgress}%</p>
+					</div>
+				</div>
+			) : (
+				<img src={url} alt={`Podgląd ${index + 1}`} className="w-full rounded-md object-cover" />
+			)}
+			{type === "video" && videoProgress === 100 && (
+				<div className="absolute inset-0 flex items-center justify-center">
+					<VideoIcon className="h-8 w-8 text-white drop-shadow-lg" />
+				</div>
+			)}
 			<button
 				type="button"
 				onClick={(e) => {
@@ -82,7 +121,7 @@ function SortablePreview({
 				}}
 				onPointerDown={(e) => e.stopPropagation()}
 				className="absolute right-1 top-1 flex size-6 items-center justify-center rounded-full bg-destructive text-destructive-foreground opacity-90 transition-opacity hover:opacity-100"
-				title="Usuń zdjęcie"
+				title="Usuń"
 			>
 				<X className="h-3 w-3" />
 			</button>
@@ -92,34 +131,28 @@ function SortablePreview({
 
 export function NewPostForm({ onSubmit, isSubmitting }: NewPostFormProps) {
 	const [description, setDescription] = useState("");
-	const [files, setFiles] = useState<File[]>([]);
+	const [media, setMedia] = useState<MediaItem[]>([]);
 	const [error, setError] = useState<string | null>(null);
-	const [previews, setPreviews] = useState<string[]>([]);
-	const [videoError, setVideoError] = useState<string | null>(null);
 	const [overId, setOverId] = useState<string | null>(null);
 	const imageInputRef = useRef<HTMLInputElement>(null);
 	const videoInputRef = useRef<HTMLInputElement>(null);
+	const videoPollIntervalsRef = useRef<Map<string, ReturnType<typeof setInterval>>>(new Map());
 
-	// Video upload hooks
-	const videoUpload = useVideoUpload();
-	const videoProcessing = useVideoProcessingStatus(videoUpload.uid);
+	// Clean up video polling on unmount
+	useEffect(() => {
+		return () => {
+			for (const interval of videoPollIntervalsRef.current.values()) {
+				clearInterval(interval);
+			}
+		};
+	}, []);
 
-	// Determine video state
-	const videoState = useMemo(() => {
-		if (videoUpload.error || videoError) return "error";
-		if (videoUpload.isUploading) return "uploading";
-		if (videoUpload.uid && videoProcessing.status === "ready") return "ready";
-		if (videoUpload.uid && videoProcessing.status === "error") return "error";
-		if (videoUpload.uid) return "processing";
-		return "idle";
-	}, [videoUpload, videoProcessing, videoError]);
-
-	// Notify parent when video is ready
-	const hasVideo = videoState === "ready" && !!videoUpload.uid;
+	const images = useMemo(() => media.filter((m) => m.type === "image"), [media]);
+	const videos = useMemo(() => media.filter((m) => m.type === "video"), [media]);
 
 	const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
-	const sortableIds = useMemo(() => previews.map((_, i) => `preview-${i}`), [previews]);
+	const sortableIds = useMemo(() => media.map((m) => m.id), [media]);
 
 	const handleDragStart = useCallback((_event: DragStartEvent) => {
 		setOverId(null);
@@ -129,17 +162,19 @@ export function NewPostForm({ onSubmit, isSubmitting }: NewPostFormProps) {
 		setOverId(event.over ? String(event.over.id) : null);
 	}, []);
 
-	const handleDragEnd = useCallback((event: DragEndEvent) => {
-		setOverId(null);
-		const { active, over } = event;
-		if (!over || active.id === over.id) return;
+	const handleDragEnd = useCallback(
+		(event: DragEndEvent) => {
+			setOverId(null);
+			const { active, over } = event;
+			if (!over || active.id === over.id) return;
 
-		const activeIndex = Number(String(active.id).replace("preview-", ""));
-		const overIndex = Number(String(over.id).replace("preview-", ""));
+			const activeIndex = media.findIndex((m) => m.id === active.id);
+			const overIndex = media.findIndex((m) => m.id === over.id);
 
-		setFiles((prev) => reorder(prev, activeIndex, overIndex));
-		setPreviews((prev) => reorder(prev, activeIndex, overIndex));
-	}, []);
+			setMedia((prev) => reorder(prev, activeIndex, overIndex));
+		},
+		[media],
+	);
 
 	const handleImageFileChange = useCallback(
 		(e: ChangeEvent<HTMLInputElement>) => {
@@ -154,19 +189,26 @@ export function NewPostForm({ onSubmit, isSubmitting }: NewPostFormProps) {
 				return;
 			}
 
-			const merged = [...files, ...incoming];
-			if (merged.length > MAX_FILES) {
-				setError(`Maksymalnie ${MAX_FILES} zdjęć na post`);
+			if (images.length + incoming.length > MAX_IMAGES) {
+				setError(`Maksymalnie ${MAX_IMAGES} zdjęć na post`);
 				return;
 			}
 
-			const urls = incoming.map((f) => URL.createObjectURL(f));
-			setFiles(merged);
-			setPreviews((prev) => [...prev, ...urls]);
+			const newItems: MediaItem[] = incoming.map((file, i) => {
+				const preview = URL.createObjectURL(file);
+				return {
+					id: `img-${Date.now()}-${i}`,
+					type: "image" as const,
+					file,
+					preview,
+				};
+			});
+
+			setMedia((prev) => [...prev, ...newItems]);
 
 			if (imageInputRef.current) imageInputRef.current.value = "";
 		},
-		[files],
+		[images.length],
 	);
 
 	const handleVideoFileChange = useCallback(
@@ -174,73 +216,104 @@ export function NewPostForm({ onSubmit, isSubmitting }: NewPostFormProps) {
 			const file = e.target.files?.[0];
 			if (!file) return;
 
-			setVideoError(null);
 			setError(null);
 
-			const validation = validateVideoFile(file);
-			if (!validation.ok) {
-				setVideoError(validation.error);
+			if (videos.length >= MAX_VIDEOS) {
+				setError(`Maksymalnie ${MAX_VIDEOS} wideo na post`);
 				return;
 			}
 
-			videoUpload.upload(file);
+			const validation = validateVideoFile(file);
+			if (!validation.ok) {
+				setError(validation.error);
+				return;
+			}
+
+			const id = `video-${Date.now()}`;
+			const newItem: MediaItem = {
+				id,
+				type: "video",
+				videoUid: null,
+				videoProgress: 0,
+				videoError: null,
+			};
+
+			setMedia((prev) => [...prev, newItem]);
+
+			// Start upload
+			const cleanup = uploadVideo(file, {
+				onProgress: (progress) => {
+					setMedia((prev) =>
+						prev.map((m) => (m.id === id ? { ...m, videoProgress: progress } : m)),
+					);
+				},
+				onSuccess: (uid) => {
+					setMedia((prev) =>
+						prev.map((m) => (m.id === id ? { ...m, videoUid: uid, videoProgress: 100 } : m)),
+					);
+				},
+				onError: (err) => {
+					setMedia((prev) => prev.map((m) => (m.id === id ? { ...m, videoError: err } : m)));
+				},
+			});
+
+			// Store cleanup for this video
+			newItem.cleanup = cleanup;
+
 			if (videoInputRef.current) videoInputRef.current.value = "";
 		},
-		[videoUpload],
+		[videos.length],
 	);
 
-	const removeFile = useCallback((index: number) => {
-		setFiles((prev) => {
-			const newFiles = prev.filter((_, i) => i !== index);
-			if (newFiles.length === 0) {
+	const removeMedia = useCallback((id: string) => {
+		setMedia((prev) => {
+			const item = prev.find((m) => m.id === id);
+			if (item?.cleanup) {
+				item.cleanup();
+			}
+			if (item?.preview) {
+				URL.revokeObjectURL(item.preview);
+			}
+			const filtered = prev.filter((m) => m.id !== id);
+			if (filtered.length === 0) {
 				if (imageInputRef.current) imageInputRef.current.value = "";
+				if (videoInputRef.current) videoInputRef.current.value = "";
 			}
-			return newFiles;
-		});
-		setPreviews((prev) => {
-			const newPreviews = prev.filter((_, i) => i !== index);
-			if (prev[index]) {
-				URL.revokeObjectURL(prev[index]);
-			}
-			return newPreviews;
+			return filtered;
 		});
 	}, []);
-
-	const removeVideo = useCallback(() => {
-		videoUpload.reset();
-		setVideoError(null);
-	}, [videoUpload]);
 
 	const handleSubmit = useCallback(
 		(e: FormEvent) => {
 			e.preventDefault();
-			if (files.length === 0 && !description.trim() && !hasVideo) {
+			const readyVideos = videos.filter((v) => v.videoUid);
+			if (images.length === 0 && readyVideos.length === 0 && !description.trim()) {
 				setError("Dodaj tekst, zdjęcie lub wideo");
 				return;
 			}
+			const videoUids = readyVideos.map((v) => v.videoUid!);
+			const files = images.map((i) => i.file!).filter(Boolean);
 			onSubmit({
 				description,
 				files,
-				cfStreamUid: hasVideo && videoUpload.uid ? videoUpload.uid : undefined,
+				cfStreamUids: videoUids,
 			});
 		},
-		[description, files, hasVideo, onSubmit, videoUpload.uid],
+		[description, images, videos, onSubmit],
 	);
 
-	const canSubmit = useMemo(
-		() =>
-			(files.length > 0 || description.trim().length > 0 || hasVideo) &&
-			!isSubmitting &&
-			videoState !== "processing" &&
-			videoState !== "uploading",
-		[files.length, description, hasVideo, isSubmitting, videoState],
-	);
+	const canSubmit = useMemo(() => {
+		const hasContent = images.length > 0 || description.trim().length > 0;
+		const allVideosReady = videos.every((v) => v.videoUid || v.videoError);
+		const hasReadyVideos = videos.some((v) => v.videoUid);
+		return (hasContent || hasReadyVideos) && !isSubmitting && allVideosReady;
+	}, [images.length, description, videos, isSubmitting]);
 
 	return (
 		<form onSubmit={handleSubmit} className="space-y-4">
-			{(error || videoError) && (
+			{error && (
 				<Alert variant="destructive">
-					<AlertDescription>{error ?? videoError}</AlertDescription>
+					<AlertDescription>{error}</AlertDescription>
 				</Alert>
 			)}
 
@@ -276,10 +349,11 @@ export function NewPostForm({ onSubmit, isSubmitting }: NewPostFormProps) {
 						variant="outline"
 						className="h-11 w-full sm:h-9"
 						onClick={() => imageInputRef.current?.click()}
+						disabled={images.length >= MAX_IMAGES}
 					>
 						<ImagePlus className="mr-2 h-4 w-4" />
-						{files.length > 0
-							? `${files.length} ${files.length === 1 ? "zdjęcie" : files.length < 5 ? "zdjęcia" : "zdjęć"}`
+						{images.length > 0
+							? `${images.length}/${MAX_IMAGES} ${images.length === 1 ? "zdjęcie" : images.length < 5 ? "zdjęcia" : "zdjęć"}`
 							: "Zdjęcia"}
 					</Button>
 				</div>
@@ -299,22 +373,22 @@ export function NewPostForm({ onSubmit, isSubmitting }: NewPostFormProps) {
 						variant="outline"
 						className="h-11 w-full sm:h-9"
 						onClick={() => videoInputRef.current?.click()}
-						disabled={videoState === "uploading" || videoState === "processing"}
+						disabled={
+							videos.length >= MAX_VIDEOS || videos.some((v) => !v.videoUid && !v.videoError)
+						}
 					>
 						<VideoIcon className="mr-2 h-4 w-4" />
-						{videoState === "uploading"
-							? `${videoUpload.progress}%`
-							: videoState === "processing"
-								? "Przetwarzanie..."
-								: videoState === "ready"
-									? "Wideo dodane"
-									: "Wideo"}
+						{videos.some((v) => !v.videoUid && !v.videoError)
+							? "Upload..."
+							: videos.length > 0
+								? `${videos.length}/${MAX_VIDEOS} ${videos.length === 1 ? "wideo" : "wideo"}`
+								: "Wideo"}
 					</Button>
 				</div>
 			</div>
 
-			{/* Image previews */}
-			{previews.length > 0 && (
+			{/* Media previews */}
+			{media.length > 0 && (
 				<DndContext
 					sensors={sensors}
 					onDragStart={handleDragStart}
@@ -323,77 +397,34 @@ export function NewPostForm({ onSubmit, isSubmitting }: NewPostFormProps) {
 				>
 					<SortableContext items={sortableIds} strategy={rectSortingStrategy}>
 						<div role="listbox" className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-							{previews.map((url, i) => (
-								<SortablePreview
-									key={sortableIds[i]}
-									id={sortableIds[i]}
-									url={url}
-									index={i}
-									isOver={overId === sortableIds[i]}
-									onRemove={() => removeFile(i)}
-								/>
-							))}
+							{media.map((item, index) => {
+								const isVideo = item.type === "video";
+								const url = isVideo
+									? item.videoUid
+										? `/api/app/videos/${item.videoUid}/thumbnail`
+										: ""
+									: (item.preview ?? "");
+								const progress = isVideo ? (item.videoProgress ?? 0) : undefined;
+
+								// For videos, poll for thumbnail when ready
+
+								return (
+									<SortablePreview
+										key={item.id}
+										id={item.id}
+										url={url}
+										type={item.type}
+										index={index}
+										isOver={overId === item.id}
+										onRemove={() => removeMedia(item.id)}
+										isVideo={isVideo}
+										videoProgress={progress}
+									/>
+								);
+							})}
 						</div>
 					</SortableContext>
 				</DndContext>
-			)}
-
-			{/* Video preview */}
-			{videoState === "ready" && videoProcessing.thumbnailUrl && (
-				<div className="relative aspect-video w-full overflow-hidden rounded-md border border-border">
-					<img
-						src={videoProcessing.thumbnailUrl}
-						alt="Miniatura wideo"
-						className="h-full w-full object-cover"
-					/>
-					<div className="absolute inset-0 flex items-center justify-center bg-black/30">
-						<VideoIcon className="h-8 w-8 text-white" />
-					</div>
-					<button
-						type="button"
-						onClick={removeVideo}
-						className="absolute right-2 top-2 flex size-8 items-center justify-center rounded-full bg-destructive text-destructive-foreground opacity-90 transition-opacity hover:opacity-100"
-						title="Usuń wideo"
-					>
-						<X className="h-4 w-4" />
-					</button>
-				</div>
-			)}
-
-			{videoState === "uploading" && (
-				<div className="space-y-2">
-					<div className="h-2 overflow-hidden rounded-full bg-muted">
-						<div
-							className="h-full rounded-full bg-primary transition-all duration-300"
-							style={{ width: `${videoUpload.progress}%` }}
-						/>
-					</div>
-				</div>
-			)}
-
-			{videoState === "processing" && (
-				<div className="flex items-center gap-2 text-muted-foreground">
-					<LoaderIcon loading className="h-4 w-4" />
-					<span className="text-sm">Przetwarzanie wideo...</span>
-				</div>
-			)}
-
-			{(videoState === "error" || videoError) && (
-				<div className="flex items-center justify-between rounded-md border border-destructive/50 bg-destructive/10 p-3">
-					<span className="text-sm text-destructive">
-						{videoUpload.error ?? videoError ?? "Wideo nie zostało dodane"}
-					</span>
-					<Button
-						type="button"
-						variant="ghost"
-						size="sm"
-						className="h-8 text-destructive hover:text-destructive"
-						onClick={removeVideo}
-					>
-						<Trash2 className="mr-1 h-3 w-3" />
-						Usuń
-					</Button>
-				</div>
 			)}
 
 			<Button type="submit" className="h-11 w-full sm:h-9" disabled={!canSubmit}>
