@@ -292,6 +292,33 @@ export async function deletePostImage(postId: string, imageId: string): Promise<
 	return rows[0] ?? null;
 }
 
+export async function getVideoById(
+	videoId: string,
+): Promise<{ video: PostVideo; post: Post } | null> {
+	const rows = await getDb()
+		.select({
+			video: postVideos,
+			post: posts,
+		})
+		.from(postVideos)
+		.innerJoin(posts, eq(postVideos.postId, posts.id))
+		.where(eq(postVideos.id, videoId))
+		.limit(1);
+
+	const first = rows[0];
+	if (!first) return null;
+	return { video: first.video, post: first.post };
+}
+
+export async function deletePostVideo(postId: string, videoId: string): Promise<PostVideo | null> {
+	const rows = await getDb()
+		.delete(postVideos)
+		.where(and(eq(postVideos.id, videoId), eq(postVideos.postId, postId)))
+		.returning();
+
+	return rows[0] ?? null;
+}
+
 export async function reorderPostImages(postId: string, imageIds: string[]): Promise<PostImage[]> {
 	if (imageIds.length === 0) return [];
 
@@ -329,6 +356,19 @@ export async function countUserPostsToday(userId: string): Promise<number> {
 		.select({ count: count() })
 		.from(posts)
 		.where(and(eq(posts.authorId, userId), gte(posts.createdAt, startOfDay)));
+
+	return rows[0]?.count ?? 0;
+}
+
+export async function countUserVideoUploadsToday(userId: string): Promise<number> {
+	const startOfDay = new Date();
+	startOfDay.setHours(0, 0, 0, 0);
+
+	const rows = await getDb()
+		.select({ count: count() })
+		.from(postVideos)
+		.innerJoin(posts, eq(postVideos.postId, posts.id))
+		.where(and(eq(posts.authorId, userId), gte(postVideos.createdAt, startOfDay)));
 
 	return rows[0]?.count ?? 0;
 }

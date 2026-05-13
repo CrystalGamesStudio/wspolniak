@@ -88,3 +88,25 @@ export async function getStreamVideoStatus(
 		thumbnailUrl: getStreamThumbnailUrl(uid),
 	};
 }
+
+interface StreamDeleteConfig {
+	accountId: string;
+	apiToken: string;
+	uid: string;
+}
+
+export async function deleteStreamVideo(config: StreamDeleteConfig): Promise<void> {
+	const { accountId, apiToken, uid } = config;
+
+	const response = await fetch(
+		`https://api.cloudflare.com/client/v4/accounts/${accountId}/stream/${uid}`,
+		{
+			method: "DELETE",
+			headers: { Authorization: `Bearer ${apiToken}` },
+		},
+	);
+
+	if (!response.ok) {
+		throw new Error(`Cloudflare Stream API error: ${response.status}`);
+	}
+}
