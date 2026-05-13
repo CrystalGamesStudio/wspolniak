@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { ExternalLinkIcon, MessageCircleIcon, RotateCcwIcon } from "lucide-react";
 import { useState } from "react";
+import { AdaptiveVideoPlayer } from "@/components/app/adaptive-video-player";
 import { ImageLightbox } from "@/components/app/image-lightbox";
 import { PostActions } from "@/components/app/post-actions";
 import { ReactionButton } from "@/components/app/reaction-button";
 import { Spinner } from "@/components/ui/spinner";
 import { getImageUrl } from "@/images/client";
+import { useVideoAutoplay } from "@/stream/use-video-autoplay";
 
 const MAX_FEED_IMAGES = 2;
 
@@ -17,6 +19,15 @@ interface FeedImage {
 	createdAt: string;
 }
 
+interface FeedVideo {
+	id: string;
+	postId: string;
+	cfStreamUid: string;
+	displayOrder: number;
+	processingStatus: "processing" | "ready" | "error";
+	createdAt: string;
+}
+
 interface FeedPost {
 	id: string;
 	authorId: string;
@@ -25,7 +36,18 @@ interface FeedPost {
 	updatedAt: string;
 	author: { id: string; name: string };
 	images: FeedImage[];
+	videos: FeedVideo[];
 	commentCount?: number;
+}
+
+type MediaItem = FeedImage | FeedVideo;
+
+function _isImage(item: MediaItem): item is FeedImage {
+	return "cfImageId" in item;
+}
+
+function _isVideo(item: MediaItem): item is FeedVideo {
+	return "cfStreamUid" in item;
 }
 
 interface FeedProps {
@@ -49,6 +71,7 @@ export function Feed({
 }: FeedProps) {
 	const [lightboxPostId, setLightboxPostId] = useState<string | null>(null);
 	const [lightboxIndex, setLightboxIndex] = useState(0);
+	const { canAutoplay } = useVideoAutoplay();
 
 	const lightboxPost = posts.find((p) => p.id === lightboxPostId);
 	const lightboxImages = lightboxPost?.images.map((img) => ({
@@ -72,8 +95,12 @@ export function Feed({
 	return (
 		<div className="space-y-6">
 			{posts.map((post) => {
-				const visibleImages = post.images.slice(0, MAX_FEED_IMAGES);
-				const remaining = post.images.length - MAX_FEED_IMAGES;
+				// Mix images and videos by displayOrder
+				const allMedia: MediaItem[] = [...post.images, ...post.videos].sort(
+					(a, b) => a.displayOrder - b.displayOrder,
+				);
+				const visibleMedia = allMedia.slice(0, MAX_FEED_IMAGES);
+				const remaining = allMedia.length - MAX_FEED_IMAGES;
 
 				return (
 					<article key={post.id} className="rounded-lg border border-border bg-card p-4">
@@ -95,37 +122,63 @@ export function Feed({
 							</p>
 						)}
 
-						{visibleImages.length > 0 && (
+						{visibleMedia.length > 0 && (
 							<div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-								{visibleImages.map((image, index) => {
-									const showOverlay = index === 1 && remaining > 0;
-									return (
-										<button
-											key={image.id}
-											type="button"
-											onClick={() => {
-												setLightboxPostId(post.id);
-												setLightboxIndex(index);
-											}}
-											className="relative overflow-hidden rounded-md"
-										>
-											<img
-												src={getImageUrl({
-													accountHash: imageAccountHash,
-													cfImageId: image.cfImageId,
-													variant: "thumbnail",
-												})}
-												alt={`Zdjęcie ${image.displayOrder + 1}`}
-												className="aspect-square w-full object-cover transition-transform hover:scale-105"
-												loading="lazy"
+								{visibleMedia.map((item, index) => {
+									if (_isImage(item)) {
+										const showOverlay = index === 1 && remaining > 0;
+										return (
+											<button
+												key={item.id}
+												type="button"
+												onClick={() => {
+													setLightboxPostId(post.id);
+													setLightboxIndex(index);
+												}}
+												className="relative overflow-hidden rounded-md"
+											>
+												<img
+													src={getImageUrl({
+														accountHash: imageAccountHash,
+														cfImageId: item.cfImageId,
+														variant: "thumbnail",
+													})}
+													alt={`Zdjęcie ${item.displayOrder + 1}`}
+													className="aspect-square w-full object-cover transition-transform hover:scale-105"
+													loading="lazy"
+												/>
+												{showOverlay && (
+													<span className="absolute inset-0 flex items-center justify-center bg-black/50 text-lg font-semibold text-white">
+														+{remaining} więcej
+													</span>
+												)}
+											</button>
+										);
+									}
+
+									if (_isVideo(item)) {
+										if (item.processingStatus !== "ready") {
+											return (
+												<div
+													key={item.id}
+													className="aspect-square w-full rounded-md bg-muted flex items-center justify-center"
+												>
+													<Spinner loading size={6} />
+												</div>
+											);
+										}
+
+										return (
+											<AdaptiveVideoPlayer
+												key={item.id}
+												videoUid={item.cfStreamUid}
+												thumbnailUrl={`/api/app/videos/${item.cfStreamUid}/thumbnail`}
+												canAutoplay={canAutoplay}
 											/>
-											{showOverlay && (
-												<span className="absolute inset-0 flex items-center justify-center bg-black/50 text-lg font-semibold text-white">
-													+{remaining} więcej
-												</span>
-											)}
-										</button>
-									);
+										);
+									}
+
+									return null;
 								})}
 							</div>
 						)}
