@@ -39,7 +39,9 @@ describe("useVideoProcessingStatus", () => {
 		});
 
 		expect(result.current.status).toBe("processing");
-		expect(mockFetch).toHaveBeenCalledWith("/api/app/videos/uid-1/status");
+		expect(mockFetch).toHaveBeenCalledWith("/api/app/videos/uid-1/status", {
+			credentials: "include",
+		});
 	});
 
 	it("polls every 5 seconds while processing", async () => {

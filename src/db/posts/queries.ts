@@ -13,11 +13,11 @@ interface CreatePostInput {
 	authorId: string;
 	description: string | null;
 	cfImageIds?: string[];
-	cfStreamUid?: string;
+	cfStreamUids?: string[];
 }
 
 export async function createPost(input: CreatePostInput) {
-	const { authorId, description, cfImageIds = [], cfStreamUid } = input;
+	const { authorId, description, cfImageIds = [], cfStreamUids = [] } = input;
 	const db = getDb();
 
 	const postId = crypto.randomUUID();
@@ -40,16 +40,23 @@ export async function createPost(input: CreatePostInput) {
 					.returning()
 			: [];
 
-	if (cfStreamUid) {
-		await db.insert(postVideos).values({
-			id: crypto.randomUUID(),
-			postId,
-			cfStreamUid,
-			displayOrder: images.length,
-		});
-	}
+	const videos =
+		cfStreamUids.length > 0
+			? await db
+					.insert(postVideos)
+					.values(
+						cfStreamUids.map((cfStreamUid, index) => ({
+							id: crypto.randomUUID(),
+							postId,
+							cfStreamUid,
+							displayOrder: images.length + index,
+							processingStatus: "processing" as const,
+						})),
+					)
+					.returning()
+			: [];
 
-	return { post, images };
+	return { post, images, videos };
 }
 
 interface PostWithAuthorAndImages {

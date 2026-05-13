@@ -20,7 +20,7 @@ async function uploadFile(file: File): Promise<string> {
 	return data.cfImageId;
 }
 
-async function createPost(input: { description: string; files: File[]; cfStreamUid?: string }) {
+async function createPost(input: { description: string; files: File[]; cfStreamUids?: string[] }) {
 	const cfImageIds = await Promise.all(input.files.map(uploadFile));
 
 	const res = await fetch("/api/app/posts", {
@@ -29,7 +29,7 @@ async function createPost(input: { description: string; files: File[]; cfStreamU
 		body: JSON.stringify({
 			description: input.description || null,
 			cfImageIds,
-			cfStreamUid: input.cfStreamUid,
+			cfStreamUids: input.cfStreamUids ?? [],
 		}),
 	});
 

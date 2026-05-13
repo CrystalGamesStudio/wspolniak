@@ -11,7 +11,7 @@ import {
 	softDeletePost,
 	updatePostDescription,
 } from "./queries";
-import { postImages, posts } from "./table";
+import { postImages, posts, postVideos } from "./table";
 
 vi.mock("@/db/setup", () => ({
 	getDb: vi.fn(),
@@ -32,6 +32,68 @@ function mockDbWithInsert(tableResults: Map<unknown, { rows: unknown[] }>) {
 }
 
 describe("createPost", () => {
+	it("inserts post with multiple videos and shared displayOrder", async () => {
+		const now = new Date();
+		const mockPost = {
+			id: "post-1",
+			authorId: "user-1",
+			description: "Wakacje z wideo",
+			deletedAt: null,
+			createdAt: now,
+			updatedAt: now,
+		};
+		const mockImageRows = [
+			{ id: "img-1", postId: "post-1", cfImageId: "cf-aaa", displayOrder: 0, createdAt: now },
+		];
+		const mockVideoRows = [
+			{
+				id: "vid-1",
+				postId: "post-1",
+				cfStreamUid: "stream-aaa",
+				displayOrder: 1,
+				processingStatus: "ready" as const,
+				createdAt: now,
+			},
+			{
+				id: "vid-2",
+				postId: "post-1",
+				cfStreamUid: "stream-bbb",
+				displayOrder: 2,
+				processingStatus: "ready" as const,
+				createdAt: now,
+			},
+		];
+
+		const insertCalls: unknown[] = [];
+		const mockInsert = vi.fn().mockImplementation((table) => {
+			insertCalls.push(table);
+			if (table === posts) {
+				const mockReturning = vi.fn().mockResolvedValue([mockPost]);
+				return { values: vi.fn().mockReturnValue({ returning: mockReturning }) };
+			}
+			if (table === postImages) {
+				const mockReturning = vi.fn().mockResolvedValue(mockImageRows);
+				return { values: vi.fn().mockReturnValue({ returning: mockReturning }) };
+			}
+			if (table === postVideos) {
+				const mockReturning = vi.fn().mockResolvedValue(mockVideoRows);
+				return { values: vi.fn().mockReturnValue({ returning: mockReturning }) };
+			}
+			throw new Error("Unexpected table");
+		});
+		mockGetDb.mockReturnValue({ insert: mockInsert } as never);
+
+		const result = await createPost({
+			authorId: "user-1",
+			description: "Wakacje z wideo",
+			cfImageIds: ["cf-aaa"],
+			cfStreamUids: ["stream-aaa", "stream-bbb"],
+		});
+
+		expect(result.post.authorId).toBe("user-1");
+		expect(insertCalls).toHaveLength(3); // post, images, videos
+	});
+
 	it("inserts post and images and returns the post with images", async () => {
 		const now = new Date();
 		const mockPost = {
