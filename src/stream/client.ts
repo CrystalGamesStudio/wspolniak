@@ -45,3 +45,46 @@ export async function createStreamUploadUrl(
 export function getStreamThumbnailUrl(uid: string): string {
 	return `https://videodelivery.net/${uid}/thumbnails/thumbnail.jpg`;
 }
+
+type VideoStatus = "processing" | "ready" | "error";
+
+interface StreamVideoStatusResult {
+	status: VideoStatus;
+	thumbnailUrl: string;
+}
+
+interface StreamStatusConfig {
+	accountId: string;
+	apiToken: string;
+	uid: string;
+}
+
+export async function getStreamVideoStatus(
+	config: StreamStatusConfig,
+): Promise<StreamVideoStatusResult> {
+	const { accountId, apiToken, uid } = config;
+
+	const response = await fetch(
+		`https://api.cloudflare.com/client/v4/accounts/${accountId}/stream/${uid}`,
+		{
+			headers: { Authorization: `Bearer ${apiToken}` },
+		},
+	);
+
+	if (!response.ok) {
+		throw new Error(`Cloudflare Stream API error: ${response.status}`);
+	}
+
+	const data = (await response.json()) as {
+		result: { uid: string; status: { state: string } };
+	};
+
+	const state = data.result.status.state;
+	const status: VideoStatus =
+		state === "ready" ? "ready" : state === "error" ? "error" : "processing";
+
+	return {
+		status,
+		thumbnailUrl: getStreamThumbnailUrl(uid),
+	};
+}
