@@ -1,3 +1,10 @@
+# [1.35.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.34.0...v1.35.0) (2026-05-13)
+
+
+### Features
+
+* **posts:** improve post layout, pagination & lightbox ([52c9d9a](https://github.com/CrystalGamesStudio/wspolniak/commit/52c9d9aa360d0716044a3874f9782a52d3a35579))
+
 # [1.34.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.33.0...v1.34.0) (2026-05-12)
 
 
