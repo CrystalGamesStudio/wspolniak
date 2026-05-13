@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { SmilePlusIcon } from "lucide-react";
+import { useEffect, useState } from "react";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -73,10 +74,16 @@ async function setReaction(postId: string, reactionType: ReactionType) {
 }
 
 function useIsMobile() {
-	const [isMobile, _setIsMobile] = useState(() => {
-		if (typeof window === "undefined" || !window.matchMedia) return false;
-		return window.matchMedia("(max-width: 639px)").matches;
-	});
+	const [isMobile, setIsMobile] = useState(false);
+
+	useEffect(() => {
+		if (!window.matchMedia) return;
+		const mql = window.matchMedia("(max-width: 639px)");
+		setIsMobile(mql.matches);
+		const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+		mql.addEventListener("change", handler);
+		return () => mql.removeEventListener("change", handler);
+	}, []);
 
 	return isMobile;
 }
@@ -147,7 +154,7 @@ export function ReactionButton({ postId }: ReactionButtonProps) {
 	});
 
 	const total = Object.values(counts).reduce((sum, n) => sum + n, 0);
-	const emoji = myReaction ? reactionEmojis[myReaction.reactionType] : "😊";
+	const emoji = myReaction ? reactionEmojis[myReaction.reactionType] : null;
 
 	const handleSelect = (type: ReactionType) => {
 		if (myReaction?.reactionType === type) return;
@@ -165,6 +172,7 @@ export function ReactionButton({ postId }: ReactionButtonProps) {
 							aria-label="Reakcje"
 							className="inline-flex items-center gap-1 rounded-md px-3 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground sm:px-2 sm:py-1"
 						>
+							<SmilePlusIcon className="h-6 w-6 sm:h-4 sm:w-4" />
 							{emoji} {total}
 						</button>
 					</SheetTrigger>
@@ -200,6 +208,7 @@ export function ReactionButton({ postId }: ReactionButtonProps) {
 						type="button"
 						className="inline-flex items-center gap-1 rounded-md px-3 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground sm:px-2 sm:py-1"
 					>
+						<SmilePlusIcon className="h-4 w-4" />
 						<ReactionDisplay counts={counts} />
 					</button>
 				</DropdownMenuTrigger>

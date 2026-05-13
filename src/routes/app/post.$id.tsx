@@ -1,10 +1,23 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { CommentSection } from "@/components/app/comment-section";
 import { PostView } from "@/components/app/post-view";
 import { ThemeToggle } from "@/components/theme";
+
+function useIsDesktop() {
+	const [isDesktop, setIsDesktop] = useState(false);
+	useEffect(() => {
+		if (!window.matchMedia) return;
+		const mql = window.matchMedia("(min-width: 1024px)");
+		setIsDesktop(mql.matches);
+		const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
+		mql.addEventListener("change", handler);
+		return () => mql.removeEventListener("change", handler);
+	}, []);
+	return isDesktop;
+}
 
 interface PostResponse {
 	data: unknown;
@@ -26,15 +39,14 @@ function PostPage() {
 	const { id } = Route.useParams();
 	const { session } = Route.useRouteContext();
 	const navigate = useNavigate();
+	const isDesktop = useIsDesktop();
 	const { data: response, isLoading } = useQuery({
 		queryKey: ["posts", id],
 		queryFn: () => fetchPost(id),
 	});
 
-	// Scroll to comments section when URL hash is #comments
 	useEffect(() => {
 		if (window.location.hash === "#comments" && !isLoading && response?.data) {
-			// Use setTimeout to ensure DOM is fully rendered
 			setTimeout(() => {
 				const element = document.getElementById("new-comment");
 				if (element) {
@@ -60,28 +72,64 @@ function PostPage() {
 		);
 	}
 
+	const commentSection = (
+		<div id="comments">
+			<CommentSection postId={id} currentUserId={session.userId} currentUserRole={session.role} />
+		</div>
+	);
+
 	return (
-		<div className="max-w-2xl bg-background px-4 py-6 pb-50 sm:pb-6">
-			<div className="mb-4 flex items-center justify-between">
-				<a
-					href="/app"
-					className="rounded-md px-2 py-1 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
-				>
-					&larr; Wróć do feedu
-				</a>
-				<ThemeToggle size="sm" className="hidden sm:block" />
+		<div className="bg-background">
+			<div className="sticky top-0 z-10 border-b border-border bg-background/95 px-4 py-3 backdrop-blur-sm">
+				<div className="mx-auto flex max-w-5xl items-center justify-between">
+					<a
+						href="/app"
+						className="rounded-md px-2 py-1 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+					>
+						&larr; Wróć do feedu
+					</a>
+					<ThemeToggle size="sm" />
+				</div>
 			</div>
-			<PostView
-				post={response.data as never}
-				imageAccountHash={response.meta.imageAccountHash}
-				currentUserId={session.userId}
-				currentUserRole={session.role}
-				onDeleted={() => navigate({ to: "/app" })}
-			/>
-			<hr className="my-6 border-border" />
-			<div id="comments">
-				<CommentSection postId={id} currentUserId={session.userId} currentUserRole={session.role} />
-			</div>
+
+			{isDesktop ? (
+				<div className="mx-auto max-w-5xl px-4 py-6">
+					<div style={{ display: "flex", gap: "1.5rem" }}>
+						<div
+							style={{
+								flex: "3",
+								minWidth: 0,
+								position: "sticky",
+								top: "4rem",
+								alignSelf: "flex-start",
+								maxHeight: "calc(100vh - 5rem)",
+								overflowY: "auto",
+							}}
+						>
+							<PostView
+								post={response.data as never}
+								imageAccountHash={response.meta.imageAccountHash}
+								currentUserId={session.userId}
+								currentUserRole={session.role}
+								onDeleted={() => navigate({ to: "/app" })}
+							/>
+						</div>
+						<div style={{ flex: "2", minWidth: 0 }}>{commentSection}</div>
+					</div>
+				</div>
+			) : (
+				<div className="mx-auto max-w-2xl px-4 py-4 pb-50">
+					{commentSection}
+					<hr className="my-4 border-border" />
+					<PostView
+						post={response.data as never}
+						imageAccountHash={response.meta.imageAccountHash}
+						currentUserId={session.userId}
+						currentUserRole={session.role}
+						onDeleted={() => navigate({ to: "/app" })}
+					/>
+				</div>
+			)}
 		</div>
 	);
 }

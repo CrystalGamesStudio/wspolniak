@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-import { ExternalLinkIcon, MessageCircleIcon } from "lucide-react";
+import { ExternalLinkIcon, MessageCircleIcon, RotateCcwIcon } from "lucide-react";
 import { useState } from "react";
 import { ImageLightbox } from "@/components/app/image-lightbox";
 import { PostActions } from "@/components/app/post-actions";
@@ -35,7 +35,7 @@ interface FeedProps {
 	currentUserRole: string;
 	hasNextPage?: boolean;
 	isFetchingNextPage?: boolean;
-	loadMoreRef?: React.RefObject<HTMLDivElement | null>;
+	onLoadMore?: () => void;
 }
 
 export function Feed({
@@ -45,7 +45,7 @@ export function Feed({
 	currentUserRole,
 	hasNextPage,
 	isFetchingNextPage,
-	loadMoreRef,
+	onLoadMore,
 }: FeedProps) {
 	const [lightboxPostId, setLightboxPostId] = useState<string | null>(null);
 	const [lightboxIndex, setLightboxIndex] = useState(0);
@@ -155,10 +155,24 @@ export function Feed({
 				);
 			})}
 
-			<div ref={loadMoreRef}>
-				<div className="flex items-center justify-center py-4">
-					<Spinner loading={isFetchingNextPage} size={6} />
-				</div>
+			<div>
+				{isFetchingNextPage && (
+					<div className="flex items-center justify-center py-4">
+						<Spinner loading size={6} />
+					</div>
+				)}
+				{hasNextPage && !isFetchingNextPage && (
+					<div className="flex justify-center py-4">
+						<button
+							type="button"
+							onClick={onLoadMore}
+							className="inline-flex items-center gap-2 rounded-lg border border-border px-6 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+						>
+							<RotateCcwIcon className="h-4 w-4" />
+							Załaduj więcej
+						</button>
+					</div>
+				)}
 				{!hasNextPage && posts.length > 0 && !isFetchingNextPage && (
 					<p className="py-4 text-center text-muted-foreground">Koniec</p>
 				)}

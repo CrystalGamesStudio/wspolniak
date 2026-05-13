@@ -22,16 +22,21 @@ export function ImageLightbox({ images, initialIndex = 0, open, onClose }: Image
 	const [visible, setVisible] = useState(false);
 	const [animatingOut, setAnimatingOut] = useState(false);
 	const [currentIndex, setCurrentIndex] = useState(initialIndex);
+	const [slideDirection, setSlideDirection] = useState<"right" | "left">("right");
 	const [downloading, setDownloading] = useState(false);
 	const [downloadProgress, setDownloadProgress] = useState(0);
 	const touchStartRef = useRef<{ x: number; y: number } | null>(null);
 	const wheelAccumRef = useRef(0);
 
 	const goNext = useCallback(() => {
+		if (images.length <= 1) return;
+		setSlideDirection("right");
 		setCurrentIndex((i) => (i + 1) % images.length);
 	}, [images.length]);
 
 	const goPrev = useCallback(() => {
+		if (images.length <= 1) return;
+		setSlideDirection("left");
 		setCurrentIndex((i) => (i - 1 + images.length) % images.length);
 	}, [images.length]);
 
@@ -55,25 +60,31 @@ export function ImageLightbox({ images, initialIndex = 0, open, onClose }: Image
 
 	const handleWheel = useCallback(
 		(e: WheelEvent) => {
-			if (Math.abs(e.deltaX) < Math.abs(e.deltaY)) return;
-			wheelAccumRef.current += e.deltaX;
+			e.preventDefault();
+			const delta = Math.abs(e.deltaX) >= Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+			wheelAccumRef.current += delta;
 			if (Math.abs(wheelAccumRef.current) < SWIPE_THRESHOLD) return;
 			wheelAccumRef.current = 0;
-			if (e.deltaX > 0) goNext();
+			if (delta > 0) goNext();
 			else goPrev();
 		},
 		[goNext, goPrev],
 	);
 
+	// Block page scroll and listen for keyboard/wheel
 	useEffect(() => {
 		if (!open) return;
 		setVisible(true);
 		setAnimatingOut(false);
 		setCurrentIndex(initialIndex);
 		wheelAccumRef.current = 0;
+
+		document.body.style.overflow = "hidden";
 		document.addEventListener("keydown", handleKeyDown);
-		document.addEventListener("wheel", handleWheel, { passive: true });
+		document.addEventListener("wheel", handleWheel, { passive: false });
+
 		return () => {
+			document.body.style.overflow = "";
 			document.removeEventListener("keydown", handleKeyDown);
 			document.removeEventListener("wheel", handleWheel);
 		};
@@ -110,6 +121,11 @@ export function ImageLightbox({ images, initialIndex = 0, open, onClose }: Image
 
 	const isOpen = open && !animatingOut;
 
+	const slideClass =
+		slideDirection === "right"
+			? "animate-in slide-in-from-right duration-200"
+			: "animate-in slide-in-from-left duration-200";
+
 	return (
 		<div
 			role="dialog"
@@ -122,8 +138,9 @@ export function ImageLightbox({ images, initialIndex = 0, open, onClose }: Image
 			}}
 			onTouchStart={handleTouchStart}
 			onTouchEnd={handleTouchEnd}
+			style={{ touchAction: "none" }}
 		>
-			<div className="relative max-h-screen max-w-screen-lg p-4">
+			<div key={currentIndex} className={`relative max-h-screen max-w-screen-lg p-4 ${slideClass}`}>
 				<img
 					src={image.src}
 					alt={image.alt}

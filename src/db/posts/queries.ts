@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import type { InferSelectModel } from "drizzle-orm";
-import { and, asc, count, desc, eq, gte, inArray, isNull, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, inArray, isNull, lt, or } from "drizzle-orm";
 import { users } from "@/db/identity/table";
 import { getDb } from "@/db/setup";
 import { postImages, posts, postVideos } from "./table";
@@ -157,7 +157,10 @@ export async function listPaginatedPosts(
 	if (cursor) {
 		const cursorDate = new Date(cursor.createdAt);
 		conditions.push(
-			sql`(${posts.createdAt} < ${cursorDate} OR (${posts.createdAt} = ${cursorDate} AND ${posts.id} < ${cursor.id}))`,
+			or(
+				lt(posts.createdAt, cursorDate),
+				and(eq(posts.createdAt, cursorDate), lt(posts.id, cursor.id)),
+			)!,
 		);
 	}
 
