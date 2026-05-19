@@ -57,6 +57,13 @@
       "when": 1778607421219,
       "tag": "0007_same_newton_destine",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1779109412247,
+      "tag": "0008_solid_yellowjacket",
+      "breakpoints": true
     }
   ]
 }

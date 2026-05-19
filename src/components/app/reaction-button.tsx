@@ -3,18 +3,19 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { SmilePlusIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogHeader,
+	DialogTitle,
+	DialogTrigger,
+} from "@/components/ui/dialog";
+import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-	Sheet,
-	SheetContent,
-	SheetDescription,
-	SheetTitle,
-	SheetTrigger,
-} from "@/components/ui/sheet";
 import type { ReactionType } from "@/db/post-reactions/table";
 import { reactionTypes } from "@/db/post-reactions/table";
 import { ReactionDisplay } from "./reaction-display";
@@ -165,20 +166,23 @@ export function ReactionButton({ postId }: ReactionButtonProps) {
 	if (isMobile) {
 		return (
 			<div className="inline-flex items-center gap-1">
-				<Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-					<SheetTrigger asChild>
+				<Dialog open={sheetOpen} onOpenChange={setSheetOpen}>
+					<DialogTrigger asChild>
 						<button
 							type="button"
 							aria-label="Reakcje"
 							className="inline-flex items-center gap-1 rounded-md px-3 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground sm:px-2 sm:py-1"
 						>
-							<SmilePlusIcon className="h-6 w-6 sm:h-4 sm:w-4" />
-							{emoji} {total}
+							{emoji && <span className="text-2xl">{emoji}</span>}
+							<SmilePlusIcon className="h-8 w-8" />
+							{total}
 						</button>
-					</SheetTrigger>
-					<SheetContent side="bottom" className="rounded-t-2xl">
-						<SheetTitle className="text-foreground text-center text-sm">React</SheetTitle>
-						<SheetDescription className="sr-only">Choose a reaction</SheetDescription>
+					</DialogTrigger>
+					<DialogContent>
+						<DialogHeader>
+							<DialogTitle className="text-center">React</DialogTitle>
+							<DialogDescription className="sr-only">Choose a reaction</DialogDescription>
+						</DialogHeader>
 						<div className="grid grid-cols-3 gap-4 p-4">
 							{reactionTypes.map((type) => (
 								<button
@@ -193,8 +197,8 @@ export function ReactionButton({ postId }: ReactionButtonProps) {
 								</button>
 							))}
 						</div>
-					</SheetContent>
-				</Sheet>
+					</DialogContent>
+				</Dialog>
 				{mutation.isError && <span className="text-xs text-destructive">Nie udało się</span>}
 			</div>
 		);

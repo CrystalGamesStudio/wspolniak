@@ -3,7 +3,7 @@
 
 const CACHE_NAME = "wspolniak-v1";
 
-const PRECACHE_URLS = ["/", "/app", "/manifest.webmanifest", "/logo192.png", "/favicon.ico"];
+const PRECACHE_URLS = ["/", "/manifest.webmanifest", "/logo192.png", "/favicon.ico"];
 
 self.addEventListener("install", (event) => {
 	event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE_URLS)));
@@ -30,6 +30,9 @@ self.addEventListener("fetch", (event) => {
 	// Skip API calls — they need fresh data
 	if (url.pathname.startsWith("/api/")) return;
 
+	// Skip /app routes — let TanStack Start handle them without service worker interference
+	if (url.pathname.startsWith("/app")) return;
+
 	// Static assets: cache-first strategy
 	if (isStaticAsset(url.pathname)) {
 		event.respondWith(
@@ -47,18 +50,18 @@ self.addEventListener("fetch", (event) => {
 		return;
 	}
 
-	// HTML navigation: stale-while-revalidate
-	if (event.request.mode === "navigate") {
+	// HTML navigation: only cache root page, not dynamic routes
+	if (event.request.mode === "navigate" && url.pathname === "/") {
 		event.respondWith(
 			caches.match(event.request).then((cached) => {
-				const fetchPromise = fetch(event.request.url, { redirect: "follow" }).then((response) => {
+				if (cached) return cached;
+				return fetch(event.request).then((response) => {
 					if (response.ok) {
 						const clone = response.clone();
 						caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
 					}
 					return response;
 				});
-				return cached || fetchPromise;
 			}),
 		);
 	}

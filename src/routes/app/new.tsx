@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 import { NewPostForm } from "@/components/app/new-post-form";
@@ -43,6 +43,13 @@ async function createPost(input: { description: string; files: File[]; cfStreamU
 	return res.json();
 }
 
+async function _fetchBanStatus() {
+	const res = await fetch("/api/app/me/ban-status");
+	if (!res.ok) throw new Error("Nie udało się sprawdzić statusu banu");
+	const json = (await res.json()) as { data: { banned: boolean; expiresAt?: string } };
+	return json.data;
+}
+
 export const Route = createFileRoute("/app/new")({
 	component: NewPostPage,
 });
@@ -51,6 +58,11 @@ function NewPostPage() {
 	const navigate = useNavigate();
 	const queryClient = useQueryClient();
 
+	const { data: banStatus } = useQuery({
+		queryKey: ["ban-status"],
+		queryFn: _fetchBanStatus,
+	});
+
 	const mutation = useMutation({
 		mutationFn: createPost,
 		onSuccess: async () => {
@@ -58,6 +70,32 @@ function NewPostPage() {
 			navigate({ to: "/app" });
 		},
 	});
+
+	if (banStatus?.banned) {
+		const expiresDate = banStatus.expiresAt ? new Date(banStatus.expiresAt) : null;
+		return (
+			<div className="max-w-2xl bg-background px-4 py-6 pb-50 sm:pb-6">
+				<div className="mb-6 flex items-center gap-4">
+					<button
+						type="button"
+						onClick={() => navigate({ to: "/app" })}
+						className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+						title="Wróć do feeda"
+					>
+						<ArrowLeft className="h-5 w-5" />
+					</button>
+					<h1 className="text-2xl font-bold text-foreground">Nowy post</h1>
+				</div>
+
+				<Alert variant="destructive" className="mb-4">
+					<AlertDescription>
+						Jesteś zbanowany. Nie możesz dodawać postów.
+						{expiresDate && <span> Ban wygasa {expiresDate.toLocaleDateString("pl-PL")}.</span>}
+					</AlertDescription>
+				</Alert>
+			</div>
+		);
+	}
 
 	return (
 		<div className="max-w-2xl bg-background px-4 py-6 pb-50 sm:pb-6">

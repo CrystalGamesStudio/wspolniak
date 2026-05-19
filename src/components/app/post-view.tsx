@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { Download } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AdaptiveVideoPlayer } from "@/components/app/adaptive-video-player";
 import { ImageLightbox } from "@/components/app/image-lightbox";
 import { PostActions } from "@/components/app/post-actions";
 import { ReactionButton } from "@/components/app/reaction-button";
+import { ReactionUsers } from "@/components/app/reaction-users";
 import { getImageUrl } from "@/images/client";
 import { downloadImage } from "@/lib/download-image";
 import { getStreamThumbnailUrl } from "@/stream/client";
@@ -43,6 +44,7 @@ interface PostViewProps {
 	currentUserId?: string;
 	currentUserRole?: string;
 	onDeleted?: () => void;
+	onLightboxChange?: (open: boolean) => void;
 }
 
 export function PostView({
@@ -51,10 +53,15 @@ export function PostView({
 	currentUserId,
 	currentUserRole,
 	onDeleted,
+	onLightboxChange,
 }: PostViewProps) {
 	const canManage = currentUserId === post.authorId || currentUserRole === "admin";
 
 	const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+
+	useEffect(() => {
+		onLightboxChange?.(lightboxIndex !== null);
+	}, [lightboxIndex, onLightboxChange]);
 
 	const lightboxImages = post.images.map((img) => ({
 		id: img.id,
@@ -80,7 +87,8 @@ export function PostView({
 					})}
 				</time>
 				{canManage && (
-					<div className="ml-auto">
+					<div className="ml-auto flex items-center gap-1">
+						<ReactionUsers postId={post.id} currentUserRole={currentUserRole ?? ""} />
 						<PostActions postId={post.id} description={post.description} onDeleted={onDeleted} />
 					</div>
 				)}
@@ -93,6 +101,7 @@ export function PostView({
 			{currentUserId && (
 				<div className="flex items-center gap-2">
 					<ReactionButton postId={post.id} currentUserId={currentUserId} />
+					<ReactionUsers postId={post.id} currentUserRole={currentUserRole ?? ""} />
 				</div>
 			)}
 
