@@ -1,3 +1,10 @@
+# [1.38.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.37.0...v1.38.0) (2026-05-19)
+
+
+### Features
+
+* admin reactions viewer, user bans, reaction UI overhaul & fixes ([1992ac7](https://github.com/CrystalGamesStudio/wspolniak/commit/1992ac7e61d3fd76de8f2766cc602eb03dd2646d))
+
 # [1.37.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.36.0...v1.37.0) (2026-05-13)
 
 
