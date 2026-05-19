@@ -5,6 +5,7 @@ import { AdaptiveVideoPlayer } from "@/components/app/adaptive-video-player";
 import { ImageLightbox } from "@/components/app/image-lightbox";
 import { PostActions } from "@/components/app/post-actions";
 import { ReactionButton } from "@/components/app/reaction-button";
+import { ReactionUsers } from "@/components/app/reaction-users";
 import { Spinner } from "@/components/ui/spinner";
 import { getImageUrl } from "@/images/client";
 import { useVideoAutoplay } from "@/stream/use-video-autoplay";
@@ -110,7 +111,8 @@ export function Feed({
 								{formatRelativeTime(post.createdAt)}
 							</time>
 							{(post.authorId === currentUserId || currentUserRole === "admin") && (
-								<div className="ml-auto">
+								<div className="ml-auto flex items-center gap-1">
+									<ReactionUsers postId={post.id} currentUserRole={currentUserRole} />
 									<PostActions postId={post.id} description={post.description} />
 								</div>
 							)}

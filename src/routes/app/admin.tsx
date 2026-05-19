@@ -4,6 +4,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import {
 	ArrowLeft,
 	Check,
+	CircleSlash2,
 	Copy,
 	Download,
 	Info,
@@ -160,6 +161,23 @@ function AdminPage() {
 				body: JSON.stringify({ note }),
 			});
 			if (!res.ok) throw new Error("Nie udało się zapisać notatki");
+		},
+		onSuccess: async () => {
+			await queryClient.invalidateQueries({ queryKey: ["admin", "members"] });
+		},
+	});
+
+	const banMutation = useMutation({
+		mutationFn: async ({ id, days }: { id: string; days: number }) => {
+			const res = await fetch(`/api/admin/members/${id}/ban`, {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ days }),
+			});
+			if (!res.ok) {
+				const err = (await res.json()) as { error: string };
+				throw new Error(err.error);
+			}
 		},
 		onSuccess: async () => {
 			await queryClient.invalidateQueries({ queryKey: ["admin", "members"] });
@@ -520,9 +538,11 @@ function AdminPage() {
 							isRegenerating={regenerateMutation.isPending}
 							isDeleting={deleteMutation.isPending}
 							isSavingNote={noteMutation.isPending}
+							isBanning={banMutation.isPending}
 							onRegenerate={() => regenerateMutation.mutate({ id: member.id, name: member.name })}
 							onDelete={() => deleteMutation.mutate(member.id)}
 							onSaveNote={(note) => noteMutation.mutate({ id: member.id, note })}
+							onBan={(days) => banMutation.mutate({ id: member.id, days })}
 						/>
 					))}
 				</div>
@@ -536,9 +556,11 @@ interface MemberRowProps {
 	isRegenerating: boolean;
 	isDeleting: boolean;
 	isSavingNote: boolean;
+	isBanning: boolean;
 	onRegenerate: () => void;
 	onDelete: () => void;
 	onSaveNote: (note: string) => void;
+	onBan: (days: number) => void;
 }
 
 function MemberRow({
@@ -546,12 +568,21 @@ function MemberRow({
 	isRegenerating,
 	isDeleting,
 	isSavingNote,
+	isBanning,
 	onRegenerate,
 	onDelete,
 	onSaveNote,
+	onBan,
 }: MemberRowProps) {
 	const [editingNote, setEditingNote] = useState(false);
 	const [noteInput, setNoteInput] = useState(member.note ?? "");
+	const [_banDialogOpen, setBanDialogOpen] = useState(false);
+	const [banDays, _setBanDays] = useState(7);
+
+	const _handleBan = () => {
+		onBan(banDays);
+		setBanDialogOpen(false);
+	};
 
 	return (
 		<div className="rounded-lg border border-border bg-card p-3">
@@ -593,6 +624,15 @@ function MemberRow({
 							<Button
 								size="sm"
 								variant="ghost"
+								onClick={() => setBanDialogOpen(true)}
+								disabled={isBanning}
+								title="Zbanuj"
+							>
+								<CircleSlash2 className="h-4 w-4 text-destructive" />
+							</Button>
+							<Button
+								size="sm"
+								variant="ghost"
 								onClick={onDelete}
 								disabled={isDeleting}
 								title="Usuń członka"
@@ -627,6 +667,37 @@ function MemberRow({
 					</Button>
 				</form>
 			)}
+			<Dialog open={_banDialogOpen} onOpenChange={setBanDialogOpen}>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Zbanuj użytkownika</DialogTitle>
+					</DialogHeader>
+					<div className="flex flex-col gap-4">
+						<p className="text-muted-foreground">
+							Zbanuj <strong>{member.name}</strong> na określoną liczbę dni.
+						</p>
+						<div className="flex items-center gap-2">
+							<Input
+								type="number"
+								min={1}
+								max={365}
+								value={banDays}
+								onChange={(e) => _setBanDays(Number(e.target.value))}
+								className="w-24"
+							/>
+							<span className="text-sm text-muted-foreground">dni</span>
+						</div>
+						<div className="flex justify-end gap-2">
+							<Button variant="outline" onClick={() => setBanDialogOpen(false)}>
+								Anuluj
+							</Button>
+							<Button variant="destructive" onClick={_handleBan} disabled={isBanning}>
+								{isBanning ? "..." : "Zbanuj"}
+							</Button>
+						</div>
+					</div>
+				</DialogContent>
+			</Dialog>
 		</div>
 	);
 }

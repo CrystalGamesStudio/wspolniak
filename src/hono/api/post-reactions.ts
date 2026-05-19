@@ -1,5 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-import { getReactionCounts, getUserReaction, upsertReaction } from "@/db/post-reactions/queries";
+import {
+	getReactionCounts,
+	getReactionsWithUsers,
+	getUserReaction,
+	upsertReaction,
+} from "@/db/post-reactions/queries";
 import { upsertReactionSchema } from "@/db/post-reactions/schema";
 import { getPostById } from "@/db/posts/queries";
 import { createHono } from "@/hono/factory";
@@ -61,6 +66,23 @@ reactionsEndpoint.get("/:postId/my-reaction", async (c) => {
 
 	const reaction = await getUserReaction(postId, user.userId);
 	return c.json({ data: reaction });
+});
+
+reactionsEndpoint.get("/:postId/reactions/users", async (c) => {
+	const user = c.get("user");
+	const postId = c.req.param("postId");
+
+	if (user.role !== "admin") {
+		return c.json({ error: "Forbidden" }, 403);
+	}
+
+	const post = await getPostById(postId);
+	if (!post) {
+		return c.json({ error: "Not found" }, 404);
+	}
+
+	const reactions = await getReactionsWithUsers(postId);
+	return c.json({ data: reactions });
 });
 
 export default reactionsEndpoint;

@@ -40,21 +40,11 @@ function PostPage() {
 	const { session } = Route.useRouteContext();
 	const navigate = useNavigate();
 	const isDesktop = useIsDesktop();
+	const [lightboxOpen, setLightboxOpen] = useState(false);
 	const { data: response, isLoading } = useQuery({
 		queryKey: ["posts", id],
 		queryFn: () => fetchPost(id),
 	});
-
-	useEffect(() => {
-		if (window.location.hash === "#comments" && !isLoading && response?.data) {
-			setTimeout(() => {
-				const element = document.getElementById("new-comment");
-				if (element) {
-					element.scrollIntoView({ behavior: "smooth", block: "center" });
-				}
-			}, 300);
-		}
-	}, [isLoading, response]);
 
 	if (isLoading) {
 		return (
@@ -80,17 +70,19 @@ function PostPage() {
 
 	return (
 		<div className="bg-background">
-			<div className="sticky top-0 z-10 border-b border-border bg-background/95 px-4 py-3 backdrop-blur-sm">
-				<div className="mx-auto flex max-w-5xl items-center justify-between">
-					<a
-						href="/app"
-						className="rounded-md px-2 py-1 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
-					>
-						&larr; Wróć do feedu
-					</a>
-					<ThemeToggle size="sm" />
+			{!lightboxOpen && (
+				<div className="sticky top-0 z-10 border-b border-border bg-background/95 px-4 py-3 backdrop-blur-sm">
+					<div className="mx-auto flex max-w-5xl items-center justify-between">
+						<a
+							href="/app"
+							className="rounded-md px-2 py-1 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+						>
+							&larr; Wróć do feedu
+						</a>
+						<ThemeToggle size="sm" />
+					</div>
 				</div>
-			</div>
+			)}
 
 			{isDesktop ? (
 				<div className="mx-auto max-w-5xl px-4 py-6">
@@ -112,6 +104,7 @@ function PostPage() {
 								currentUserId={session.userId}
 								currentUserRole={session.role}
 								onDeleted={() => navigate({ to: "/app" })}
+								onLightboxChange={setLightboxOpen}
 							/>
 						</div>
 						<div style={{ flex: "2", minWidth: 0 }}>{commentSection}</div>
@@ -127,6 +120,7 @@ function PostPage() {
 						currentUserId={session.userId}
 						currentUserRole={session.role}
 						onDeleted={() => navigate({ to: "/app" })}
+						onLightboxChange={setLightboxOpen}
 					/>
 				</div>
 			)}

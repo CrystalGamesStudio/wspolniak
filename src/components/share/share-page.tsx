@@ -8,14 +8,15 @@ import { Label } from "@/components/ui/label";
 import { LoaderIcon } from "@/components/ui/spinner";
 
 interface VerifyResponse {
-	members: { id: string; name: string }[];
+	members?: { id: string; name: string }[];
+	isAdmin: boolean;
 }
 
 interface LoginResponse {
 	redirectUrl: string;
 }
 
-type Step = "code" | "members" | "redirecting";
+type Step = "code" | "members" | "admin-confirm" | "redirecting";
 
 async function verifyCode(code: string): Promise<VerifyResponse> {
 	const res = await fetch("/api/share/verify", {
@@ -60,8 +61,12 @@ export function SharePage({ initialCode = "", preselectedMemberId }: SharePagePr
 	const verifyMutation = useMutation({
 		mutationFn: () => verifyCode(code),
 		onSuccess: (data) => {
-			setMembers(data.members);
-			setStep("members");
+			if (data.isAdmin) {
+				setStep("admin-confirm");
+			} else {
+				setMembers(data.members ?? []);
+				setStep("members");
+			}
 		},
 	});
 
@@ -88,6 +93,20 @@ export function SharePage({ initialCode = "", preselectedMemberId }: SharePagePr
 		);
 	}
 
+	if (step === "admin-confirm") {
+		return (
+			<AdminConfirmStep
+				isLoggingIn={loginMutation.isPending}
+				errorMessage={loginMutation.isError ? loginMutation.error.message : null}
+				onConfirm={() => loginMutation.mutate("")}
+				onCancel={() => {
+					setStep("code");
+					loginMutation.reset();
+				}}
+			/>
+		);
+	}
+
 	if (step === "members") {
 		return (
 			<MembersStep
@@ -110,7 +129,6 @@ export function SharePage({ initialCode = "", preselectedMemberId }: SharePagePr
 			<div className="mx-auto w-full max-w-md space-y-6">
 				<div className="text-center">
 					<h1 className="text-2xl font-bold tracking-tight text-foreground">Wspólniak</h1>
-					<p className="mt-2 text-muted-foreground">Wpisz kod dostępu z ulotki</p>
 				</div>
 
 				{verifyMutation.isError && (
@@ -229,6 +247,58 @@ function MembersStep({
 				<Button variant="ghost" className="w-full h-12 text-base" onClick={onBack}>
 					Wstecz
 				</Button>
+			</div>
+		</div>
+	);
+}
+
+interface AdminConfirmStepProps {
+	isLoggingIn: boolean;
+	errorMessage: string | null;
+	onConfirm: () => void;
+	onCancel: () => void;
+}
+
+function AdminConfirmStep({
+	isLoggingIn,
+	errorMessage,
+	onConfirm,
+	onCancel,
+}: AdminConfirmStepProps) {
+	return (
+		<div className="flex min-h-screen items-center justify-center bg-background px-6">
+			<div className="mx-auto w-full max-w-md space-y-6">
+				<div className="text-center">
+					<h1 className="text-2xl font-bold tracking-tight text-foreground">
+						Logowanie jako Admin
+					</h1>
+					<p className="mt-2 text-muted-foreground">
+						Czy na pewno zalogować się jako administrator?
+					</p>
+				</div>
+				{errorMessage && (
+					<Alert variant="destructive">
+						<AlertDescription>{errorMessage}</AlertDescription>
+					</Alert>
+				)}
+				<div className="space-y-3">
+					<Button
+						className="w-full h-14 justify-center text-lg bg-destructive text-destructive-foreground hover:bg-destructive/90"
+						disabled={isLoggingIn}
+						onClick={onConfirm}
+					>
+						<LoaderIcon loading={isLoggingIn} />
+						{isLoggingIn ? "Logowanie..." : "Tak, zaloguj jako admin"}
+					</Button>
+					<Button
+						variant="outline"
+						className="w-full h-14 justify-center text-lg"
+						disabled={isLoggingIn}
+						onClick={onCancel}
+					>
+						Anuluj
+					</Button>
+				</div>
 			</div>
 		</div>
 	);
