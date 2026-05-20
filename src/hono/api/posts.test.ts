@@ -103,7 +103,6 @@ describe("POST /api/app/posts", () => {
 			images: [
 				{ id: "img-1", postId: "post-1", cfImageId: "cf-aaa", displayOrder: 0, createdAt: now },
 			],
-			videos: [],
 		});
 
 		const api = createApi();
@@ -124,7 +123,6 @@ describe("POST /api/app/posts", () => {
 			authorId: "u1",
 			description: "Test",
 			cfImageIds: ["cf-aaa"],
-			cfStreamUids: [],
 		});
 	});
 
@@ -157,78 +155,6 @@ describe("POST /api/app/posts", () => {
 		);
 
 		expect(res.status).toBe(201);
-	});
-
-	it("creates post with cfStreamUid", async () => {
-		mockCountToday.mockResolvedValue(0);
-		const now = new Date();
-		mockCreatePost.mockResolvedValue({
-			post: {
-				id: "post-2",
-				authorId: "u1",
-				description: "Video post",
-				deletedAt: null,
-				createdAt: now,
-				updatedAt: now,
-			},
-			images: [],
-			videos: [],
-		});
-
-		const api = createApi();
-		const res = await api.request(
-			"/api/app/posts",
-			authedRequest("/api/app/posts", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ description: "Video post", cfStreamUids: ["stream-uid-1"] }),
-			}),
-			env,
-		);
-
-		expect(res.status).toBe(201);
-		expect(mockCreatePost).toHaveBeenCalledWith({
-			authorId: "u1",
-			description: "Video post",
-			cfImageIds: [],
-			cfStreamUids: ["stream-uid-1"],
-		});
-	});
-
-	it("creates post with only a video (no text, no images)", async () => {
-		mockCountToday.mockResolvedValue(0);
-		const now = new Date();
-		mockCreatePost.mockResolvedValue({
-			post: {
-				id: "post-3",
-				authorId: "u1",
-				description: null,
-				deletedAt: null,
-				createdAt: now,
-				updatedAt: now,
-			},
-			images: [],
-			videos: [],
-		});
-
-		const api = createApi();
-		const res = await api.request(
-			"/api/app/posts",
-			authedRequest("/api/app/posts", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ cfStreamUids: ["stream-uid-2"] }),
-			}),
-			env,
-		);
-
-		expect(res.status).toBe(201);
-		expect(mockCreatePost).toHaveBeenCalledWith({
-			authorId: "u1",
-			description: null,
-			cfImageIds: [],
-			cfStreamUids: ["stream-uid-2"],
-		});
 	});
 
 	it("returns 400 when more than 10 images", async () => {
@@ -330,7 +256,6 @@ describe("GET /api/app/posts/:id", () => {
 			updatedAt: now,
 			author: { id: "u1", name: "Tomek" },
 			images: [],
-			videos: [],
 		});
 
 		const api = createApi();
@@ -343,41 +268,6 @@ describe("GET /api/app/posts/:id", () => {
 		expect(res.status).toBe(200);
 		const body = (await res.json()) as { data: { id: string } };
 		expect(body.data.id).toBe("post-1");
-	});
-
-	it("returns post with videos", async () => {
-		const now = new Date();
-		mockGetPost.mockResolvedValue({
-			id: "post-v1",
-			authorId: "u1",
-			description: null,
-			createdAt: now,
-			updatedAt: now,
-			author: { id: "u1", name: "Tomek" },
-			images: [],
-			videos: [
-				{
-					id: "vid-1",
-					postId: "post-v1",
-					cfStreamUid: "stream-uid-1",
-					displayOrder: 0,
-					processingStatus: "ready",
-					createdAt: now,
-				},
-			],
-		});
-
-		const api = createApi();
-		const res = await api.request(
-			"/api/app/posts/post-v1",
-			authedRequest("/api/app/posts/post-v1"),
-			env,
-		);
-
-		expect(res.status).toBe(200);
-		const body = (await res.json()) as { data: { id: string; videos: { cfStreamUid: string }[] } };
-		expect(body.data.videos).toHaveLength(1);
-		expect(body.data.videos[0]?.cfStreamUid).toBe("stream-uid-1");
 	});
 
 	it("returns 404 for non-existent post", async () => {
@@ -422,7 +312,6 @@ describe("GET /api/app/posts (paginated)", () => {
 					updatedAt: now,
 					author: { id: "u1", name: "Tomek" },
 					images: [],
-					videos: [],
 				},
 			],
 			nextCursor: { createdAt: now.toISOString(), id: "post-1" },
@@ -482,7 +371,6 @@ describe("GET /api/app/posts (paginated)", () => {
 					updatedAt: now,
 					author: { id: "u1", name: "Tomek" },
 					images: [],
-					videos: [],
 				},
 				{
 					id: "post-2",
@@ -492,7 +380,6 @@ describe("GET /api/app/posts (paginated)", () => {
 					updatedAt: now,
 					author: { id: "u1", name: "Tomek" },
 					images: [],
-					videos: [],
 				},
 			],
 			nextCursor: null,
@@ -513,45 +400,6 @@ describe("GET /api/app/posts (paginated)", () => {
 		expect(body.data[1]?.commentCount).toBe(0);
 		expect(mockCountComments).toHaveBeenCalledWith(["post-1", "post-2"]);
 	});
-
-	it("includes videos with thumbnail URLs in feed", async () => {
-		const now = new Date();
-		mockListPaginated.mockResolvedValue({
-			posts: [
-				{
-					id: "post-v1",
-					authorId: "u1",
-					description: null,
-					createdAt: now,
-					updatedAt: now,
-					author: { id: "u1", name: "Tomek" },
-					images: [],
-					videos: [
-						{
-							id: "vid-1",
-							postId: "post-v1",
-							cfStreamUid: "stream-uid-1",
-							displayOrder: 0,
-							processingStatus: "ready",
-							createdAt: now,
-						},
-					],
-				},
-			],
-			nextCursor: null,
-		});
-		mockCountComments.mockResolvedValue(new Map());
-
-		const api = createApi();
-		const res = await api.request("/api/app/posts", authedRequest("/api/app/posts"), env);
-
-		expect(res.status).toBe(200);
-		const body = (await res.json()) as {
-			data: { id: string; videos: { cfStreamUid: string }[] }[];
-		};
-		expect(body.data[0]?.videos).toHaveLength(1);
-		expect(body.data[0]?.videos[0]?.cfStreamUid).toBe("stream-uid-1");
-	});
 });
 
 const now = new Date();
@@ -565,7 +413,6 @@ const samplePost = {
 	updatedAt: now,
 	author: { id: "u1", name: "Tomek" },
 	images: [],
-	videos: [],
 };
 
 describe("PATCH /api/app/posts/:id", () => {

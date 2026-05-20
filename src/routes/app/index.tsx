@@ -19,14 +19,6 @@ interface FeedPost {
 		displayOrder: number;
 		createdAt: string;
 	}[];
-	videos: {
-		id: string;
-		postId: string;
-		cfStreamUid: string;
-		displayOrder: number;
-		processingStatus: "processing" | "ready" | "error";
-		createdAt: string;
-	}[];
 }
 
 interface FeedPage {

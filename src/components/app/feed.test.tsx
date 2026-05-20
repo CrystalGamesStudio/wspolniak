@@ -34,7 +34,6 @@ describe("Feed", () => {
 				images: [
 					{ id: "img-1", postId: "post-1", cfImageId: "cf-aaa", displayOrder: 0, createdAt: now },
 				],
-				videos: [],
 			},
 			{
 				id: "post-2",
@@ -46,7 +45,6 @@ describe("Feed", () => {
 				images: [
 					{ id: "img-2", postId: "post-2", cfImageId: "cf-bbb", displayOrder: 0, createdAt: now },
 				],
-				videos: [],
 			},
 		];
 
@@ -78,7 +76,6 @@ describe("Feed", () => {
 					{ id: "img-1", postId: "post-1", cfImageId: "cf-aaa", displayOrder: 0, createdAt: now },
 					{ id: "img-2", postId: "post-1", cfImageId: "cf-bbb", displayOrder: 1, createdAt: now },
 				],
-				videos: [],
 			},
 		];
 
@@ -103,7 +100,6 @@ describe("Feed", () => {
 				images: [
 					{ id: "img-1", postId: "post-1", cfImageId: "cf-aaa", displayOrder: 0, createdAt: now },
 				],
-				videos: [],
 			},
 		];
 
@@ -127,7 +123,6 @@ describe("Feed", () => {
 				images: [
 					{ id: "img-1", postId: "post-1", cfImageId: "cf-aaa", displayOrder: 0, createdAt: now },
 				],
-				videos: [],
 			},
 		];
 
@@ -155,7 +150,6 @@ describe("Feed", () => {
 					displayOrder: i,
 					createdAt: now,
 				})),
-				videos: [],
 			},
 		];
 
@@ -182,7 +176,6 @@ describe("Feed", () => {
 					displayOrder: i,
 					createdAt: now,
 				})),
-				videos: [],
 			},
 		];
 
@@ -204,7 +197,6 @@ describe("Feed", () => {
 				images: [
 					{ id: "img-1", postId: "post-1", cfImageId: "cf-aaa", displayOrder: 0, createdAt: now },
 				],
-				videos: [],
 			},
 		];
 

@@ -21,7 +21,6 @@ import {
 } from "@/db/push-subscriptions/queries";
 import { createHono } from "@/hono/factory";
 import { authMiddleware } from "@/hono/middleware/auth";
-import { deleteStreamVideo } from "@/stream/client";
 
 const DAILY_POST_LIMIT = 50;
 
@@ -47,7 +46,6 @@ postsEndpoint.post("/", async (c) => {
 		authorId: user.userId,
 		description: result.data.description,
 		cfImageIds: result.data.cfImageIds ?? [],
-		cfStreamUids: result.data.cfStreamUids ?? [],
 	});
 
 	const baseSendPush = createSendWebPushFromEnv(c.env);
@@ -181,21 +179,6 @@ postsEndpoint.delete("/:id", async (c) => {
 
 	if (!canDeletePost(user, post)) {
 		return c.json({ error: "Forbidden" }, 403);
-	}
-
-	// Delete all videos from Cloudflare Stream before soft-delete
-	if (post.videos && post.videos.length > 0) {
-		await Promise.all(
-			post.videos.map((video) =>
-				deleteStreamVideo({
-					accountId: c.env.CLOUDFLARE_ACCOUNT_ID,
-					apiToken: c.env.CLOUDFLARE_STREAM_API_TOKEN,
-					uid: video.cfStreamUid,
-				}).catch((_error) => {
-					// Continue anyway - post will be soft-deleted
-				}),
-			),
-		);
 	}
 
 	await softDeletePost(post.id);

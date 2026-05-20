@@ -1,23 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { AdaptiveVideoPlayer } from "@/components/app/adaptive-video-player";
-import { getStreamThumbnailUrl } from "@/stream/client";
 
 interface PostImage {
 	id: string;
 	postId: string;
 	cfImageId: string;
 	displayOrder: number;
-	createdAt: string;
-}
-
-interface PostVideo {
-	id: string;
-	postId: string;
-	cfStreamUid: string;
-	displayOrder: number;
-	processingStatus: "processing" | "ready" | "error";
 	createdAt: string;
 }
 
@@ -29,7 +18,6 @@ interface PostData {
 	updatedAt: string;
 	author: { id: string; name: string };
 	images: PostImage[];
-	videos?: PostVideo[];
 }
 
 interface PostResponse {
@@ -92,23 +80,6 @@ function SharedPostPage() {
 
 					{post.description && (
 						<p className="whitespace-pre-wrap break-words text-foreground">{post.description}</p>
-					)}
-
-					{post.videos && post.videos.length > 0 && (
-						<div className="space-y-2">
-							{post.videos.map((video) => {
-								if (video.processingStatus !== "ready") return null;
-
-								return (
-									<AdaptiveVideoPlayer
-										key={video.id}
-										videoUid={video.cfStreamUid}
-										thumbnailUrl={getStreamThumbnailUrl(video.cfStreamUid)}
-										canAutoplay={false}
-									/>
-								);
-							})}
-						</div>
 					)}
 
 					{post.images.length > 0 && (
