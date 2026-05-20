@@ -1,3 +1,10 @@
+## [1.39.1](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.39.0...v1.39.1) (2026-05-20)
+
+
+### Bug Fixes
+
+* **pwa:** bump SW cache name per build to evict stale bundles ([c971a4d](https://github.com/CrystalGamesStudio/wspolniak/commit/c971a4d4298556a1a5dae697015b8e8b864b201c)), closes [#62](https://github.com/CrystalGamesStudio/wspolniak/issues/62)
+
 # [1.39.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.38.0...v1.39.0) (2026-05-20)
 
 
