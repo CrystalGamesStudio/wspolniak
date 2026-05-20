@@ -22,6 +22,20 @@
       "when": 1777359121448,
       "tag": "0002_robust_pestilence",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1779004131909,
+      "tag": "0003_good_vin_gonzales",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1779277479074,
+      "tag": "0004_wakeful_reaper",
+      "breakpoints": true
     }
   ]
 }
