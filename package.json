@@ -5,8 +5,8 @@
 	"packageManager": "pnpm@10.33.1",
 	"scripts": {
 		"dev": "vite dev --port 3000",
-		"build": "vite build",
-		"build:production": "vite build --mode production",
+		"build": "vite build && node scripts/inject-sw-version.mjs",
+		"build:production": "vite build --mode production && node scripts/inject-sw-version.mjs",
 		"deploy": "pnpm run build && wrangler deploy",
 		"deploy:production": "pnpm run build:production && wrangler deploy --env=''",
 		"serve": "vite preview",

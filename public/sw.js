@@ -1,7 +1,10 @@
 // Service worker for Wspólniak — handles web push notifications and asset caching.
 // Registered manually from src/components/pwa/pwa-shell.tsx.
+// The build-id placeholder below is replaced at build time by
+// scripts/inject-sw-version.mjs so each deploy gets a unique CACHE_NAME and
+// the activate handler evicts the previous build's stale bundles. See GH #62.
 
-const CACHE_NAME = "wspolniak-v1";
+const CACHE_NAME = "wspolniak-__BUILD_ID__";
 
 const PRECACHE_URLS = ["/", "/manifest.webmanifest", "/logo192.png", "/favicon.ico"];
 
@@ -50,19 +53,19 @@ self.addEventListener("fetch", (event) => {
 		return;
 	}
 
-	// HTML navigation: only cache root page, not dynamic routes
+	// HTML navigation: network-first so a fresh shell always references the
+	// current build's hashed assets. Fall back to cache only when offline.
 	if (event.request.mode === "navigate" && url.pathname === "/") {
 		event.respondWith(
-			caches.match(event.request).then((cached) => {
-				if (cached) return cached;
-				return fetch(event.request).then((response) => {
+			fetch(event.request)
+				.then((response) => {
 					if (response.ok) {
 						const clone = response.clone();
 						caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
 					}
 					return response;
-				});
-			}),
+				})
+				.catch(() => caches.match(event.request).then((cached) => cached ?? Response.error())),
 		);
 	}
 });
