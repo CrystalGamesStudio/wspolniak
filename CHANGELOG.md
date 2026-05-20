@@ -1,3 +1,10 @@
+# [1.39.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.38.0...v1.39.0) (2026-05-20)
+
+
+### Features
+
+* remove video functionality entirely ([891169f](https://github.com/CrystalGamesStudio/wspolniak/commit/891169fe6df1aab181ac3124d09c7eb359b78739))
+
 # [1.38.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.37.0...v1.38.0) (2026-05-19)
 
 
