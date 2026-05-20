@@ -4,5 +4,5 @@ export { userBans } from "./identity/bans";
 export { users } from "./identity/table";
 export { instanceConfig } from "./instance/table";
 export { postReactions } from "./post-reactions/table";
-export { postImages, posts, postVideos } from "./posts/table";
+export { postImages, posts } from "./posts/table";
 export { pushSubscriptions } from "./push-subscriptions/table";

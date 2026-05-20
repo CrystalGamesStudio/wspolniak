@@ -1,29 +1,18 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { Download } from "lucide-react";
 import { useEffect, useState } from "react";
-import { AdaptiveVideoPlayer } from "@/components/app/adaptive-video-player";
 import { ImageLightbox } from "@/components/app/image-lightbox";
 import { PostActions } from "@/components/app/post-actions";
 import { ReactionButton } from "@/components/app/reaction-button";
 import { ReactionUsers } from "@/components/app/reaction-users";
 import { getImageUrl } from "@/images/client";
 import { downloadImage } from "@/lib/download-image";
-import { getStreamThumbnailUrl } from "@/stream/client";
 
 interface PostImage {
 	id: string;
 	postId: string;
 	cfImageId: string;
 	displayOrder: number;
-	createdAt: string;
-}
-
-interface PostVideo {
-	id: string;
-	postId: string;
-	cfStreamUid: string;
-	displayOrder: number;
-	processingStatus: "processing" | "ready" | "error";
 	createdAt: string;
 }
 
@@ -35,7 +24,6 @@ interface PostData {
 	updatedAt: string;
 	author: { id: string; name: string };
 	images: PostImage[];
-	videos?: PostVideo[];
 }
 
 interface PostViewProps {
@@ -102,23 +90,6 @@ export function PostView({
 				<div className="flex items-center gap-2">
 					<ReactionButton postId={post.id} currentUserId={currentUserId} />
 					<ReactionUsers postId={post.id} currentUserRole={currentUserRole ?? ""} />
-				</div>
-			)}
-
-			{post.videos && post.videos.length > 0 && (
-				<div className="space-y-2">
-					{post.videos.map((video) => {
-						if (video.processingStatus !== "ready") return null;
-
-						return (
-							<AdaptiveVideoPlayer
-								key={video.id}
-								videoUid={video.cfStreamUid}
-								thumbnailUrl={getStreamThumbnailUrl(video.cfStreamUid)}
-								canAutoplay={false}
-							/>
-						);
-					})}
 				</div>
 			)}
 

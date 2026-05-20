@@ -17,15 +17,3 @@ export const postImages = pgTable("post_images", {
 	displayOrder: integer("display_order").notNull(),
 	createdAt: timestamp("created_at").defaultNow().notNull(),
 });
-
-export const postVideos = pgTable("post_videos", {
-	id: text("id").primaryKey(),
-	postId: text("post_id").notNull(),
-	cfStreamUid: text("cf_stream_uid").notNull(),
-	displayOrder: integer("display_order").notNull(),
-	processingStatus: text("processing_status")
-		.$type<"processing" | "ready" | "error">()
-		.default("processing")
-		.notNull(),
-	createdAt: timestamp("created_at").defaultNow().notNull(),
-});
