@@ -37,7 +37,6 @@ const dbUser = {
 	role: "admin",
 	tokenHash: "hash",
 	deletedAt: null,
-	note: null,
 	createdAt: new Date(),
 };
 

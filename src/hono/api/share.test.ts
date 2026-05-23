@@ -44,7 +44,6 @@ describe("POST /api/share/verify", () => {
 				role: "admin",
 				tokenHash: "h1",
 				deletedAt: null,
-				note: null,
 				createdAt: new Date(),
 			},
 			{
@@ -53,7 +52,6 @@ describe("POST /api/share/verify", () => {
 				role: "member",
 				tokenHash: "h2",
 				deletedAt: null,
-				note: null,
 				createdAt: new Date(),
 			},
 		]);
@@ -107,7 +105,6 @@ describe("POST /api/share/login", () => {
 			role: "member",
 			tokenHash: "old-hash",
 			deletedAt: null,
-			note: null,
 			createdAt: new Date(),
 		});
 		mockRegenerateMemberToken.mockResolvedValue({ plaintextToken: "new-token" });
@@ -132,7 +129,6 @@ describe("POST /api/share/login", () => {
 			role: "admin",
 			tokenHash: "h1",
 			deletedAt: null,
-			note: null,
 			createdAt: new Date(),
 		});
 

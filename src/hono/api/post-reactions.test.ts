@@ -80,7 +80,6 @@ describe("POST /api/app/posts/:postId/reactions", () => {
 			role: "member",
 			tokenHash: "hash",
 			deletedAt: null,
-			note: null,
 			createdAt: new Date(),
 		});
 	});
@@ -171,7 +170,6 @@ describe("GET /api/app/posts/:postId/reactions", () => {
 			role: "member",
 			tokenHash: "hash",
 			deletedAt: null,
-			note: null,
 			createdAt: new Date(),
 		});
 	});
@@ -221,7 +219,6 @@ describe("GET /api/app/posts/:postId/my-reaction", () => {
 			role: "member",
 			tokenHash: "hash",
 			deletedAt: null,
-			note: null,
 			createdAt: new Date(),
 		});
 	});
