@@ -1,3 +1,10 @@
+# [1.40.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.39.1...v1.40.0) (2026-05-23)
+
+
+### Features
+
+* remove user bans and admin notes functionality ([bcff68b](https://github.com/CrystalGamesStudio/wspolniak/commit/bcff68b92797bd52526030438055751035991f1f))
+
 ## [1.39.1](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.39.0...v1.39.1) (2026-05-20)
 
 
