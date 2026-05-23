@@ -64,6 +64,13 @@
       "when": 1779109412247,
       "tag": "0008_solid_yellowjacket",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1779277281920,
+      "tag": "0009_supreme_switch",
+      "breakpoints": true
     }
   ]
 }

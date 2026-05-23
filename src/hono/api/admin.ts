@@ -1,12 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-
-import { createBan, getActiveBan, removeBan } from "@/db/identity/ban-queries";
 import {
 	createMember,
 	listActiveMembers,
 	regenerateMemberToken,
 	softDeleteMember,
-	updateMemberNote,
 } from "@/db/identity/queries";
 import { getShareCode, setShareCode } from "@/db/instance/queries";
 import { createHono, getOrigin } from "@/hono/factory";
@@ -41,7 +38,6 @@ adminEndpoint.get("/members", async (c) => {
 		id: m.id,
 		name: m.name,
 		role: m.role,
-		note: m.note,
 		createdAt: m.createdAt,
 	}));
 	return c.json({ data });
@@ -61,14 +57,6 @@ adminEndpoint.delete("/members/:id", async (c) => {
 	return c.json({ data: { deleted: true } });
 });
 
-adminEndpoint.put("/members/:id/note", async (c) => {
-	const userId = c.req.param("id");
-	const body = await c.req.json<{ note?: string }>();
-	const note = body.note?.trim() || null;
-	const user = await updateMemberNote(userId, note);
-	return c.json({ data: { id: user.id, note: user.note } });
-});
-
 adminEndpoint.get("/share-code", async (c) => {
 	const code = await getShareCode();
 	return c.json({ data: { code } });
@@ -83,50 +71,6 @@ adminEndpoint.put("/share-code", async (c) => {
 
 	await setShareCode(code);
 	return c.json({ data: { code } });
-});
-
-adminEndpoint.post("/members/:id/ban", async (c) => {
-	const user = c.get("user");
-	const userId = c.req.param("id");
-	const body = await c.req.json<{ days?: number }>();
-	const days = body.days ?? 7;
-
-	if (days < 1 || days > 365) {
-		return c.json({ error: "Days must be between 1 and 365" }, 400);
-	}
-
-	const expiresAt = new Date();
-	expiresAt.setDate(expiresAt.getDate() + days);
-
-	const ban = await createBan({
-		userId,
-		bannedBy: user.userId,
-		expiresAt,
-	});
-
-	return c.json({ data: { ban: { id: ban.id, expiresAt: ban.expiresAt } } });
-});
-
-adminEndpoint.get("/members/:id/ban-status", async (c) => {
-	const userId = c.req.param("id");
-	const ban = await getActiveBan(userId);
-
-	if (!ban) {
-		return c.json({ data: { banned: false } });
-	}
-
-	return c.json({
-		data: {
-			banned: true,
-			expiresAt: ban.expiresAt,
-		},
-	});
-});
-
-adminEndpoint.delete("/members/:id/ban", async (c) => {
-	const userId = c.req.param("id");
-	await removeBan(userId);
-	return c.json({ data: { unbanned: true } });
 });
 
 export default adminEndpoint;

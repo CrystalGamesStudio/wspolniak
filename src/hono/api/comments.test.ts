@@ -77,7 +77,6 @@ const sampleComment = {
 	authorId: "u1",
 	body: "Fajne zdjęcie!",
 	deletedAt: null,
-	note: null,
 	createdAt: now,
 	updatedAt: now,
 };
@@ -92,7 +91,6 @@ describe("POST /api/app/posts/:postId/comments", () => {
 			role: "member",
 			tokenHash: "hash",
 			deletedAt: null,
-			note: null,
 			createdAt: new Date(),
 		});
 	});
@@ -200,7 +198,6 @@ describe("GET /api/app/posts/:postId/comments", () => {
 			role: "member",
 			tokenHash: "hash",
 			deletedAt: null,
-			note: null,
 			createdAt: new Date(),
 		});
 	});
@@ -255,7 +252,6 @@ describe("PATCH /api/app/posts/:postId/comments/:commentId", () => {
 			role: "member",
 			tokenHash: "hash",
 			deletedAt: null,
-			note: null,
 			createdAt: new Date(),
 		});
 	});
@@ -288,7 +284,6 @@ describe("PATCH /api/app/posts/:postId/comments/:commentId", () => {
 			role: "admin",
 			tokenHash: "hash",
 			deletedAt: null,
-			note: null,
 			createdAt: new Date(),
 		});
 		mockGetComment.mockResolvedValue(sampleComment);
@@ -316,7 +311,6 @@ describe("PATCH /api/app/posts/:postId/comments/:commentId", () => {
 			role: "member",
 			tokenHash: "hash",
 			deletedAt: null,
-			note: null,
 			createdAt: new Date(),
 		});
 		mockGetComment.mockResolvedValue(sampleComment);
@@ -381,7 +375,6 @@ describe("DELETE /api/app/posts/:postId/comments/:commentId", () => {
 			role: "member",
 			tokenHash: "hash",
 			deletedAt: null,
-			note: null,
 			createdAt: new Date(),
 		});
 	});
@@ -409,7 +402,6 @@ describe("DELETE /api/app/posts/:postId/comments/:commentId", () => {
 			role: "admin",
 			tokenHash: "hash",
 			deletedAt: null,
-			note: null,
 			createdAt: new Date(),
 		});
 		mockGetComment.mockResolvedValue(sampleComment);
@@ -433,7 +425,6 @@ describe("DELETE /api/app/posts/:postId/comments/:commentId", () => {
 			role: "member",
 			tokenHash: "hash",
 			deletedAt: null,
-			note: null,
 			createdAt: new Date(),
 		});
 		mockGetComment.mockResolvedValue(sampleComment);
