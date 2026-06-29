@@ -1,47 +1,70 @@
-# PRD: Wspólniak – Kalendarz
+# PRD: Wspólniak — Aktualizacje (Wydajność, Reply, Mentions, Tryb Awaryjny, Bottombar)
 
 ## Overview
 
-Moduł Kalendarza dla istniejącej aplikacji rodzinnej Wspólniak (produkcja).
-Umożliwia członkom rodziny przeglądanie i zarządzanie wydarzeniami rodzinnymi oraz świętami, tak aby nikt nie zapomniał o ważnych datach.
+Zestaw 5 niezależnych usprawnień do istniejącej aplikacji Wspólniak. Celem jest poprawa wydajności, rozszerzenie funkcji społecznych (reply, @mentions) oraz dodanie narzędzi administracyjnych (tryb awaryjny) i poprawa nawigacji mobilnej.
+
+---
+
+## Stack (rzeczywisty, zweryfikowany w repo)
+
+| Layer | Technology |
+|-------|------------|
+| Framework | TanStack Start (SSR + Router + Query) |
+| Styling | Tailwind CSS v4 + shadcn/ui |
+| API | Hono na Cloudflare Workers |
+| Database | Neon PostgreSQL (serverless) |
+| ORM | Drizzle ORM |
+| Image storage | Cloudflare Images |
+| Push | Web Push VAPID |
+| Build | Vite |
+| Package manager | pnpm |
+| Linting | Biome |
+| Testing | Vitest |
+| Deploy | Cloudflare Workers (wrangler) |
 
 ---
 
 ## Problem Statement
 
-Rodzina nie ma jednego wspólnego miejsca, w którym widać nadchodzące święta i uroczystości rodzinne. Ważne daty (imieniny, rocznice, święta kościelne) umykają uwadze. Kalendarz w Wspólniaku ma to zmienić — jedno miejsce, widoczne dla wszystkich, z aktywnym przypominaniem przez Feed.
+1. Aplikacja ładuje się zbyt wolno — widoczny waterfall: czarny ekran → loader → biały ekran → loader → feed. Użytkownicy na LTE i WiFi odczuwają wyraźne opóźnienia.
+2. Brak możliwości odpowiadania na konkretne komentarze utrudnia rozmowę w wątkach.
+3. Brak @mentions uniemożliwia bezpośrednie zwrócenie uwagi konkretnej osoby.
+4. Admin nie ma możliwości szybkiego wyłączenia widoku aplikacji podczas prac serwisowych.
+5. Bottombar mobilny zawiera przycisk Feedback zamiast bardziej użytecznego przycisku powrotu do feedu.
 
 ---
 
 ## Users
 
-| Typ użytkownika | Opis | Liczba |
-|-----------------|------|--------|
-| Członek rodziny | Dodaje/edytuje własne wydarzenia, przegląda kalendarz | ~10–20 |
-| Admin | Pełny dostęp do wszystkich wydarzeń, zarządza świętami systemowymi | 1 |
-| System ("Kalendarz") | Wirtualny użytkownik generujący posty-przypomnienia na Feedzie | — |
+| Typ użytkownika | Opis | Wolumen |
+|----------------|------|---------|
+| Użytkownik rodziny | Mobile-first, mixed technical skills, PWA (iOS/Android/desktop) | ~10–30 osób |
+| Admin | Zarządza kontami, treścią, ustawieniami systemowymi | 1 osoba |
 
 ---
 
 ## Goals & Success Criteria
 
-- [ ] Każdy członek rodziny może dodać, edytować i usunąć własne wydarzenie
-- [ ] Polskie święta (ustawowe + kościelne) ładowane automatycznie, bez ręcznego wprowadzania
-- [ ] Święta ruchome (Wielkanoc, Popielec itp.) poprawnie wyliczane co rok
-- [ ] Funkcja przypomnienia: tydzień przed wydarzeniem pojawia się post na Feedzie
-- [ ] Widok mobilny i desktopowy działają zgodnie ze specyfikacją
-- [ ] Członkowie rodziny testują funkcjonalność po wdrożeniu
+- [ ] Wyeliminowanie czarnego ekranu i podwójnego loadera przy wejściu do aplikacji
+- [ ] Czas do pierwszego renderowania feedu skrócony o co najmniej 60%
+- [ ] Czas publikowania posta (z plikiem) odczuwalnie krótszy dzięki optimistic UI
+- [ ] Użytkownik może odpowiedzieć na komentarz (max 5 reply per komentarz)
+- [ ] Użytkownik może @wspomnieć inną osobę w komentarzu lub opisie posta
+- [ ] Wspomniana osoba otrzymuje push notyfikację
+- [ ] Admin może włączyć tryb awaryjny jednym switchem
+- [ ] Bottombar mobilny zawiera przycisk Home zamiast Feedback
 
 ---
 
 ## User Stories
 
-1. Jako członek rodziny chcę dodać wydarzenie cykliczne (np. imieniny) z wyborem częstotliwości, żeby nie musieć dodawać go ręcznie co roku.
-2. Jako członek rodziny chcę zaznaczyć "przypomnienie" przy wydarzeniu, żeby tydzień wcześniej na Feedzie pojawił się post przypominający całej rodzinie.
-3. Jako członek rodziny chcę przeglądać listę nadchodzących wydarzeń na telefonie, żeby szybko sprawdzić co się zbliża.
-4. Jako admin chcę mieć możliwość edycji lub usunięcia dowolnego wydarzenia (w tym systemowych świąt), żeby utrzymać porządek w kalendarzu.
-5. Jako admin chcę włączyć przypomnienie dla wybranych świąt systemowych (np. Wielkanoc, Boże Narodzenie), żeby Feed przypominał o najważniejszych świętach.
-6. Jako użytkownik desktopowy chcę widzieć siatkę miesięczną kalendarza, żeby mieć lepszy przegląd całego miesiąca.
+1. Jako użytkownik chcę żeby aplikacja załadowała się szybko, bez czarnego ekranu i podwójnego spinnera.
+2. Jako użytkownik chcę odpowiedzieć bezpośrednio na konkretny komentarz, żeby rozmowa była czytelna.
+3. Jako użytkownik chcę napisać @imię w komentarzu lub opisie posta i zobaczyć dropdown z listą osób, żeby szybko oznaczyć konkretną osobę.
+4. Jako wspomniana osoba chcę dostać push notyfikację kiedy ktoś użyje @mojaimię, żeby wiedzieć że się do mnie zwracają.
+5. Jako admin chcę jednym switchem w panelu zakryć aplikację dla użytkowników podczas naprawy, żeby nie widzieli niepełnych danych lub błędów.
+6. Jako użytkownik mobilny chcę mieć przycisk Home w dolnej nawigacji, żeby szybko wrócić do feedu.
 
 ---
 
@@ -49,133 +72,193 @@ Rodzina nie ma jednego wspólnego miejsca, w którym widać nadchodzące święt
 
 ### In scope
 
-- Tworzenie wydarzeń: tytuł, opis, data (dzień + miesiąc; rok opcjonalny dla jednorazowych)
-- Typy cykliczności: jednorazowe / co tydzień / co miesiąc / co rok
-- Edycja i usuwanie: tylko autor lub admin
-- Przypomnienie (checkbox): automatyczny post od systemowego użytkownika "Kalendarz" na Feedzie 7 dni przed wydarzeniem
-- Przy wydarzeniach cyklicznych: przypomnienie odpala się automatycznie przy każdym powtórzeniu
-- Polskie święta ustawowe i kościelne (w tym ruchome) — ładowane automatycznie z zewnętrznego API/bazy
-- Święta systemowe: przypomnienie domyślnie wyłączone; admin może włączyć dla wybranych
-- Admin: pełny dostęp do edycji, usuwania i zarządzania przypomnieniami wszystkich wydarzeń
-- Widok mobilny: lista nadchodzących wydarzeń (chronologicznie)
-- Widok desktopowy: lista + siatka miesięczna
-- Wszystkie wydarzenia widoczne dla całej rodziny (brak podziału na grupy)
+#### 1. Optymalizacja wydajności
 
-### Out of scope
+**Diagnoza (wykonać przed wdrożeniem):**
+- Sprawdzić czy feed renderuje się przez SSR czy CSR — TanStack Start obsługuje SSR przez `loader` w definicji routy, sprawdzić czy feed-route ma loader czy dane są fetchowane po stronie klienta
+- Zmierzyć TTFB i czas ładowania JS bundle (DevTools → Network)
+- Sprawdzić kolejność operacji: auth check → fetch danych → render — czy auth jest blokujący?
+- Zbadać zapytania do Neon PostgreSQL: N+1 queries, brakujące indeksy, brak paginacji
 
-- Komentarze pod wydarzeniami
-- Podział wydarzeń na grupy/subprzestrzenie
-- Push notyfikacje (planowane post-MVP)
-- Zaproszenia / RSVP na wydarzenia
-- Import/export kalendarza (iCal, Google Calendar)
-- Obsługa świąt z innych krajów / religii
+**Implementacja:**
+
+- **Auth waterfall:** W TanStack Start auth sprawdzamy w `beforeLoad` na chronionych routach — weryfikacja czy to jest już zrobione i czy działa server-side. Użytkownicy niezalogowani powinni być przekierowani przez `redirect()` w `beforeLoad`, bez renderowania czegokolwiek na kliencie.
+- **Bundle / code splitting:** Sprawdzić konfigurację Vite — czy ciężkie komponenty (galerie, edytory) są lazy-loaded przez `React.lazy()` lub dynamiczne importy. Dodać gdzie brakuje.
+- **Feed SSR:** TanStack Start ładuje dane w `loader` funkcji routy, dane są dostępne przy pierwszym renderze HTML. Jeśli feed używa `useQuery` bez preloadowania — przepiąć na `ensureQueryData` w loaderze lub pełny SSR loader, żeby dane przychodziły razem z HTML.
+- **Streaming:** Sprawdzić czy TanStack Start jest skonfigurowany z `streaming: true` w konfiguracji serwera — pozwala na Suspense streaming podobnie jak Next.js.
+- **Optimistic UI przy publikowaniu:** Po kliknięciu "Opublikuj" post pojawia się w feedzie natychmiast z placeholderem (TanStack Query `optimisticUpdate`). Upload zdjęć do Cloudflare Images odbywa się w tle osobnym requestem po zapisaniu tekstu posta. W razie błędu — post oznaczony jako "nie wysłano" z możliwością ponowienia.
+- **PostgreSQL — zapytania feedu:** Dodać indeksy na `created_at`, `user_id`. Zastąpić N+1 queries JOIN-ami lub batched queries przez Drizzle. Wdrożyć cursor-based pagination (nie offset).
+- **Obrazy:** Weryfikacja czy zdjęcia w feedzie mają lazy loading (`loading="lazy"`). Cloudflare Images serwuje już przez CDN z wariantami (thumbnail/full) — upewnić się że feed używa thumbnailów, nie pełnych rozdzielczości.
+
+---
+
+#### 2. Reply do komentarzy
+
+**Model danych:**
+- Tabela `comments` otrzymuje kolumnę `parent_id` (nullable FK do `comments.id`)
+- Reply to komentarz z ustawionym `parent_id`
+- Maksymalnie 5 reply na jeden komentarz (walidacja po stronie serwera w Hono i w UI)
+- Jeden poziom wcięcia — reply na reply nie jest możliwe (płaskie wątki)
+
+**UI:**
+- Pod każdym komentarzem przycisk "Odpowiedz"
+- Reply są wyświetlane wciętą listą pod komentarzem nadrzędnym
+- Licznik reply widoczny przy komentarzu (np. "5 odpowiedzi")
+- Gdy limit 5 osiągnięty — przycisk "Odpowiedz" znika lub jest disabled z tooltipem
+
+**Uprawnienia:**
+- Każdy zalogowany użytkownik może dodać reply
+- Admin może usuwać reply (tak samo jak komentarze)
+- Użytkownik nie może usunąć własnego reply (zgodnie z istniejącą polityką komentarzy)
+
+---
+
+#### 3. @mentions
+
+**Zachowanie:**
+- Aktywowane przez wpisanie `@` w polu komentarza lub opisu posta (w tym przy edycji posta jeśli edycja istnieje)
+- Po wpisaniu `@` pojawia się dropdown z listą użytkowników filtrowany na bieżąco po wpisaniu kolejnych znaków (np. `@An` → pokazuje Ania, Andrzej)
+- Kliknięcie nazwy w dropdown wstawia `@imię` do tekstu i zamyka dropdown
+- Klawiszem Escape lub kliknięciem poza dropdown — zamknięcie bez wstawiania
+
+**Wygląd dropdownu:**
+- Małe okienko (max-height: ~200px, scroll jeśli więcej użytkowników)
+- Kolor tła: biały/ciemny zgodnie z motywem aplikacji
+- Highlight aktywnej pozycji w kolorze głównym (zielonym, główny kolor marki Wspólniak)
+- Avatar + imię użytkownika w każdym wierszu
+
+**Wygląd wzmianki w tekście:**
+- `@imię` wyróżnione kolorem zielonym (główny kolor marki Wspólniak)
+- Nieinteraktywne (bez linku, bez profilu)
+
+**Powiadomienia:**
+- Gdy komentarz/opis posta z @mention zostanie zapisany — wysłać push notyfikację do wspomnianej osoby
+- Ten sam mechanizm Web Push VAPID co istniejące powiadomienia (podpiąć do istniejącego serwisu w Hono Workers)
+- Treść powiadomienia: np. *"[Imię] wspomniał(a) o Tobie w komentarzu"*
+- Nie wysyłać notyfikacji gdy ktoś wspomina sam siebie
+
+---
+
+#### 4. Tryb awaryjny (Maintenance Mode)
+
+**Admin panel:**
+- W panelu admina dodać sekcję "Tryb awaryjny"
+- Switch toggle: Wyłączony / Włączony
+- Stan zapisany w bazie danych Neon PostgreSQL (tabela `system_settings` lub odpowiednik — sprawdzić czy istnieje, jeśli nie — dodać migrację Drizzle)
+
+**Overlay:**
+- Gdy tryb awaryjny włączony: wszystkie chronione routy **z wyjątkiem routy admina** renderują overlay zamiast treści
+- Implementacja: w `beforeLoad` chronionego layoutu sprawdzić flagę maintenance z DB/cache; jeśli true i user nie jest adminem — zwrócić overlay zamiast dzieci
+- Overlay: pełnoekranowe czarne tło (`z-index` maksymalny, pokrywa cały viewport)
+- Strona logowania — **bez zmian**, nadal dostępna
+- Zawartość overlay:
+  - Duża ikona żółtego trójkąta z wykrzyknikiem (⚠️ lub SVG, min. 80px)
+  - Napis: **"Wspólniak jest w trakcie naprawy"** (biały tekst, duży, wycentrowany)
+  - Podtytuł: *"Wróć za chwilę"* (mniejszy, szary)
+- Overlay sprawdzany server-side w loaderze/beforeLoad — użytkownik nie widzi treści nawet przez chwilę
+
+**Bezpieczeństwo:**
+- Admin widzi aplikację normalnie mimo włączonego trybu awaryjnego
+- Weryfikacja roli admina przed pominięciem overlay
+
+---
+
+#### 5. Bottombar mobilny — zmiana przycisku
+
+- **Usunąć:** przycisk Feedback z dolnej nawigacji mobilnej
+- **Dodać:** przycisk Home z ikoną domu (`lucide-react`: `Home`)
+- Akcja przycisku: nawigacja do głównego feedu
+- Przycisk aktywny (podświetlony) gdy użytkownik jest na stronie feedu (TanStack Router `useMatch` lub `useRouterState`)
+- Kolejność przycisków w bottombarze do ustalenia w kodzie — Home powinien być pierwszym lub drugim przyciskiem
+
+---
+
+## Out of Scope
+
+- Natywne systemowe menu i alerty (iOS Action Sheet, Android Material) — **wykluczone**, zostaje obecny styl webowy
+- Powiadomienia e-mail przy @mentions
+- Edycja komentarzy i reply
+- Usuwanie własnych reply przez użytkownika
+- Niestandardowy tekst trybu awaryjnego (stały napis)
+- Zagnieżdżone reply (reply na reply)
+- @mentions z linkiem do profilu użytkownika
 
 ---
 
 ## System Components
 
-### 1. Baza danych (Cloudflare D1)
+```
+TanStack Router — chroniony layout (beforeLoad)
+  └── auth check (server-side)
+  └── maintenance mode check (server-side, skip dla admina)
+  └── maintenance overlay (warunkowy render)
 
-**Tabela `calendar_events`**
-| Kolumna | Typ | Opis |
-|---------|-----|------|
-| id | TEXT (UUID) | PK |
-| title | TEXT | Tytuł wydarzenia |
-| description | TEXT | Opis (opcjonalny) |
-| day | INTEGER | Dzień (1–31) |
-| month | INTEGER | Miesiąc (1–12) |
-| year | INTEGER | Rok (NULL dla cyklicznych) |
-| recurrence | TEXT | `none` / `weekly` / `monthly` / `yearly` |
-| reminder_enabled | BOOLEAN | Czy wysłać post-przypomnienie |
-| author_id | TEXT | FK → users; NULL dla wydarzeń systemowych |
-| is_system | BOOLEAN | TRUE dla automatycznie wgranych świąt |
-| created_at | TIMESTAMP | |
-| updated_at | TIMESTAMP | |
+Feed route
+  └── loader / ensureQueryData (SSR preload)
+  └── Suspense streaming
+  └── cursor pagination
 
----
+Post composer
+  └── MentionInput (komponent)
+  └── optimistic post creation (TanStack Query optimisticUpdate)
+  └── background Cloudflare Images upload
 
-### 2. Moduł świąt polskich
+Comment component
+  └── ReplyList (max 5, 1 poziom wcięcia)
+  └── MentionInput
 
-- Integracja z zewnętrznym API lub lokalną biblioteką (np. `date-holidays`, `@nager/date`) do pobierania świąt ustawowych i kościelnych
-- Obsługa świąt ruchomych (Wielkanoc, Popielec, Wniebowstąpienie itp.) — algorytm Gaussowski lub dane z API
-- Święta ładowane do bazy jako `is_system = true` przy starcie aplikacji lub jako Cron job (np. Cloudflare Worker raz w roku)
-- Deduplication: nie ładuj ponownie jeśli już istnieje w danym roku
+MentionInput (współdzielony komponent)
+  └── @ trigger
+  └── UserDropdown (zielony highlight, Tailwind v4)
+  └── onMention callback → push notification
 
----
+Hono API (Cloudflare Workers)
+  └── POST /api/mentions → triggerMentionNotification(userId, actorId, context)
+  └── Web Push VAPID (istniejący serwis)
 
-### 3. Moduł przypomnień (Cron Job)
-
-- Cloudflare Worker uruchamiany codziennie (np. o 08:00)
-- Sprawdza: czy za 7 dni jest wydarzenie z `reminder_enabled = true`
-- Dla cyklicznych: wylicza następne wystąpienie i sprawdza 7-dniowy próg
-- Tworzy post w Feed od systemowego użytkownika "Kalendarz" (istniejący mechanizm postów)
-- Idempotentny: nie tworzy duplikatów (flaga `reminder_sent` lub tabela `reminder_log`)
-
----
-
-### 4. API (Next.js App Router – Route Handlers)
-
-| Endpoint | Metoda | Opis |
-|----------|--------|------|
-| `/api/calendar/events` | GET | Lista wydarzeń (z filtrem miesiąca/zakresu) |
-| `/api/calendar/events` | POST | Utwórz wydarzenie |
-| `/api/calendar/events/[id]` | PATCH | Edytuj wydarzenie (autor lub admin) |
-| `/api/calendar/events/[id]` | DELETE | Usuń wydarzenie (autor lub admin) |
-| `/api/calendar/events/[id]/reminder` | PATCH | Włącz/wyłącz przypomnienie (admin dla systemowych) |
-
----
-
-### 5. UI (Next.js + shadcn/ui)
-
-**Mobile (`< md`):**
-- Lista nadchodzących wydarzeń, posortowana chronologicznie
-- Wyróżnienie: typ (systemowe vs użytkownika), ikona cykliczności, ikona przypomnienia
-
-**Desktop (`≥ md`):**
-- Split view: siatka miesięczna (lewo) + lista wydarzeń wybranego dnia (prawo)
-- Nawigacja po miesiącach
-
-**Formularz tworzenia/edycji wydarzenia:**
-- Tytuł (wymagany)
-- Opis (opcjonalny)
-- Data: dzień + miesiąc (rok opcjonalny, wymagany dla jednorazowych)
-- Powtarzanie: jednorazowe / co tydzień / co miesiąc / co rok
-- Przypomnienie: checkbox (domyślnie OFF dla wszystkich)
+Admin Panel — sekcja Tryb Awaryjny
+  └── toggle switch
+  └── system_settings table (Neon PostgreSQL, Drizzle migration)
+```
 
 ---
 
 ## Implementation Decisions
 
-| Decyzja | Wybór | Uzasadnienie |
-|---------|-------|--------------|
-| Stack | Next.js App Router + Cloudflare D1 + R2 | Istniejący stack produkcyjny |
-| Święta polskie | Zewnętrzne API lub `date-holidays` (npm) | Obsługa świąt ruchomych bez ręcznego kodowania |
-| Przypomnienia | Cloudflare Cron Worker | Brak push notyfikacji; Feed jako kanał komunikacji |
-| Widoczność | Cała rodzina (bez grup) | Grupy poza zakresem; prostota |
-| Rok w dacie | Opcjonalny dla cyklicznych | Imieniny/urodziny nie wymagają roku |
-| Systemowy user "Kalendarz" | Istniejący mechanizm postów | Reużycie gotowej infrastruktury Feed |
+| Obszar | Decyzja | Uzasadnienie |
+|--------|---------|--------------|
+| Auth check | `beforeLoad` w TanStack Router | Server-side, eliminuje waterfall auth na kliencie |
+| Feed rendering | SSR loader + Suspense streaming | Dane w HTML, nie czekamy na hydration |
+| Optimistic UI | TanStack Query `optimisticUpdate` | Subiektywne przyspieszenie publikowania |
+| Reply model | `parent_id` na istniejącej tabeli `comments` | Minimalna zmiana schematu, migracja Drizzle |
+| Mentions storage | Inline w tekście + osobna tabela `mentions` (userId, commentId/postId) | Potrzebne do wysyłki notyfikacji |
+| Maintenance mode | `beforeLoad` + Neon `system_settings` | Server-side check bez flash treści |
+| Mentions dropdown | Własny komponent React | Pełna kontrola nad wyglądem, Tailwind v4 |
+| Push przy @mention | Hono endpoint → istniejący Web Push VAPID | Brak nowej infrastruktury |
 
 ---
 
 ## Validation Strategy
 
-Manualne testy przez członków rodziny po wdrożeniu:
-- Dodanie własnego wydarzenia cyklicznego
-- Weryfikacja że przypomnienie pojawia się na Feedzie tydzień przed
-- Sprawdzenie że polskie święta są poprawnie załadowane
-- Testy edycji i usuwania wydarzeń
+- Testy manualne na urządzeniu mobilnym (iPhone + Android) po każdym temacie
+- DevTools Network tab — porównanie waterfall przed/po optymalizacji
+- Weryfikacja push notyfikacji przy @mention na prawdziwym urządzeniu
+- Test trybu awaryjnego: zalogowany user, admin, niezalogowany — każdy widzi co powinien
 
 ---
 
 ## Open Questions
 
-- [ ] Które API/biblioteka do polskich świąt kościelnych? Weryfikacja dostępności `date-holidays` lub `@nager/date` dla pełnego zakresu (ustawowe + kościelne)
-- [ ] Czy Cron Worker powinien obsługiwać retroaktywne ładowanie świąt dla bieżącego roku przy pierwszym deployu?
-- [ ] Jak obsłużyć zmianę daty w wydarzeniu cyklicznym — czy zmiana dotyczy tylko przyszłych wystąpień czy wszystkich?
+- [ ] Czy tabela `system_settings` już istnieje w Neon PostgreSQL? Jeśli nie — dodać migrację Drizzle.
+- [ ] Jaki jest dokładny kod istniejącego serwisu Web Push VAPID w Workers? Potrzebne do podpięcia notyfikacji @mention.
+- [ ] Czy feed route ma już loader z `ensureQueryData` (SSR) czy używa tylko `useQuery` (CSR)? — zdiagnozować przed optymalizacją.
+- [ ] Czy istnieje edycja opisów postów w UI? Jeśli tak — MentionInput musi działać też w trybie edycji.
 
 ---
 
 ## References
 
-- Discovery summary: inline powyżej (sesja `/ask`)
-- Główny PRD Wspólniak: `PRD.md`
+- Discovery session: sesja /ask, 29.06.2026
+- Istniejące PRD: `wspolniak-prd.md`, `wspolniak-kalendarz-prd.md`
+- Repo: https://github.com/CrystalGamesStudio/wspolniak
+- Stack: TanStack Start, Hono/Cloudflare Workers, Neon PostgreSQL, Drizzle ORM, Cloudflare Images, Web Push VAPID, Tailwind v4 + shadcn/ui, Vite, pnpm, Biome
