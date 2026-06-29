@@ -50,9 +50,9 @@ Rodzina komunikuje się przez różne komunikatory (np. WhatsApp), ale nie wszys
 - Wygasanie wiadomości po 24h od wysłania (rolling, per wiadomość, twarda zasada)
 - Real-time delivery (bez odświeżania strony)
 - Typing indicator ("ktoś pisze...")
-- Push notyfikacje o nowych wiadomościach (podpięcie pod istniejący system)
+- Push notyfikacje o nowych wiadomościach (podpięcie pod istniejący system Web Push VAPID)
 - Ładowanie wszystkich wiadomości z ostatnich 24h przy otwarciu chatu; loader + informacja gdy jest ich dużo
-- Podstrona `/chat`
+- Podstrona `/chat` (TanStack Router)
 - **Mobile:** slide-out drawer z lewej (jak X/Twitter) jako główna nawigacja z hamburgerem w lewym górnym rogu ekranu + nagłówek "Witamy!"
 - **Desktop:** Chat jako nowa pozycja w istniejącym sidebarze
 
@@ -73,40 +73,79 @@ Rodzina komunikuje się przez różne komunikatory (np. WhatsApp), ale nie wszys
 
 ## System Components
 
-### Wiadomość (Message)
+### Stack kontekst
 
-Każda wiadomość zawiera:
-- `id`
-- `authorId` + dane autora (imię, avatar)
-- `text` — treść tekstowa
-- `replyToId` — opcjonalne id wiadomości, na którą jest odpowiedź (+ snapshot tekstu oryginału)
-- `reactions` — tablica { emoji, userId }
-- `createdAt` — timestamp
-- `expiresAt` — `createdAt + 24h`
+| Warstwa | Technologia |
+|---------|-------------|
+| Framework | TanStack Start (SSR + Router + Query) |
+| API | Hono na Cloudflare Workers |
+| Baza danych | Neon PostgreSQL (serverless, `@neondatabase/serverless`) |
+| ORM | Drizzle ORM |
+| Push | Web Push VAPID (istniejący system) |
+| Styling | Tailwind CSS v4 + shadcn/ui |
+| Build | Vite + pnpm |
+| Linting | Biome |
+
+### Schemat bazy danych (Neon PostgreSQL + Drizzle)
+
+**Tabela `chat_messages`:**
+```
+id           uuid         PK, default gen_random_uuid()
+author_id    uuid         FK → users.id
+text         text         NOT NULL
+reply_to_id  uuid         FK → chat_messages.id (nullable)
+reply_text   text         snapshot cytowanej wiadomości (nullable)
+created_at   timestamptz  default now()
+expires_at   timestamptz  default now() + interval '24 hours'
+```
+
+**Tabela `chat_reactions`:**
+```
+id           uuid         PK
+message_id   uuid         FK → chat_messages.id ON DELETE CASCADE
+user_id      uuid         FK → users.id
+emoji        text         NOT NULL
+created_at   timestamptz  default now()
+UNIQUE (message_id, user_id, emoji)
+```
+
+### API (Hono)
+
+```
+GET  /api/chat/messages          — pobierz wiadomości z ostatnich 24h
+POST /api/chat/messages          — wyślij nową wiadomość
+POST /api/chat/messages/:id/reactions  — dodaj / usuń reakcję
+GET  /api/chat/stream            — SSE endpoint (real-time, patrz Open Questions)
+```
 
 ### Real-time
 
-Wiadomości muszą być dostarczane bez odświeżania strony. Wymaga rozwiązania real-time na Cloudflare (patrz Open Questions).
+Wiadomości muszą być dostarczane bez odświeżania strony. Decyzja architektoniczna do podjęcia — patrz Open Questions.
 
-Typing indicator: broadcast zdarzenia "user is typing" — wygasa automatycznie po ~3s braku aktywności.
+Typing indicator: broadcast zdarzenia "user is typing" przez ten sam kanał real-time. Wygasa automatycznie po ~3s braku aktywności klienta.
 
 ### Nawigacja
 
 **Mobile:**
 - Hamburger (lewy górny róg) → slide-out drawer z lewej
 - Drawer zawiera wszystkie sekcje: Home, Chat, Kalendarz, Albumy, Profil itd.
-- Nagłówek główny: "Witamy!"
+- Nagłówek główny ekranu: "Witamy!"
+- Animacja drawera: natywna płynność, punkt odniesienia X/Twitter + Telegram na iOS
 
 **Desktop:**
-- Istniejący sidebar — dodać pozycję "Chat"
+- Istniejący sidebar (TanStack Router layout) — dodać pozycję "Chat"
 
 ### Wygasanie wiadomości
 
-Cloudflare Worker (Cron) sprawdza i usuwa wiadomości, których `expiresAt < now()`. Można uruchamiać co godzinę.
+Brak natywnych Cron Triggers w obecnym `wrangler.jsonc`. Opcje:
+1. **Dodać Cron Trigger do wrangler.jsonc** — Worker odpala się co godzinę i usuwa z Neon rekordy gdzie `expires_at < now()`
+2. **Lazy delete** — przy każdym `GET /api/chat/messages` usuwaj wygasłe wiadomości przed zwróceniem wyniku
+
+Rekomendacja: Cron Trigger (opcja 1) — nie obciąża ścieżki odczytu.
 
 ### Push notyfikacje
 
-Podpiąć pod istniejący system push w codebase — wysyłać przy nowej wiadomości na chacie.
+Podpiąć pod istniejący system Web Push VAPID — wysyłać przy nowej wiadomości na chacie (nie przy reakcjach, nie przy typing indicator).
 
 ---
 
@@ -120,7 +159,8 @@ Podpiąć pod istniejący system push w codebase — wysyłać przy nowej wiadom
 | Edycja / usuwanie | Nie | Prostota; wiadomości i tak znikają po 24h |
 | Read receipts | Nie | Redukuje presję społeczną; prostota implementacji |
 | Badge nieprzeczytanych | Nie | Redukuje anxiety; chat jest efemeryczny z natury |
-| Real-time | Do ustalenia | Patrz Open Questions |
+| Wygasanie | Cron Trigger (rekomendacja) | Nie blokuje ścieżki odczytu |
+| Real-time transport | Do ustalenia | Patrz Open Questions |
 | Jakość animacji | Telegram na iOS | Punkt odniesienia dla płynności i dopracowania |
 
 ---
@@ -133,14 +173,19 @@ Wdrożenie do produkcji → obserwacja czy rodzina faktycznie przechodzi z Whats
 
 ## Open Questions
 
-- [ ] **Real-time transport:** Jak obsłużyć real-time na Cloudflare bez istniejącej infrastruktury? Opcje: (a) Cloudflare Durable Objects z WebSocket — najbardziej niezawodne, wyższy nakład; (b) Server-Sent Events (SSE) przez Workers — prostsze, tylko server→client; (c) polling co N sekund — najprostsze, najmniej "real-time". Wymaga decyzji architektonicznej przed implementacją.
+- [ ] **Real-time transport:** Jak obsłużyć real-time na Cloudflare Workers bez istniejącej infrastruktury?
+  - **(a) Cloudflare Durable Objects + WebSocket** — najbardziej niezawodne dla czatu; wymaga dodania DO do `wrangler.jsonc` i nowego kodu; WebSocket trzyma połączenie, DO rozsyła do wszystkich klientów; wyższy nakład
+  - **(b) SSE przez Hono** — prostsze; Hono ma wbudowane wsparcie SSE; **uwaga:** Cloudflare Workers mają limit CPU per request, SSE może być rozłączany po ~30s bez aktywności; wymaga retry po stronie klienta; tylko server→client (polling dla typing indicator)
+  - **(c) Polling co N sekund** — najprostsze w implementacji; polling co 2–3s jest akceptowalny dla małej rodziny; brak "typing indicator" w czasie rzeczywistym; zero dodatkowej infrastruktury
+
 - [ ] **Definicja "dużo wiadomości":** Jaki próg uruchamia loader + komunikat przy ładowaniu historii? (np. > 50, > 100 wiadomości?)
 
 ---
 
 ## References
 
-- Discovery summary: inline powyżej (sesja /ask)
-- PRD główny Wspólniak: `./wspolniak-prd.md` (istniejący)
+- Discovery summary: sesja /ask (ta rozmowa)
+- PRD główny Wspólniak: `./docs/002-prd.md` (repozytorium)
+- Repo: `github.com/CrystalGamesStudio/wspolniak`
 - Styl nawigacji mobile: X/Twitter (slide-out drawer)
 - Punkt odniesienia UX: Telegram na iOS
