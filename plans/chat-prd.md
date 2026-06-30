@@ -55,6 +55,7 @@ Rodzina komunikuje się przez różne komunikatory (np. WhatsApp), ale nie wszys
 - Podstrona `/chat` (TanStack Router)
 - **Mobile:** slide-out drawer z lewej (jak X/Twitter) jako główna nawigacja z hamburgerem w lewym górnym rogu ekranu + nagłówek "Witamy!"
 - **Desktop:** Chat jako nowa pozycja w istniejącym sidebarze
+- Animacje UI (patrz sekcja UX & Animacje)
 
 ### Out of scope
 
@@ -71,6 +72,50 @@ Rodzina komunikuje się przez różne komunikatory (np. WhatsApp), ale nie wszys
 
 ---
 
+## UX & Animacje
+
+Punkt odniesienia: **Telegram na iOS**. Wszystkie animacje muszą być płynne, natywnie odczuwalne i nie mogą zacinać się na urządzeniach mobilnych.
+
+### Wysyłanie wiadomości (Optimistic UI)
+
+1. Użytkownik klika "wyślij"
+2. Bąbelek wiadomości **pojawia się natychmiast** w liście (optimistic insert) — bez czekania na odpowiedź serwera
+3. Pod bąbelkiem pojawia się **cienki pasek postępu** (progress bar) animowany do momentu potwierdzenia z API
+4. Po potwierdzeniu: pasek znika, wiadomość zostaje — bez żadnego "skoku" layoutu
+5. W przypadku błędu: pasek zmienia kolor na czerwony + opcja ponowienia
+
+### Nowe wiadomości przychodzące
+
+- Każda nowa wiadomość **wślizguje się z dołu** — animacja translate + fade, jak w Telegram
+- Czas animacji: ~220ms, easing: `ease-out`
+- Lista automatycznie scrolluje się do dołu jeśli użytkownik jest blisko końca (ostatnie ~100px); jeśli scrollował wyżej — nie przewija automatycznie, pojawia się przycisk "↓ nowe wiadomości"
+
+### Reakcje
+
+- Po kliknięciu emoji — animacja **pop/bounce** (scale: 0 → 1.3 → 1.0, ~200ms)
+- Reakcje wyświetlane jako same emoji pod bąbelkiem — **bez liczników**
+- Każdy użytkownik widzi swoje emoji podświetlone (np. lekko jaśniejsze tło lub border)
+- Usunięcie reakcji: kliknięcie ponownie tego samego emoji — animacja fade out
+
+### Drawer nawigacyjny (mobile)
+
+- Otwieranie: **slide-in z lewej**, ~250ms, easing: `ease-out`
+- Zamykanie: slide-out w lewo lub swipe w lewo
+- Tło (overlay): fade in/out, `backdrop-blur` lub ciemne przyciemnienie
+
+### Typing indicator
+
+- Animacja trzech kropek ("...") pulsujących naprzemiennie — jak w Telegram / iMessage
+- Pojawia się i znika z animacją fade
+
+### Ogólne zasady
+
+- Animacje oparte na **CSS transitions / Tailwind** (`tw-animate-css` jest w zależnościach) lub `framer-motion` jeśli jest potrzeba bardziej złożonych sekwencji
+- Żadna animacja nie może blokować interakcji (wszystko `pointer-events: auto` podczas animacji)
+- Preferowane `transform` i `opacity` — nie animować `height`, `width`, `top`, `left` (wydajność GPU)
+
+---
+
 ## System Components
 
 ### Stack kontekst
@@ -82,7 +127,7 @@ Rodzina komunikuje się przez różne komunikatory (np. WhatsApp), ale nie wszys
 | Baza danych | Neon PostgreSQL (serverless, `@neondatabase/serverless`) |
 | ORM | Drizzle ORM |
 | Push | Web Push VAPID (istniejący system) |
-| Styling | Tailwind CSS v4 + shadcn/ui |
+| Styling | Tailwind CSS v4 + shadcn/ui + tw-animate-css |
 | Build | Vite + pnpm |
 | Linting | Biome |
 
@@ -112,10 +157,10 @@ UNIQUE (message_id, user_id, emoji)
 ### API (Hono)
 
 ```
-GET  /api/chat/messages          — pobierz wiadomości z ostatnich 24h
-POST /api/chat/messages          — wyślij nową wiadomość
+GET  /api/chat/messages                — pobierz wiadomości z ostatnich 24h
+POST /api/chat/messages                — wyślij nową wiadomość
 POST /api/chat/messages/:id/reactions  — dodaj / usuń reakcję
-GET  /api/chat/stream            — SSE endpoint (real-time, patrz Open Questions)
+GET  /api/chat/stream                  — SSE endpoint (real-time, patrz Open Questions)
 ```
 
 ### Real-time
@@ -130,7 +175,7 @@ Typing indicator: broadcast zdarzenia "user is typing" przez ten sam kanał real
 - Hamburger (lewy górny róg) → slide-out drawer z lewej
 - Drawer zawiera wszystkie sekcje: Home, Chat, Kalendarz, Albumy, Profil itd.
 - Nagłówek główny ekranu: "Witamy!"
-- Animacja drawera: natywna płynność, punkt odniesienia X/Twitter + Telegram na iOS
+- Animacja drawera: slide-in z lewej, ~250ms ease-out (patrz UX & Animacje)
 
 **Desktop:**
 - Istniejący sidebar (TanStack Router layout) — dodać pozycję "Chat"
@@ -155,7 +200,10 @@ Podpiąć pod istniejący system Web Push VAPID — wysyłać przy nowej wiadomo
 |---------|-------|-------------|
 | Zakres chatu | Jeden globalny | Prostota; rodzina jest jedną jednostką |
 | Trwałość wiadomości | 24h rolling, per wiadomość | Efemeryczność odróżnia chat od feedu; brak wyjątków upraszcza logikę |
-| Reakcje | Ten sam zestaw co feed | Spójność UX; brak dodatkowej pracy nad nowym systemem |
+| Reakcje | Ten sam zestaw co feed, bez liczników | Spójność UX; czytelniejszy wygląd |
+| Wysyłanie | Optimistic UI + pasek postępu | Natychmiastowe odczucie; pasek informuje o stanie wysyłki |
+| Animacja nowej wiadomości | Slide-in z dołu jak Telegram | Naturalny ruch zgodny z oczekiwaniami użytkownika |
+| Animacja reakcji | Pop/bounce przy kliknięciu | Satysfakcjonujące, natywne odczucie |
 | Edycja / usuwanie | Nie | Prostota; wiadomości i tak znikają po 24h |
 | Read receipts | Nie | Redukuje presję społeczną; prostota implementacji |
 | Badge nieprzeczytanych | Nie | Redukuje anxiety; chat jest efemeryczny z natury |
