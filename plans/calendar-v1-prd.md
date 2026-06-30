@@ -155,7 +155,7 @@ Posty od „Kalendarz" wyglądają jak zwykłe posty systemowe
 
 ## Open Questions
 
-- [ ] Czy systemowy użytkownik „Kalendarz" już istnieje w bazie (z poprzednich ficzerów), czy trzeba go stworzyć?
+- [ ] Czy systemowy użytkownik „Kalendarz" już istnieje w bazie (z poprzednich ficzerów), czy trzeba go stworzyć? jako admin ma wrzucac posty z wydarzeniami
 - [ ] Jakie pole w tabeli `posts` użyć dla autora systemowego (author_id = NULL + osobna flaga, czy stały UUID)?
 - [ ] Cron Trigger — osobny Worker czy handler w istniejącym Worker Hono?
 
