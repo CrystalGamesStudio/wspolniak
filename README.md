@@ -4,7 +4,7 @@
 
 Wspólniak to prosta, otwarta alternatywa dla Facebooka, Google Photos i iCloud Shared Albums — zaprojektowana dla jednej rodziny, jednej instancji i jednego admina. Bez haseł, bez reklam, bez śledzenia. Babcia dostaje link, klika, instaluje PWA na telefonie i już jest w środku.
 
-> **Status:** MVP in development. Zobacz [`docs/002-prd.md`](docs/002-prd.md) oraz [`plans/wspolniak-mvp.md`](plans/wspolniak-mvp.md).
+> **Status:** aplikacja w aktywnej produkcji. Feed, posty, komentarze, reakcje i panel admina są wdrożone i używane. Kolejne funkcje (albumy, kalendarz, czat, wideo, threaded replies, @mentions, tryb awaryjny) mają gotowe PRD i czekają na fazowanie (`/carve`) — zobacz sekcję [Roadmapa](#roadmapa) oraz [`docs/002-prd.md`](docs/002-prd.md).
 
 ---
 
@@ -12,7 +12,7 @@ Wspólniak to prosta, otwarta alternatywa dla Facebooka, Google Photos i iCloud 
 
 ### Dla kogo
 
-Dla rodzin, które chcą prywatnej przestrzeni na zdjęcia, bez:
+Dla rodzin, które chcą prywatnej przestrzeni na zdjęcia i wspomnienia, bez:
 
 - **Rejestracji i haseł** — starsze osoby w rodzinie (babcia, dziadek) nie radzą sobie z logowaniem, captchami i weryfikacją email. Każda bariera = nieużywany serwis.
 - **Algorytmicznego feedu** — chcesz widzieć zdjęcia chronologicznie, nie wg tego co AI uzna za "angażujące".
@@ -28,24 +28,26 @@ Dla rodzin, które chcą prywatnej przestrzeni na zdjęcia, bez:
 5. Członek instaluje PWA na telefonie ("Dodaj do ekranu głównego"), robi zdjęcie, wrzuca.
 6. Reszta rodziny dostaje natychmiastowe **push notification** i widzi zdjęcie w chronologicznym feedzie.
 
-### Funkcjonalności MVP
+### Funkcjonalności (produkcja)
 
-- Posty z opisem i 1-10 zdjęciami (JPEG, PNG, WebP, **HEIC z iPhone'a** — automatyczna konwersja)
 - Chronologiczny feed z infinite scroll
+- Posty z opisem i zdjęciami (JPEG, PNG, WebP, **HEIC z iPhone'a** — automatyczna konwersja)
 - Komentarze pod postami
+- Reakcje (zestaw emoji na postach i komentarzach)
 - Push notifications (Android, iOS 16.4+, desktop)
 - PWA — instalowalna na ekranie głównym telefonu
 - Offline reading ostatnio załadowanego feedu
+- Panel admina
 - Jeden admin per instancja, dowolna liczba członków
 
 ### Czego **nie** ma i nie będzie
 
 - Multi-tenancy (jeden Worker = jedna rodzina)
 - Publicznych profili
-- Reakcji / lajków (post-MVP)
 - Algorytmicznego rankingu
 - Reklam
 - Hostowanej wersji SaaS
+- Natywnych menu w stylu OS (odrzucone — nieosiągalne w web PWA)
 
 ### Stack
 
@@ -54,11 +56,55 @@ Dla rodzin, które chcą prywatnej przestrzeni na zdjęcia, bez:
 | Framework | TanStack Start (SSR + Router + Query) |
 | Styling | Tailwind CSS v4 + Shadcn/UI |
 | API | Hono na Cloudflare Workers |
-| Database | Neon PostgreSQL (serverless) |
+| Database | Neon PostgreSQL (serverless) + Drizzle ORM |
 | Image storage | Cloudflare Images (automatyczna konwersja HEIC, warianty) |
 | Push | Web Push VAPID |
+| Tooling | Vite, pnpm, Biome |
 | Language | TypeScript strict, Polish UI |
 | License | AGPL-3.0-or-later |
+
+---
+
+## Roadmapa
+
+Poniższe funkcje mają zakończoną fazę PRD i czekają na fazowanie implementacji (`/carve`). Pliki PRD znajdują się w `./plans/`.
+
+### Albumy
+- Trwałe (nie wygasają), edytowalne przez każdego użytkownika
+- Zdjęcia w albumie wymagają tytułu lub krótkiego opisu
+- Album suggestion — system proponuje utworzenie albumu na podstawie wybranych postów (np. "Wakacje 2025")
+- Pobieranie zdjęć z albumu jako ZIP
+
+### Aktualizacje istniejących funkcji — [`plans/wspolniak-updates-prd.md`](plans/wspolniak-updates-prd.md)
+- **Wydajność** — SSR loader + `beforeLoad` auth, Suspense streaming, optimistic UI, indeksy Neon + cursor pagination
+- **Threaded replies** — max 5 odpowiedzi na komentarz, jeden poziom zagnieżdżenia
+- **@mentions** — zielony dropdown, powiadomienia push przez istniejący Web Push VAPID
+- **Tryb awaryjny (maintenance mode)** — przełącznik admina w Neon `system_settings`, pełnoekranowy czarny overlay w `beforeLoad`
+- **Bottom bar** — usunięcie przycisku Feedback, dodanie Home → feed
+
+### Kalendarz — [`plans/wspolniak-kalendarz-prd.md`](plans/wspolniak-kalendarz-prd.md)
+- Wydarzenia rodzinne z cyklicznością (jednorazowe / tygodniowe / miesięczne / roczne, dzień+miesiąc bez roku dla cyklicznych)
+- Wszyscy członkowie rodziny mogą dodawać wydarzenia; edycja/usuwanie tylko przez autora lub admina
+- Przypomnienia jako post systemowego użytkownika "Kalendarz" na Feedzie, 7 dni przed każdą datą
+- Polskie święta ustawowe i kościelne (w tym ruchome, np. Wielkanoc) z zewnętrznego API/biblioteki — przypomnienia o świętach wyłączone domyślnie, admin może włączyć
+- Widok: chronologiczna lista nadchodzących wydarzeń (mobile), lista + siatka miesięczna (desktop)
+- Brak komentarzy pod wydarzeniami; wszystkie wydarzenia widoczne dla całej rodziny
+- Wersja v1 w PRD: tylko admin dodaje wydarzenia w panelu, Cron Worker codziennie o 08:00 wystawia posty na Feedzie (D-7 i D-0), bez osobnej zakładki `/calendar` — pełna wersja opisana wyżej to kolejny etap
+- Otwarte pytanie: która biblioteka polskich świąt
+
+### Czat — [`plans/wspolniak-chat-prd.md`](plans/wspolniak-chat-prd.md)
+- Jeden globalny czat rodzinny (bez wątków 1:1 czy podgrup)
+- Tekst + reakcje emoji (ten sam zestaw co w feedzie) + reply/quote
+- Wiadomości wygasają po 24h (rolling per-message)
+- Real-time, wskaźniki pisania, powiadomienia push; brak potwierdzeń odczytu i licznika nieprzeczytanych
+- Mobile: wysuwana szuflada z lewej (hamburger, nagłówek "Witamy!"); desktop: dodany do sidebaru, trasa `/chat`
+- Otwarte pytania: transport real-time (Cloudflare Durable Objects + WebSocket vs. SSE vs. polling), próg "dużej liczby wiadomości" przy ładowaniu historii
+
+### Wspólniak Video — [`plans/wspolniak-video-prd.md`](plans/wspolniak-video-prd.md)
+- Nowa zakładka `/video` do uploadu filmów rodzinnych
+- Upload bezpośrednio z przeglądarki do YouTube Resumable Upload API (Worker dostarcza tylko token OAuth) — wymuszone limitem 100 MB body na Cloudflare Workers
+- Dedykowane konto YouTube, filmy "unlisted"
+- Limit 3 uploadów/dzień (limit YouTube Data API), maks. 2 GB na plik
 
 ---
 
@@ -95,7 +141,7 @@ Po zainstalowaniu aplikacji pojawi się komunikat **"Włącz powiadomienia o now
 
 ### 4. Gotowe
 
-Otwieraj Wspólniaka z ekranu głównego, przeglądaj zdjęcia, komentuj i wrzucaj swoje. Ostatnio załadowany feed jest dostępny nawet offline.
+Otwieraj Wspólniaka z ekranu głównego, przeglądaj zdjęcia, komentuj, reaguj i wrzucaj swoje. Ostatnio załadowany feed jest dostępny nawet offline.
 
 ---
 
@@ -176,7 +222,7 @@ Hostując Wspólniaka dla własnej rodziny, zazwyczaj mieścisz się w wyłącze
 - Zero analytics, zero telemetry
 - Żadnych persistent identyfikatorów poza family session cookie
 - Zdjęcia są za auth wallem, widoczne tylko dla członków Twojej instancji
-- Soft delete (post-MVP: export + full delete)
+- Soft delete (planowany: export + full delete)
 
 **Uwaga**: Jeśli planujesz hostować Wspólniaka dla kogoś spoza swojego gospodarstwa domowego, skonsultuj się z prawnikiem — wychodzisz wtedy poza wyłączenie "domowe" w RODO.
 
@@ -205,7 +251,7 @@ Planowany flow dla self-hosterów:
 
 Wspólniak jest open-source i chętnie przyjmuje PR-y. Zanim zaczniesz pracę:
 
-1. Zajrzyj do [`plans/wspolniak-mvp.md`](plans/wspolniak-mvp.md) żeby zobaczyć phase plan
+1. Zajrzyj do [`plans/`](plans/) żeby zobaczyć aktualne PRD i plany fazowania
 2. Sprawdź [GitHub issues](https://github.com/CrystalGamesStudio/wspolniak/issues) — każda faza ma swoją issue z acceptance criteria
 3. Przeczytaj [`.claude/CLAUDE.md`](.claude/CLAUDE.md) i [`.claude/rules/`](.claude/rules/) — projekt ma formalne konwencje (deep modules, error handling, atomic imports)
 4. Quality gates przed PR: `pnpm types && pnpm lint && pnpm test`
