@@ -160,14 +160,25 @@ UNIQUE (message_id, user_id, emoji)
 GET  /api/chat/messages                — pobierz wiadomości z ostatnich 24h
 POST /api/chat/messages                — wyślij nową wiadomość
 POST /api/chat/messages/:id/reactions  — dodaj / usuń reakcję
-GET  /api/chat/stream                  — SSE endpoint (real-time, patrz Open Questions)
+GET  /api/chat/ws                      — WebSocket endpoint (Durable Object)
 ```
 
-### Real-time
+### Real-time (Cloudflare Durable Objects + WebSocket)
 
-Wiadomości muszą być dostarczane bez odświeżania strony. Decyzja architektoniczna do podjęcia — patrz Open Questions.
+Wiadomości dostarczane bez odświeżania strony przez **Cloudflare Durable Objects**.
 
-Typing indicator: broadcast zdarzenia "user is typing" przez ten sam kanał real-time. Wygasa automatycznie po ~3s braku aktywności klienta.
+Architektura:
+- Jeden DO (`ChatRoom`) trzyma aktywne WebSocket connections wszystkich podłączonych klientów
+- Klient łączy się przez `GET /api/chat/ws` → Worker przekierowuje do DO
+- DO rozsyła wiadomości do wszystkich połączonych klientów (broadcast)
+- DO wymaga dodania do `wrangler.jsonc`:
+  ```jsonc
+  [[durable_objects.bindings]]
+  name = "CHAT_ROOM"
+  class_name = "ChatRoom"
+  ```
+
+Typing indicator: klient wysyła zdarzenie `{ type: "typing" }` przez WebSocket → DO broadcastuje do pozostałych. Wygasa automatycznie po ~3s braku aktywności klienta.
 
 ### Nawigacja
 
@@ -208,7 +219,7 @@ Podpiąć pod istniejący system Web Push VAPID — wysyłać przy nowej wiadomo
 | Read receipts | Nie | Redukuje presję społeczną; prostota implementacji |
 | Badge nieprzeczytanych | Nie | Redukuje anxiety; chat jest efemeryczny z natury |
 | Wygasanie | Cron Trigger (rekomendacja) | Nie blokuje ścieżki odczytu |
-| Real-time transport | Do ustalenia | Patrz Open Questions |
+| Real-time transport | Cloudflare Durable Objects + WebSocket | Natywne narzędzie CF do persistent connections; DO rozsyła do wszystkich klientów; jedyna opcja bez timeoutów Workers |
 | Jakość animacji | Telegram na iOS | Punkt odniesienia dla płynności i dopracowania |
 
 ---
@@ -220,11 +231,6 @@ Wdrożenie do produkcji → obserwacja czy rodzina faktycznie przechodzi z Whats
 ---
 
 ## Open Questions
-
-- [ ] **Real-time transport:** Jak obsłużyć real-time na Cloudflare Workers bez istniejącej infrastruktury?
-  - **(a) Cloudflare Durable Objects + WebSocket** — najbardziej niezawodne dla czatu; wymaga dodania DO do `wrangler.jsonc` i nowego kodu; WebSocket trzyma połączenie, DO rozsyła do wszystkich klientów; wyższy nakład
-  - **(b) SSE przez Hono** — prostsze; Hono ma wbudowane wsparcie SSE; **uwaga:** Cloudflare Workers mają limit CPU per request, SSE może być rozłączany po ~30s bez aktywności; wymaga retry po stronie klienta; tylko server→client (polling dla typing indicator)
-  - **(c) Polling co N sekund** — najprostsze w implementacji; polling co 2–3s jest akceptowalny dla małej rodziny; brak "typing indicator" w czasie rzeczywistym; zero dodatkowej infrastruktury
 
 - [ ] **Definicja "dużo wiadomości":** Jaki próg uruchamia loader + komunikat przy ładowaniu historii? (np. > 50, > 100 wiadomości?)
 
