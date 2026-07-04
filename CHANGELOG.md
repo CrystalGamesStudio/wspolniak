@@ -1,3 +1,10 @@
+# [1.42.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.41.0...v1.42.0) (2026-07-04)
+
+
+### Features
+
+* **reactions:** allow all users to see who reacted ([1864956](https://github.com/CrystalGamesStudio/wspolniak/commit/1864956e864c0633f04ff788d749e05081f97eb6)), closes [#71](https://github.com/CrystalGamesStudio/wspolniak/issues/71)
+
 # [1.41.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.40.0...v1.41.0) (2026-07-04)
 
 
