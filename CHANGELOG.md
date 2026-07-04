@@ -1,3 +1,10 @@
+# [1.41.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.40.0...v1.41.0) (2026-07-04)
+
+
+### Features
+
+* **nav:** replace Feedback with Home in mobile bottom bar ([#70](https://github.com/CrystalGamesStudio/wspolniak/issues/70)) ([61c4408](https://github.com/CrystalGamesStudio/wspolniak/commit/61c4408264f0cc33a6299eacf6045c82c6142018))
+
 # [1.40.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.39.1...v1.40.0) (2026-05-23)
 
 
