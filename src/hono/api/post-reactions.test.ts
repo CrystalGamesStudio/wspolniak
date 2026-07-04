@@ -18,11 +18,17 @@ vi.mock("@/db/post-reactions/queries", () => ({
 	upsertReaction: vi.fn(),
 	getReactionCounts: vi.fn(),
 	getUserReaction: vi.fn(),
+	getReactionsWithUsers: vi.fn(),
 }));
 
 import { findActiveUserById } from "@/db/identity/queries";
 import { verifySessionCookie } from "@/db/identity/session";
-import { getReactionCounts, getUserReaction, upsertReaction } from "@/db/post-reactions/queries";
+import {
+	getReactionCounts,
+	getReactionsWithUsers,
+	getUserReaction,
+	upsertReaction,
+} from "@/db/post-reactions/queries";
 import { getPostById } from "@/db/posts/queries";
 import reactionsEndpoint from "./post-reactions";
 
@@ -32,6 +38,7 @@ const mockGetPost = vi.mocked(getPostById);
 const mockUpsertReaction = vi.mocked(upsertReaction);
 const mockGetReactionCounts = vi.mocked(getReactionCounts);
 const mockGetUserReaction = vi.mocked(getUserReaction);
+const mockGetReactionsWithUsers = vi.mocked(getReactionsWithUsers);
 
 function createApi() {
 	const api = new Hono<{
@@ -264,6 +271,65 @@ describe("GET /api/app/posts/:postId/my-reaction", () => {
 		mockVerify.mockResolvedValue(null);
 		const api = createApi();
 		const res = await api.request("/api/app/posts/post-1/my-reaction", {}, env);
+
+		expect(res.status).toBe(401);
+	});
+});
+
+describe("GET /api/app/posts/:postId/reactions/users", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		mockVerify.mockResolvedValue({ userId: "u1", name: "Tomek", role: "member" });
+		mockFindUser.mockResolvedValue({
+			id: "u1",
+			name: "Tomek",
+			role: "member",
+			tokenHash: "hash",
+			deletedAt: null,
+			createdAt: new Date(),
+		});
+	});
+
+	it("returns reaction users list for any logged-in member", async () => {
+		mockGetPost.mockResolvedValue(samplePost);
+		const reactionWithUser = {
+			id: "reaction-1",
+			postId: "post-1",
+			userId: "u1",
+			reactionType: "heart" as const,
+			createdAt: now,
+			updatedAt: now,
+			user: { name: "Tomek" },
+		};
+		mockGetReactionsWithUsers.mockResolvedValue([reactionWithUser]);
+
+		const api = createApi();
+		const res = await api.request("/api/app/posts/post-1/reactions/users", authedRequest("/"), env);
+
+		expect(res.status).toBe(200);
+		const json = (await res.json()) as { data: { userId: string; reactionType: string }[] };
+		expect(json.data).toHaveLength(1);
+		expect(json.data[0]?.userId).toBe("u1");
+		expect(mockGetReactionsWithUsers).toHaveBeenCalledWith("post-1");
+	});
+
+	it("returns 404 when post does not exist", async () => {
+		mockGetPost.mockResolvedValue(null);
+
+		const api = createApi();
+		const res = await api.request(
+			"/api/app/posts/non-existent/reactions/users",
+			authedRequest("/"),
+			env,
+		);
+
+		expect(res.status).toBe(404);
+	});
+
+	it("returns 401 without session", async () => {
+		mockVerify.mockResolvedValue(null);
+		const api = createApi();
+		const res = await api.request("/api/app/posts/post-1/reactions/users", {}, env);
 
 		expect(res.status).toBe(401);
 	});
