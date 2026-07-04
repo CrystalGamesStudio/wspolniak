@@ -1,18 +1,33 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import { Link } from "@tanstack/react-router";
-import { MessageSquare, Plus, RefreshCw, SlidersHorizontal } from "lucide-react";
+import { Link, useLocation } from "@tanstack/react-router";
+import { Home, Plus, RefreshCw, SlidersHorizontal } from "lucide-react";
 import { ThemeToggle } from "@/components/theme";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface MobileNavProps {
 	role?: string;
 }
 
 export function MobileNav({ role }: MobileNavProps) {
+	const { pathname } = useLocation();
+	const isHomeActive = pathname === "/app";
+
 	return (
 		<nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background pb-safe sm:hidden">
 			<div className="flex items-center justify-around px-2 py-3">
+				<Link
+					to="/app"
+					className={cn(
+						"flex flex-col items-center gap-1.5 rounded-md p-1.5",
+						isHomeActive && "font-bold",
+					)}
+				>
+					<Home className="h-6 w-6 text-foreground" />
+					<span className="text-xs text-muted-foreground">Home</span>
+				</Link>
+
 				{role === "admin" && (
 					<Link to="/app/admin" className="flex flex-col items-center gap-1.5 rounded-md p-1.5">
 						<SlidersHorizontal className="h-6 w-6 text-foreground" />
@@ -41,11 +56,6 @@ export function MobileNav({ role }: MobileNavProps) {
 					<ThemeToggle size="sm" />
 					<span className="text-xs text-muted-foreground">Tryb</span>
 				</div>
-
-				<Link to="/app/feedback" className="flex flex-col items-center gap-1.5 rounded-md p-1.5">
-					<MessageSquare className="h-6 w-6 text-foreground" />
-					<span className="text-xs text-muted-foreground">Feedback</span>
-				</Link>
 			</div>
 		</nav>
 	);
