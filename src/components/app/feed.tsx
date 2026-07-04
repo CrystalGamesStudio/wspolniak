@@ -83,12 +83,12 @@ export function Feed({
 							<time className="text-sm text-muted-foreground" dateTime={post.createdAt}>
 								{formatRelativeTime(post.createdAt)}
 							</time>
-							{(post.authorId === currentUserId || currentUserRole === "admin") && (
-								<div className="ml-auto flex items-center gap-1">
-									<ReactionUsers postId={post.id} currentUserRole={currentUserRole} />
+							<div className="ml-auto flex items-center gap-1">
+								<ReactionUsers postId={post.id} />
+								{(post.authorId === currentUserId || currentUserRole === "admin") && (
 									<PostActions postId={post.id} description={post.description} />
-								</div>
-							)}
+								)}
+							</div>
 						</div>
 
 						{post.description && (

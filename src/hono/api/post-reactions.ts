@@ -69,12 +69,7 @@ reactionsEndpoint.get("/:postId/my-reaction", async (c) => {
 });
 
 reactionsEndpoint.get("/:postId/reactions/users", async (c) => {
-	const user = c.get("user");
 	const postId = c.req.param("postId");
-
-	if (user.role !== "admin") {
-		return c.json({ error: "Forbidden" }, 403);
-	}
 
 	const post = await getPostById(postId);
 	if (!post) {

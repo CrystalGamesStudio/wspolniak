@@ -76,7 +76,7 @@ export function PostView({
 				</time>
 				{canManage && (
 					<div className="ml-auto flex items-center gap-1">
-						<ReactionUsers postId={post.id} currentUserRole={currentUserRole ?? ""} />
+						<ReactionUsers postId={post.id} />
 						<PostActions postId={post.id} description={post.description} onDeleted={onDeleted} />
 					</div>
 				)}
@@ -89,7 +89,7 @@ export function PostView({
 			{currentUserId && (
 				<div className="flex items-center gap-2">
 					<ReactionButton postId={post.id} currentUserId={currentUserId} />
-					<ReactionUsers postId={post.id} currentUserRole={currentUserRole ?? ""} />
+					<ReactionUsers postId={post.id} />
 				</div>
 			)}
 

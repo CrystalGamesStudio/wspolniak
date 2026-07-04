@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { useQuery } from "@tanstack/react-query";
-import { AlignHorizontalDistributeCenterIcon } from "lucide-react";
+import { Users } from "lucide-react";
 import {
 	Dialog,
 	DialogContent,
@@ -23,7 +23,6 @@ const reactionEmojis: Record<ReactionType, string> = {
 
 interface ReactionUsersProps {
 	postId: string;
-	currentUserRole: string;
 }
 
 async function fetchReactionUsers(postId: string): Promise<ReactionWithUser[]> {
@@ -33,18 +32,11 @@ async function fetchReactionUsers(postId: string): Promise<ReactionWithUser[]> {
 	return json.data;
 }
 
-export function ReactionUsers({ postId, currentUserRole }: ReactionUsersProps) {
-	const isAdmin = currentUserRole === "admin";
-
+export function ReactionUsers({ postId }: ReactionUsersProps) {
 	const { data: reactions = [], isLoading } = useQuery({
 		queryKey: ["post-reactions-users", postId],
 		queryFn: () => fetchReactionUsers(postId),
-		enabled: isAdmin,
 	});
-
-	if (!isAdmin) {
-		return null;
-	}
 
 	// Group by reaction type
 	const grouped = new Map<ReactionType, ReactionWithUser[]>();
@@ -63,7 +55,7 @@ export function ReactionUsers({ postId, currentUserRole }: ReactionUsersProps) {
 					className="inline-flex items-center gap-1 rounded-md px-3 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
 					title="Pokaż kto zareagował"
 				>
-					<AlignHorizontalDistributeCenterIcon className="h-8 w-8" />
+					<Users className="h-5 w-5" />
 				</button>
 			</DialogTrigger>
 			<DialogContent>

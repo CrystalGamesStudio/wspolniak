@@ -207,4 +207,23 @@ describe("Feed", () => {
 		await act(() => vi.advanceTimersByTimeAsync(1500));
 		expect(document.querySelector(".animate-spin")).not.toBeNull();
 	});
+
+	it("shows who-reacted button on someone else's post for member", () => {
+		const now = new Date().toISOString();
+		const posts = [
+			{
+				id: "post-2",
+				authorId: "u2",
+				description: "Cudzy post",
+				createdAt: now,
+				updatedAt: now,
+				author: { id: "u2", name: "Kasia" },
+				images: [],
+			},
+		];
+
+		render(<Feed posts={posts} {...defaultProps} />, { wrapper: createWrapper() });
+
+		expect(screen.getByRole("button", { name: /pokaż kto zareagował/i })).toBeDefined();
+	});
 });
