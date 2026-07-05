@@ -23,9 +23,11 @@ export function optimisticCommentMutation(
 				postId,
 				authorId: currentUser.id,
 				body,
+				parentId: null,
 				createdAt: new Date().toISOString(),
 				updatedAt: new Date().toISOString(),
 				author: { id: currentUser.id, name: currentUser.name },
+				replies: [],
 			};
 
 			queryClient.setQueryData<CommentWithAuthor[]>(queryKey, (old = []) => [

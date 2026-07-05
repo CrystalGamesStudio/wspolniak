@@ -3,13 +3,16 @@ import { canDeleteComment, canEditComment } from "@/core/authorization";
 import { notifyNewComment } from "@/core/notify";
 import { createSendWebPushFromEnv } from "@/core/web-push";
 import {
+	countRepliesByComment,
 	createComment,
+	createReply,
 	getCommentById,
 	listCommentsByPost,
+	MAX_REPLIES_PER_COMMENT,
 	softDeleteComment,
 	updateCommentBody,
 } from "@/db/comments/queries";
-import { createCommentSchema, updateCommentSchema } from "@/db/comments/schema";
+import { createCommentSchema, createReplySchema, updateCommentSchema } from "@/db/comments/schema";
 import { getPostById } from "@/db/posts/queries";
 import {
 	deleteSubscriptionByEndpoint,
@@ -31,6 +34,57 @@ commentsEndpoint.get("/:postId/comments", async (c) => {
 
 	const commentsList = await listCommentsByPost(postId);
 	return c.json({ data: commentsList });
+});
+
+commentsEndpoint.post("/:postId/comments/:commentId/replies", async (c) => {
+	const user = c.get("user");
+	const postId = c.req.param("postId");
+	const commentId = c.req.param("commentId");
+
+	const post = await getPostById(postId);
+	if (!post) {
+		return c.json({ error: "Not found" }, 404);
+	}
+
+	const parent = await getCommentById(commentId);
+	if (!parent || parent.postId !== postId) {
+		return c.json({ error: "Not found" }, 404);
+	}
+
+	// Płaskie wątki: brak reply-na-reply (parent musi być komentarzem głównym).
+	if (parent.parentId !== null) {
+		return c.json(
+			{ error: "Nie można odpowiedzieć na odpowiedź", details: { code: "reply_on_reply" } },
+			422,
+		);
+	}
+
+	// Limit 5 reply — obowiązuje wszystkich, włącznie z adminem.
+	const replyCount = await countRepliesByComment(commentId);
+	if (replyCount >= MAX_REPLIES_PER_COMMENT) {
+		return c.json(
+			{
+				error: `Osiągnięto limit ${MAX_REPLIES_PER_COMMENT} odpowiedzi`,
+				details: { code: "reply_limit" },
+			},
+			422,
+		);
+	}
+
+	const body = await c.req.json();
+	const result = createReplySchema.safeParse(body);
+	if (!result.success) {
+		return c.json({ error: "Validation failed", details: result.error.flatten() }, 400);
+	}
+
+	const reply = await createReply({
+		postId,
+		parentId: commentId,
+		authorId: user.userId,
+		body: result.data.body,
+	});
+
+	return c.json({ data: reply }, 201);
 });
 
 commentsEndpoint.post("/:postId/comments", async (c) => {

@@ -15,7 +15,10 @@ vi.mock("@/db/posts/queries", () => ({
 }));
 
 vi.mock("@/db/comments/queries", () => ({
+	MAX_REPLIES_PER_COMMENT: 5,
 	createComment: vi.fn(),
+	createReply: vi.fn(),
+	countRepliesByComment: vi.fn(),
 	listCommentsByPost: vi.fn(),
 	getCommentById: vi.fn(),
 	updateCommentBody: vi.fn(),
@@ -23,7 +26,9 @@ vi.mock("@/db/comments/queries", () => ({
 }));
 
 import {
+	countRepliesByComment,
 	createComment,
+	createReply,
 	getCommentById,
 	listCommentsByPost,
 	softDeleteComment,
@@ -38,6 +43,8 @@ const mockVerify = vi.mocked(verifySessionCookie);
 const mockFindUser = vi.mocked(findActiveUserById);
 const mockGetPost = vi.mocked(getPostById);
 const mockCreateComment = vi.mocked(createComment);
+const mockCreateReply = vi.mocked(createReply);
+const mockCountReplies = vi.mocked(countRepliesByComment);
 const mockListComments = vi.mocked(listCommentsByPost);
 const mockGetComment = vi.mocked(getCommentById);
 const mockUpdateBody = vi.mocked(updateCommentBody);
@@ -76,6 +83,7 @@ const sampleComment = {
 	postId: "post-1",
 	authorId: "u1",
 	body: "Fajne zdjęcie!",
+	parentId: null,
 	deletedAt: null,
 	createdAt: now,
 	updatedAt: now,
@@ -210,9 +218,11 @@ describe("GET /api/app/posts/:postId/comments", () => {
 				postId: "post-1",
 				authorId: "u1",
 				body: "Pierwszy",
+				parentId: null,
 				createdAt: now,
 				updatedAt: now,
 				author: { id: "u1", name: "Tomek" },
+				replies: [],
 			},
 		]);
 
@@ -459,6 +469,187 @@ describe("DELETE /api/app/posts/:postId/comments/:commentId", () => {
 		const res = await api.request(
 			"/api/app/posts/post-1/comments/comment-1",
 			{ method: "DELETE" },
+			env,
+		);
+
+		expect(res.status).toBe(401);
+	});
+});
+
+describe("POST /api/app/posts/:postId/comments/:commentId/replies", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		mockVerify.mockResolvedValue({ userId: "u1", name: "Tomek", role: "member" });
+		mockFindUser.mockResolvedValue({
+			id: "u1",
+			name: "Tomek",
+			role: "member",
+			tokenHash: "hash",
+			deletedAt: null,
+			createdAt: new Date(),
+		});
+	});
+
+	it("creates reply with valid input", async () => {
+		mockGetPost.mockResolvedValue(samplePost);
+		mockGetComment.mockResolvedValue(sampleComment);
+		mockCountReplies.mockResolvedValue(0);
+		mockCreateReply.mockResolvedValue({
+			...sampleComment,
+			id: "reply-1",
+			parentId: "comment-1",
+			body: "Odpowiedź!",
+		});
+
+		const api = createApi();
+		const res = await api.request(
+			"/api/app/posts/post-1/comments/comment-1/replies",
+			authedRequest("/", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ body: "Odpowiedź!" }),
+			}),
+			env,
+		);
+
+		expect(res.status).toBe(201);
+		const json = (await res.json()) as { data: { id: string; parentId: string } };
+		expect(json.data.id).toBe("reply-1");
+		expect(json.data.parentId).toBe("comment-1");
+		expect(mockCreateReply).toHaveBeenCalledWith({
+			postId: "post-1",
+			parentId: "comment-1",
+			authorId: "u1",
+			body: "Odpowiedź!",
+		});
+	});
+
+	it("returns 404 when post does not exist", async () => {
+		mockGetPost.mockResolvedValue(null);
+
+		const api = createApi();
+		const res = await api.request(
+			"/api/app/posts/non-existent/comments/comment-1/replies",
+			authedRequest("/", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ body: "Odpowiedź!" }),
+			}),
+			env,
+		);
+
+		expect(res.status).toBe(404);
+		expect(mockCreateReply).not.toHaveBeenCalled();
+	});
+
+	it("returns 404 when parent comment does not exist", async () => {
+		mockGetPost.mockResolvedValue(samplePost);
+		mockGetComment.mockResolvedValue(null);
+
+		const api = createApi();
+		const res = await api.request(
+			"/api/app/posts/post-1/comments/non-existent/replies",
+			authedRequest("/", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ body: "Odpowiedź!" }),
+			}),
+			env,
+		);
+
+		expect(res.status).toBe(404);
+		expect(mockCreateReply).not.toHaveBeenCalled();
+	});
+
+	it("returns 404 when parent comment belongs to a different post", async () => {
+		mockGetPost.mockResolvedValue(samplePost);
+		mockGetComment.mockResolvedValue({ ...sampleComment, postId: "other-post" });
+
+		const api = createApi();
+		const res = await api.request(
+			"/api/app/posts/post-1/comments/comment-1/replies",
+			authedRequest("/", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ body: "Odpowiedź!" }),
+			}),
+			env,
+		);
+
+		expect(res.status).toBe(404);
+		expect(mockCreateReply).not.toHaveBeenCalled();
+	});
+
+	it("returns 422 when replying to a reply (reply-on-reply forbidden)", async () => {
+		mockGetPost.mockResolvedValue(samplePost);
+		mockGetComment.mockResolvedValue({ ...sampleComment, parentId: "grandparent-1" });
+		mockCountReplies.mockResolvedValue(0);
+
+		const api = createApi();
+		const res = await api.request(
+			"/api/app/posts/post-1/comments/comment-1/replies",
+			authedRequest("/", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ body: "Odpowiedź!" }),
+			}),
+			env,
+		);
+
+		expect(res.status).toBe(422);
+		expect(mockCreateReply).not.toHaveBeenCalled();
+	});
+
+	it("returns 422 when reply limit (5) is reached", async () => {
+		mockGetPost.mockResolvedValue(samplePost);
+		mockGetComment.mockResolvedValue(sampleComment);
+		mockCountReplies.mockResolvedValue(5);
+
+		const api = createApi();
+		const res = await api.request(
+			"/api/app/posts/post-1/comments/comment-1/replies",
+			authedRequest("/", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ body: "Odpowiedź!" }),
+			}),
+			env,
+		);
+
+		expect(res.status).toBe(422);
+		expect(mockCreateReply).not.toHaveBeenCalled();
+	});
+
+	it("returns 400 when body is empty", async () => {
+		mockGetPost.mockResolvedValue(samplePost);
+		mockGetComment.mockResolvedValue(sampleComment);
+		mockCountReplies.mockResolvedValue(0);
+
+		const api = createApi();
+		const res = await api.request(
+			"/api/app/posts/post-1/comments/comment-1/replies",
+			authedRequest("/", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ body: "" }),
+			}),
+			env,
+		);
+
+		expect(res.status).toBe(400);
+		expect(mockCreateReply).not.toHaveBeenCalled();
+	});
+
+	it("returns 401 without session", async () => {
+		mockVerify.mockResolvedValue(null);
+		const api = createApi();
+		const res = await api.request(
+			"/api/app/posts/post-1/comments/comment-1/replies",
+			{
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ body: "Odpowiedź!" }),
+			},
 			env,
 		);
 

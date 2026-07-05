@@ -18,3 +18,12 @@ export const updateCommentSchema = z.object({
 });
 
 export type UpdateCommentRequest = z.infer<typeof updateCommentSchema>;
+
+export const createReplySchema = z.object({
+	body: z
+		.string()
+		.min(1, "Odpowiedź nie może być pusta")
+		.max(1000, "Odpowiedź może mieć maksymalnie 1000 znaków"),
+});
+
+export type CreateReplyRequest = z.infer<typeof createReplySchema>;

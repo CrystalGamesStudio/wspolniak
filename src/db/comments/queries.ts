@@ -12,9 +12,15 @@ export interface CommentWithAuthor {
 	postId: string;
 	authorId: string;
 	body: string;
+	parentId: string | null;
 	createdAt: Date;
 	updatedAt: Date;
 	author: { id: string; name: string };
+}
+
+/** Komentarz główny z jego zagnieżdżonymi reply (płaskie wątki — 1 poziom). */
+export interface CommentThread extends CommentWithAuthor {
+	replies: CommentWithAuthor[];
 }
 
 export async function createComment(input: {
@@ -32,7 +38,48 @@ export async function createComment(input: {
 	return row;
 }
 
-export async function listCommentsByPost(postId: string): Promise<CommentWithAuthor[]> {
+/**
+ * Wstawia reply (komentarz z parentId). Czysty CRUD — logika biznesowa
+ * (limit 5, brak reply-na-reply, walidacja parenta) orkiestrowana w API handlerze.
+ */
+export async function createReply(input: {
+	postId: string;
+	parentId: string;
+	authorId: string;
+	body: string;
+}): Promise<Comment> {
+	const rows = await getDb()
+		.insert(comments)
+		.values({ id: crypto.randomUUID(), ...input })
+		.returning();
+
+	const row = rows[0];
+	if (!row) throw new Error("createReply: insert returned no rows");
+	return row;
+}
+
+/** Maksymalna liczba reply pod jednym komentarzem. Limit obowiązuje wszystkich (włącznie z adminem). */
+export const MAX_REPLIES_PER_COMMENT = 5;
+
+/** Czy można dodać kolejne reply, given bieżąca liczba reply pod komentarzem. */
+export function canAddReply(currentReplyCount: number): boolean {
+	return currentReplyCount < MAX_REPLIES_PER_COMMENT;
+}
+
+/**
+ * Liczy aktywne (nieusunięte) reply danego komentarza nadrzędnego.
+ * Używane przez API do egzekwowania limitu 5 reply na komentarz.
+ */
+export async function countRepliesByComment(parentId: string): Promise<number> {
+	const rows = await getDb()
+		.select({ count: count() })
+		.from(comments)
+		.where(and(eq(comments.parentId, parentId), isNull(comments.deletedAt)));
+
+	return rows[0]?.count ?? 0;
+}
+
+export async function listCommentsByPost(postId: string): Promise<CommentThread[]> {
 	const rows = await getDb()
 		.select({
 			comment: comments,
@@ -43,15 +90,34 @@ export async function listCommentsByPost(postId: string): Promise<CommentWithAut
 		.where(and(eq(comments.postId, postId), isNull(comments.deletedAt)))
 		.orderBy(asc(comments.createdAt));
 
-	return rows.map((row) => ({
+	const flat: CommentWithAuthor[] = rows.map((row) => ({
 		id: row.comment.id,
 		postId: row.comment.postId,
 		authorId: row.comment.authorId,
 		body: row.comment.body,
+		parentId: row.comment.parentId,
 		createdAt: row.comment.createdAt,
 		updatedAt: row.comment.updatedAt,
 		author: { id: row.author?.id ?? "", name: row.author?.name ?? "" },
 	}));
+
+	return groupCommentsIntoThreads(flat);
+}
+
+/**
+ * Grupuje płaską listę komentarzy w wątki (top-level + reply).
+ * Top-level = komentarz bez parenta LUB reply, którego parent nie figuruje
+ * w wyniku (np. parent soft-deletowany) — pokazujemy je jako główną odpowiedź,
+ * żeby nie zniknęły. Reply attachowane są pod istniejącym parentem.
+ */
+function groupCommentsIntoThreads(flat: CommentWithAuthor[]): CommentThread[] {
+	const ids = new Set(flat.map((comment) => comment.id));
+	return flat
+		.filter((comment) => !comment.parentId || !ids.has(comment.parentId))
+		.map((parent) => ({
+			...parent,
+			replies: flat.filter((comment) => comment.parentId === parent.id),
+		}));
 }
 
 export async function getCommentById(id: string): Promise<Comment | null> {
@@ -74,9 +140,17 @@ export async function updateCommentBody(id: string, body: string): Promise<Comme
 }
 
 export async function softDeleteComment(id: string): Promise<Comment | null> {
+	const deletedAt = new Date();
+	// Kaskada: najpierw soft-delete reply (parentId = id), potem komentarz główny.
+	// Gdyby parent istniał bez reply — pierwsze UPDATE dotyka 0 wierszy (bezpieczne).
+	await getDb()
+		.update(comments)
+		.set({ deletedAt })
+		.where(and(eq(comments.parentId, id), isNull(comments.deletedAt)));
+
 	const rows = await getDb()
 		.update(comments)
-		.set({ deletedAt: new Date() })
+		.set({ deletedAt })
 		.where(and(eq(comments.id, id), isNull(comments.deletedAt)))
 		.returning();
 

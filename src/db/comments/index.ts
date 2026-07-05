@@ -1,11 +1,17 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-export type { Comment, CommentWithAuthor } from "./queries";
+export type { Comment, CommentThread, CommentWithAuthor } from "./queries";
 export {
+	canAddReply,
 	countCommentsByPosts,
+	countRepliesByComment,
 	createComment,
+	createReply,
 	getCommentById,
 	listCommentsByPost,
+	MAX_REPLIES_PER_COMMENT,
 	softDeleteComment,
 	updateCommentBody,
 } from "./queries";
+export type { CreateReplyRequest } from "./schema";
+export { createReplySchema } from "./schema";
 export { comments } from "./table";

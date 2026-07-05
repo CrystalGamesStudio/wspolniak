@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import {
+	canAddReply,
 	countCommentsByPosts,
+	countRepliesByComment,
 	createComment,
+	createReply,
 	getCommentById,
 	listCommentsByPost,
 	softDeleteComment,
@@ -25,6 +28,7 @@ function mockComment(overrides: Partial<Record<string, unknown>> = {}) {
 		postId: "post-1",
 		authorId: "user-1",
 		body: "Fajne zdjęcie!",
+		parentId: null,
 		deletedAt: null,
 		createdAt: now,
 		updatedAt: now,
@@ -53,6 +57,35 @@ describe("createComment", () => {
 	});
 });
 
+describe("createReply", () => {
+	it("inserts reply with parentId and returns it", async () => {
+		const mock = mockComment({ id: "reply-1", parentId: "parent-1", body: "Odpowiedź!" });
+		const mockReturning = vi.fn().mockResolvedValue([mock]);
+		const mockValues = vi.fn().mockReturnValue({ returning: mockReturning });
+		const mockInsert = vi.fn().mockReturnValue({ values: mockValues });
+		mockGetDb.mockReturnValue({ insert: mockInsert } as never);
+
+		const result = await createReply({
+			postId: "post-1",
+			parentId: "parent-1",
+			authorId: "user-1",
+			body: "Odpowiedź!",
+		});
+
+		expect(result.id).toBe("reply-1");
+		expect(result.parentId).toBe("parent-1");
+		expect(result.body).toBe("Odpowiedź!");
+		expect(mockInsert).toHaveBeenCalledWith(comments);
+		const insertedValues = mockValues.mock.calls[0]?.[0];
+		expect(insertedValues).toMatchObject({
+			postId: "post-1",
+			parentId: "parent-1",
+			authorId: "user-1",
+			body: "Odpowiedź!",
+		});
+	});
+});
+
 describe("listCommentsByPost", () => {
 	function mockSelectChain(mockRows: unknown[]) {
 		const mockOrderBy = vi.fn().mockResolvedValue(mockRows);
@@ -63,7 +96,7 @@ describe("listCommentsByPost", () => {
 		mockGetDb.mockReturnValue({ select: mockSelect } as never);
 	}
 
-	it("returns comments with authors in chronological order", async () => {
+	it("returns top-level comments with authors in chronological order", async () => {
 		const older = new Date(now.getTime() - 60_000);
 		mockSelectChain([
 			{
@@ -81,8 +114,56 @@ describe("listCommentsByPost", () => {
 		expect(result).toHaveLength(2);
 		expect(result[0]?.id).toBe("c-1");
 		expect(result[0]?.author.name).toBe("Tomek");
+		expect(result[0]?.replies).toEqual([]);
 		expect(result[1]?.id).toBe("c-2");
 		expect(result[1]?.author.name).toBe("Kasia");
+		expect(result[1]?.replies).toEqual([]);
+	});
+
+	it("groups replies under their parent comment in chronological order", async () => {
+		const oldest = new Date(now.getTime() - 120_000);
+		const older = new Date(now.getTime() - 60_000);
+		mockSelectChain([
+			{
+				comment: mockComment({ id: "c-1", createdAt: oldest }),
+				author: { id: "u1", name: "Tomek" },
+			},
+			{
+				comment: mockComment({ id: "r-1", parentId: "c-1", createdAt: older }),
+				author: { id: "u2", name: "Kasia" },
+			},
+			{
+				comment: mockComment({ id: "r-2", parentId: "c-1", createdAt: now }),
+				author: { id: "u3", name: "Ania" },
+			},
+			{ comment: mockComment({ id: "c-2", createdAt: now }), author: { id: "u4", name: "Paweł" } },
+		]);
+
+		const result = await listCommentsByPost("post-1");
+
+		expect(result).toHaveLength(2);
+		expect(result[0]?.id).toBe("c-1");
+		expect(result[0]?.replies).toHaveLength(2);
+		expect(result[0]?.replies[0]?.id).toBe("r-1");
+		expect(result[0]?.replies[1]?.id).toBe("r-2");
+		expect(result[0]?.replies[1]?.author.name).toBe("Ania");
+		expect(result[1]?.id).toBe("c-2");
+		expect(result[1]?.replies).toEqual([]);
+	});
+
+	it("treats an orphan reply (parent deleted) as top-level", async () => {
+		mockSelectChain([
+			{
+				comment: mockComment({ id: "orphan", parentId: "ghost-parent" }),
+				author: { id: "u1", name: "Tomek" },
+			},
+		]);
+
+		const result = await listCommentsByPost("post-1");
+
+		expect(result).toHaveLength(1);
+		expect(result[0]?.id).toBe("orphan");
+		expect(result[0]?.replies).toEqual([]);
 	});
 
 	it("returns empty array when no comments exist", async () => {
@@ -173,6 +254,58 @@ describe("softDeleteComment", () => {
 
 		expect(result).toBeNull();
 	});
+
+	it("cascades: soft-deletes the comment and its replies", async () => {
+		const replyWhere = vi.fn().mockResolvedValue(undefined);
+		const replySet = vi.fn().mockReturnValue({ where: replyWhere });
+		const mockReturning = vi.fn().mockResolvedValue([mockComment({ deletedAt: now })]);
+		const parentWhere = vi.fn().mockReturnValue({ returning: mockReturning });
+		const parentSet = vi.fn().mockReturnValue({ where: parentWhere });
+		const mockUpdate = vi
+			.fn()
+			.mockReturnValueOnce({ set: replySet })
+			.mockReturnValueOnce({ set: parentSet });
+		mockGetDb.mockReturnValue({ update: mockUpdate } as never);
+
+		const result = await softDeleteComment("comment-1");
+
+		expect(result?.deletedAt).toBeTruthy();
+		expect(mockUpdate).toHaveBeenCalledTimes(2);
+		expect(replyWhere).toHaveBeenCalled();
+	});
+});
+
+describe("countRepliesByComment", () => {
+	function mockCountChain(rows: unknown[]) {
+		const mockWhere = vi.fn().mockResolvedValue(rows);
+		const mockFrom = vi.fn().mockReturnValue({ where: mockWhere });
+		const mockSelect = vi.fn().mockReturnValue({ from: mockFrom });
+		mockGetDb.mockReturnValue({ select: mockSelect } as never);
+	}
+
+	it("returns the number of replies for a given parent", async () => {
+		mockCountChain([{ count: 3 }]);
+
+		const result = await countRepliesByComment("parent-1");
+
+		expect(result).toBe(3);
+	});
+
+	it("returns 0 when no replies exist", async () => {
+		mockCountChain([{ count: 0 }]);
+
+		const result = await countRepliesByComment("parent-1");
+
+		expect(result).toBe(0);
+	});
+
+	it("returns 0 when the count row is missing", async () => {
+		mockCountChain([]);
+
+		const result = await countRepliesByComment("parent-1");
+
+		expect(result).toBe(0);
+	});
 });
 
 describe("countCommentsByPosts", () => {
@@ -208,5 +341,17 @@ describe("countCommentsByPosts", () => {
 		const result = await countCommentsByPosts(["post-99"]);
 
 		expect(result.size).toBe(0);
+	});
+});
+
+describe("canAddReply", () => {
+	it("allows reply when current reply count is below the max", () => {
+		expect(canAddReply(0)).toBe(true);
+		expect(canAddReply(4)).toBe(true);
+	});
+
+	it("forbids reply when the max (5) is reached or exceeded", () => {
+		expect(canAddReply(5)).toBe(false);
+		expect(canAddReply(6)).toBe(false);
 	});
 });

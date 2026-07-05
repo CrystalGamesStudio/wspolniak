@@ -85,6 +85,13 @@
       "when": 1783246709493,
       "tag": "0011_steady_anthem",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1783278139579,
+      "tag": "0012_equal_diamondback",
+      "breakpoints": true
     }
   ]
 }

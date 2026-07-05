@@ -2,10 +2,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { MessageCircleIcon } from "lucide-react";
 import { useState } from "react";
-import { CommentActions } from "@/components/app/comment-actions";
+import { CommentItem } from "@/components/app/comment-item";
 import { optimisticCommentMutation } from "@/components/app/optimistic-comments";
-import { ReactionBar } from "@/components/app/reaction-bar";
-import { ReactionUsers } from "@/components/app/reaction-users";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { LoaderIcon } from "@/components/ui/spinner";
@@ -16,9 +14,11 @@ export interface CommentWithAuthor {
 	postId: string;
 	authorId: string;
 	body: string;
+	parentId: string | null;
 	createdAt: string;
 	updatedAt: string;
 	author: { id: string; name: string };
+	replies: CommentWithAuthor[];
 }
 
 interface CommentSectionProps {
@@ -79,38 +79,15 @@ export function CommentSection({ postId, currentUserId, currentUserRole }: Comme
 			</h2>
 
 			<div className="space-y-3">
-				{comments.map((comment) => {
-					const canManage = currentUserId === comment.authorId || currentUserRole === "admin";
-					return (
-						<div key={comment.id} className="rounded-md border border-border bg-muted/50 p-3">
-							<div className="mb-1 flex items-center gap-2">
-								<span className="text-sm font-medium text-foreground">{comment.author.name}</span>
-								<time className="text-xs text-muted-foreground" dateTime={comment.createdAt}>
-									{new Date(comment.createdAt).toLocaleDateString("pl-PL", {
-										day: "numeric",
-										month: "short",
-										hour: "2-digit",
-										minute: "2-digit",
-									})}
-								</time>
-								<div className="ml-auto flex items-center gap-1">
-									<ReactionUsers target={{ kind: "comment", postId, commentId: comment.id }} />
-									{canManage && (
-										<CommentActions postId={postId} commentId={comment.id} body={comment.body} />
-									)}
-								</div>
-							</div>
-							<p className="whitespace-pre-wrap break-words text-sm text-foreground">
-								{comment.body}
-							</p>
-							{currentUserId && (
-								<div className="mt-2 flex items-center gap-2">
-									<ReactionBar target={{ kind: "comment", postId, commentId: comment.id }} />
-								</div>
-							)}
-						</div>
-					);
-				})}
+				{comments.map((comment) => (
+					<CommentItem
+						key={comment.id}
+						comment={comment}
+						postId={postId}
+						currentUserId={currentUserId}
+						currentUserRole={currentUserRole}
+					/>
+				))}
 			</div>
 
 			<div id="new-comment" className="space-y-2">

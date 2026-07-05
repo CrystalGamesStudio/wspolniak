@@ -6,6 +6,9 @@ export const comments = pgTable("comments", {
 	postId: text("post_id").notNull(),
 	authorId: text("author_id").notNull(),
 	body: text("body").notNull(),
+	// Reply = komentarz z ustawionym parentId. Null = komentarz główny (top-level).
+	// FK → comments.id (płaskie wątki: parent zawsze jest komentarzem głównym).
+	parentId: text("parent_id"),
 	deletedAt: timestamp("deleted_at"),
 	createdAt: timestamp("created_at").defaultNow().notNull(),
 	updatedAt: timestamp("updated_at").defaultNow().notNull(),
