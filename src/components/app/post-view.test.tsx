@@ -1,6 +1,28 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-import { render, screen } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { cleanup, render, screen } from "@testing-library/react";
+import type { ReactNode } from "react";
 import { PostView } from "./post-view";
+
+function createWrapper() {
+	const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+	return function Wrapper({ children }: { children: ReactNode }) {
+		return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
+	};
+}
+
+// ReactionUsers in the header fires a fetch on mount; stub it so tests don't hit the network.
+beforeEach(() => {
+	vi.stubGlobal(
+		"fetch",
+		vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve({ data: [] }) }),
+	);
+});
+
+afterEach(() => {
+	cleanup();
+	vi.unstubAllGlobals();
+});
 
 describe("PostView", () => {
 	it("renders post with author, description, and images", () => {
@@ -18,7 +40,7 @@ describe("PostView", () => {
 			],
 		};
 
-		render(<PostView post={post} imageAccountHash="hash-1" />);
+		render(<PostView post={post} imageAccountHash="hash-1" />, { wrapper: createWrapper() });
 
 		expect(screen.getByText("Tomek")).toBeDefined();
 		expect(screen.getByText("Wakacje nad morzem")).toBeDefined();
@@ -40,7 +62,7 @@ describe("PostView", () => {
 			],
 		};
 
-		render(<PostView post={post} imageAccountHash="hash-1" />);
+		render(<PostView post={post} imageAccountHash="hash-1" />, { wrapper: createWrapper() });
 
 		expect(screen.getByText("Kasia")).toBeDefined();
 		expect(screen.getAllByRole("img")).toHaveLength(1);

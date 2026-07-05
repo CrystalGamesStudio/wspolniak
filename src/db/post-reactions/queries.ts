@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import type { InferSelectModel } from "drizzle-orm";
-import { and, count, eq } from "drizzle-orm";
+import { and, count, eq, isNotNull, isNull } from "drizzle-orm";
 import { users } from "@/db/identity/table";
 import { getDb } from "@/db/setup";
 import type { ReactionType } from "./table";
@@ -8,9 +8,14 @@ import { postReactions } from "./table";
 
 export type PostReaction = InferSelectModel<typeof postReactions>;
 
+export type ReactionTarget =
+	| { kind: "post"; postId: string }
+	| { kind: "comment"; postId: string; commentId: string };
+
 export interface ReactionWithUser {
 	id: string;
 	postId: string;
+	commentId: string | null;
 	userId: string;
 	reactionType: ReactionType;
 	createdAt: Date;
@@ -21,25 +26,38 @@ export interface ReactionWithUser {
 }
 
 interface UpsertReactionInput {
-	postId: string;
+	target: ReactionTarget;
 	userId: string;
 	reactionType: ReactionType;
 }
 
+function targetCommentId(target: ReactionTarget): string | null {
+	return target.kind === "comment" ? target.commentId : null;
+}
+
 export async function upsertReaction(input: UpsertReactionInput): Promise<PostReaction> {
-	const { postId, userId, reactionType } = input;
+	const { target, userId, reactionType } = input;
 	const db = getDb();
+	const commentId = targetCommentId(target);
 
 	const rows = await db
 		.insert(postReactions)
 		.values({
 			id: crypto.randomUUID(),
-			postId,
+			postId: target.postId,
+			commentId,
 			userId,
 			reactionType,
 		})
 		.onConflictDoUpdate({
-			target: [postReactions.postId, postReactions.userId],
+			target:
+				target.kind === "comment"
+					? [postReactions.commentId, postReactions.userId]
+					: [postReactions.postId, postReactions.userId],
+			targetWhere:
+				target.kind === "comment"
+					? isNotNull(postReactions.commentId)
+					: isNull(postReactions.commentId),
 			set: { reactionType, updatedAt: new Date() },
 		})
 		.returning();
@@ -49,13 +67,21 @@ export async function upsertReaction(input: UpsertReactionInput): Promise<PostRe
 	return row;
 }
 
-export async function getReactionCounts(postId: string): Promise<Map<ReactionType, number>> {
+function targetWhere(target: ReactionTarget) {
+	return target.kind === "post"
+		? and(eq(postReactions.postId, target.postId), isNull(postReactions.commentId))
+		: eq(postReactions.commentId, target.commentId);
+}
+
+export async function getReactionCounts(
+	target: ReactionTarget,
+): Promise<Map<ReactionType, number>> {
 	const db = getDb();
 
 	const rows = await db
 		.select({ reactionType: postReactions.reactionType, count: count() })
 		.from(postReactions)
-		.where(eq(postReactions.postId, postId))
+		.where(targetWhere(target))
 		.groupBy(postReactions.reactionType);
 
 	const result = new Map<ReactionType, number>();
@@ -66,7 +92,7 @@ export async function getReactionCounts(postId: string): Promise<Map<ReactionTyp
 }
 
 export async function getUserReaction(
-	postId: string,
+	target: ReactionTarget,
 	userId: string,
 ): Promise<PostReaction | null> {
 	const db = getDb();
@@ -74,18 +100,19 @@ export async function getUserReaction(
 	const rows = await db
 		.select()
 		.from(postReactions)
-		.where(and(eq(postReactions.postId, postId), eq(postReactions.userId, userId)));
+		.where(and(targetWhere(target), eq(postReactions.userId, userId)));
 
 	return rows[0] ?? null;
 }
 
-export async function getReactionsWithUsers(postId: string): Promise<ReactionWithUser[]> {
+export async function getReactionsWithUsers(target: ReactionTarget): Promise<ReactionWithUser[]> {
 	const db = getDb();
 
 	const rows = await db
 		.select({
 			id: postReactions.id,
 			postId: postReactions.postId,
+			commentId: postReactions.commentId,
 			userId: postReactions.userId,
 			reactionType: postReactions.reactionType,
 			createdAt: postReactions.createdAt,
@@ -94,11 +121,12 @@ export async function getReactionsWithUsers(postId: string): Promise<ReactionWit
 		})
 		.from(postReactions)
 		.leftJoin(users, eq(postReactions.userId, users.id))
-		.where(eq(postReactions.postId, postId));
+		.where(targetWhere(target));
 
 	return rows.map((row) => ({
 		id: row.id,
 		postId: row.postId,
+		commentId: row.commentId,
 		userId: row.userId,
 		reactionType: row.reactionType as ReactionType,
 		createdAt: row.createdAt,

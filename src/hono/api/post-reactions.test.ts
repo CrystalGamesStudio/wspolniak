@@ -71,6 +71,7 @@ const samplePost = {
 const sampleReaction = {
 	id: "reaction-1",
 	postId: "post-1",
+	commentId: null,
 	userId: "u1",
 	reactionType: "heart" as const,
 	createdAt: now,
@@ -110,7 +111,7 @@ describe("POST /api/app/posts/:postId/reactions", () => {
 		const json = (await res.json()) as { data: { id: string } };
 		expect(json.data.id).toBe("reaction-1");
 		expect(mockUpsertReaction).toHaveBeenCalledWith({
-			postId: "post-1",
+			target: { kind: "post", postId: "post-1" },
 			userId: "u1",
 			reactionType: "heart",
 		});
@@ -185,7 +186,7 @@ describe("GET /api/app/posts/:postId/reactions", () => {
 		mockGetPost.mockResolvedValue(samplePost);
 		const counts = new Map([
 			["heart" as const, 5],
-			["thumbs_up" as const, 3],
+			["flame" as const, 3],
 		]);
 		mockGetReactionCounts.mockResolvedValue(counts);
 
@@ -195,7 +196,7 @@ describe("GET /api/app/posts/:postId/reactions", () => {
 		expect(res.status).toBe(200);
 		const json = (await res.json()) as { data: Record<string, number> };
 		expect(json.data.heart).toBe(5);
-		expect(json.data.thumbs_up).toBe(3);
+		expect(json.data.flame).toBe(3);
 	});
 
 	it("returns 404 when post does not exist", async () => {
@@ -295,6 +296,7 @@ describe("GET /api/app/posts/:postId/reactions/users", () => {
 		const reactionWithUser = {
 			id: "reaction-1",
 			postId: "post-1",
+			commentId: null,
 			userId: "u1",
 			reactionType: "heart" as const,
 			createdAt: now,
@@ -310,7 +312,7 @@ describe("GET /api/app/posts/:postId/reactions/users", () => {
 		const json = (await res.json()) as { data: { userId: string; reactionType: string }[] };
 		expect(json.data).toHaveLength(1);
 		expect(json.data[0]?.userId).toBe("u1");
-		expect(mockGetReactionsWithUsers).toHaveBeenCalledWith("post-1");
+		expect(mockGetReactionsWithUsers).toHaveBeenCalledWith({ kind: "post", postId: "post-1" });
 	});
 
 	it("returns 404 when post does not exist", async () => {
@@ -332,5 +334,202 @@ describe("GET /api/app/posts/:postId/reactions/users", () => {
 		const res = await api.request("/api/app/posts/post-1/reactions/users", {}, env);
 
 		expect(res.status).toBe(401);
+	});
+});
+
+describe("POST /api/app/posts/:postId/comments/:commentId/reactions", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		mockVerify.mockResolvedValue({ userId: "u1", name: "Tomek", role: "member" });
+		mockFindUser.mockResolvedValue({
+			id: "u1",
+			name: "Tomek",
+			role: "member",
+			tokenHash: "hash",
+			deletedAt: null,
+			createdAt: new Date(),
+		});
+	});
+
+	it("creates a COMMENT reaction with valid input", async () => {
+		mockUpsertReaction.mockResolvedValue(sampleReaction);
+
+		const api = createApi();
+		const res = await api.request(
+			"/api/app/posts/post-1/comments/comment-1/reactions",
+			authedRequest("/api/app/posts/post-1/comments/comment-1/reactions", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ reactionType: "flame" }),
+			}),
+			env,
+		);
+
+		expect(res.status).toBe(200);
+		expect(mockUpsertReaction).toHaveBeenCalledWith({
+			target: { kind: "comment", postId: "post-1", commentId: "comment-1" },
+			userId: "u1",
+			reactionType: "flame",
+		});
+	});
+
+	it("returns 400 for invalid reaction type", async () => {
+		const api = createApi();
+		const res = await api.request(
+			"/api/app/posts/post-1/comments/comment-1/reactions",
+			authedRequest("/", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ reactionType: "thumbs_up" }),
+			}),
+			env,
+		);
+
+		expect(res.status).toBe(400);
+	});
+
+	it("returns 401 without session", async () => {
+		mockVerify.mockResolvedValue(null);
+		const api = createApi();
+		const res = await api.request(
+			"/api/app/posts/post-1/comments/comment-1/reactions",
+			{
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ reactionType: "heart" }),
+			},
+			env,
+		);
+
+		expect(res.status).toBe(401);
+	});
+});
+
+describe("GET /api/app/posts/:postId/comments/:commentId/reactions", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		mockVerify.mockResolvedValue({ userId: "u1", name: "Tomek", role: "member" });
+		mockFindUser.mockResolvedValue({
+			id: "u1",
+			name: "Tomek",
+			role: "member",
+			tokenHash: "hash",
+			deletedAt: null,
+			createdAt: new Date(),
+		});
+	});
+
+	it("returns reaction counts for a comment", async () => {
+		const counts = new Map([["laugh" as const, 4]]);
+		mockGetReactionCounts.mockResolvedValue(counts);
+
+		const api = createApi();
+		const res = await api.request(
+			"/api/app/posts/post-1/comments/comment-1/reactions",
+			authedRequest("/"),
+			env,
+		);
+
+		expect(res.status).toBe(200);
+		const json = (await res.json()) as { data: Record<string, number> };
+		expect(json.data.laugh).toBe(4);
+		expect(mockGetReactionCounts).toHaveBeenCalledWith({
+			kind: "comment",
+			postId: "post-1",
+			commentId: "comment-1",
+		});
+	});
+});
+
+describe("GET /api/app/posts/:postId/comments/:commentId/my-reaction", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		mockVerify.mockResolvedValue({ userId: "u1", name: "Tomek", role: "member" });
+		mockFindUser.mockResolvedValue({
+			id: "u1",
+			name: "Tomek",
+			role: "member",
+			tokenHash: "hash",
+			deletedAt: null,
+			createdAt: new Date(),
+		});
+	});
+
+	it("returns the user reaction for a comment", async () => {
+		mockGetUserReaction.mockResolvedValue(sampleReaction);
+
+		const api = createApi();
+		const res = await api.request(
+			"/api/app/posts/post-1/comments/comment-1/my-reaction",
+			authedRequest("/"),
+			env,
+		);
+
+		expect(res.status).toBe(200);
+		expect(mockGetUserReaction).toHaveBeenCalledWith(
+			{ kind: "comment", postId: "post-1", commentId: "comment-1" },
+			"u1",
+		);
+	});
+
+	it("returns null when the user has not reacted", async () => {
+		mockGetUserReaction.mockResolvedValue(null);
+
+		const api = createApi();
+		const res = await api.request(
+			"/api/app/posts/post-1/comments/comment-1/my-reaction",
+			authedRequest("/"),
+			env,
+		);
+
+		expect(res.status).toBe(200);
+		const json = (await res.json()) as { data: null };
+		expect(json.data).toBeNull();
+	});
+});
+
+describe("GET /api/app/posts/:postId/comments/:commentId/reactions/users", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		mockVerify.mockResolvedValue({ userId: "u1", name: "Tomek", role: "member" });
+		mockFindUser.mockResolvedValue({
+			id: "u1",
+			name: "Tomek",
+			role: "member",
+			tokenHash: "hash",
+			deletedAt: null,
+			createdAt: new Date(),
+		});
+	});
+
+	it("returns reaction users list for a comment", async () => {
+		const reactionWithUser = {
+			id: "reaction-1",
+			postId: "post-1",
+			commentId: "comment-1",
+			userId: "u1",
+			reactionType: "flame" as const,
+			createdAt: now,
+			updatedAt: now,
+			user: { name: "Tomek" },
+		};
+		mockGetReactionsWithUsers.mockResolvedValue([reactionWithUser]);
+
+		const api = createApi();
+		const res = await api.request(
+			"/api/app/posts/post-1/comments/comment-1/reactions/users",
+			authedRequest("/"),
+			env,
+		);
+
+		expect(res.status).toBe(200);
+		const json = (await res.json()) as { data: { userId: string }[] };
+		expect(json.data).toHaveLength(1);
+		expect(json.data[0]?.userId).toBe("u1");
+		expect(mockGetReactionsWithUsers).toHaveBeenCalledWith({
+			kind: "comment",
+			postId: "post-1",
+			commentId: "comment-1",
+		});
 	});
 });

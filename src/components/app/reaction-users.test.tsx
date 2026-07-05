@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
+import type { ReactionTarget } from "@/db/post-reactions/queries";
 import { ReactionUsers } from "./reaction-users";
 
 function createWrapper() {
@@ -13,16 +14,15 @@ function createWrapper() {
 }
 
 function mockFetchUsers(data: unknown[]) {
-	vi.stubGlobal(
-		"fetch",
-		vi.fn().mockImplementation((url: string) => {
-			if (url.includes("/reactions/users")) {
-				return Promise.resolve({ ok: true, json: () => Promise.resolve({ data }) });
-			}
-			return Promise.resolve({ ok: true, json: () => Promise.resolve({ data: {} }) });
-		}),
-	);
+	return vi.fn().mockImplementation((url: string) => {
+		if (url.includes("/reactions/users")) {
+			return Promise.resolve({ ok: true, json: () => Promise.resolve({ data }) });
+		}
+		return Promise.resolve({ ok: true, json: () => Promise.resolve({ data: {} }) });
+	});
 }
+
+const POST_TARGET: ReactionTarget = { kind: "post", postId: "post-1" };
 
 describe("ReactionUsers", () => {
 	afterEach(() => {
@@ -32,39 +32,40 @@ describe("ReactionUsers", () => {
 	});
 
 	it("renders button for non-admin member", async () => {
-		mockFetchUsers([]);
-		render(<ReactionUsers postId="post-1" />, {
-			wrapper: createWrapper(),
-		});
+		vi.stubGlobal("fetch", mockFetchUsers([]));
+		render(<ReactionUsers target={POST_TARGET} />, { wrapper: createWrapper() });
 
 		expect(await screen.findByRole("button", { name: /pokaż kto zareagował/i })).toBeDefined();
 	});
 
 	it("displays grouped users after clicking button", async () => {
-		const reactions = [
-			{
-				id: "r1",
-				postId: "post-1",
-				userId: "u1",
-				reactionType: "heart",
-				createdAt: "2026-01-01",
-				updatedAt: "2026-01-01",
-				user: { name: "Tomek" },
-			},
-			{
-				id: "r2",
-				postId: "post-1",
-				userId: "u2",
-				reactionType: "thumbs_up",
-				createdAt: "2026-01-01",
-				updatedAt: "2026-01-01",
-				user: { name: "Ania" },
-			},
-		];
-		mockFetchUsers(reactions);
-		render(<ReactionUsers postId="post-1" />, {
-			wrapper: createWrapper(),
-		});
+		vi.stubGlobal(
+			"fetch",
+			mockFetchUsers([
+				{
+					id: "r1",
+					postId: "post-1",
+					commentId: null,
+					userId: "u1",
+					reactionType: "heart",
+					createdAt: "2026-01-01",
+					updatedAt: "2026-01-01",
+					user: { name: "Tomek" },
+				},
+				{
+					id: "r2",
+					postId: "post-1",
+					commentId: null,
+					userId: "u2",
+					reactionType: "flame",
+					createdAt: "2026-01-01",
+					updatedAt: "2026-01-01",
+					user: { name: "Ania" },
+				},
+			]),
+		);
+
+		render(<ReactionUsers target={POST_TARGET} />, { wrapper: createWrapper() });
 
 		const trigger = await screen.findByRole("button", { name: /pokaż kto zareagował/i });
 		await userEvent.click(trigger);
@@ -74,14 +75,30 @@ describe("ReactionUsers", () => {
 	});
 
 	it("shows empty state when no reactions", async () => {
-		mockFetchUsers([]);
-		render(<ReactionUsers postId="post-1" />, {
-			wrapper: createWrapper(),
-		});
+		vi.stubGlobal("fetch", mockFetchUsers([]));
+		render(<ReactionUsers target={POST_TARGET} />, { wrapper: createWrapper() });
 
 		const trigger = await screen.findByRole("button", { name: /pokaż kto zareagował/i });
 		await userEvent.click(trigger);
 
 		expect(await screen.findByText(/brak reakcji/i)).toBeDefined();
+	});
+
+	it("fetches from the comment endpoint for a comment target", async () => {
+		const fetchMock = mockFetchUsers([]);
+		vi.stubGlobal("fetch", fetchMock);
+
+		const commentTarget: ReactionTarget = {
+			kind: "comment",
+			postId: "post-1",
+			commentId: "comment-1",
+		};
+		render(<ReactionUsers target={commentTarget} />, { wrapper: createWrapper() });
+
+		await screen.findByRole("button", { name: /pokaż kto zareagował/i });
+
+		expect(fetchMock).toHaveBeenCalledWith(
+			"/api/app/posts/post-1/comments/comment-1/reactions/users",
+		);
 	});
 });

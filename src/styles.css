@@ -333,6 +333,18 @@ code {
     calc(var(--radius) * 2.6);
 }
 
+@keyframes reaction-pop {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.4);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
 @utility pb-safe {
   padding-bottom: env(safe-area-inset-bottom, 0);
 }
