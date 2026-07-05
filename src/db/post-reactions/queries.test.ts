@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-import { getReactionCounts, getUserReaction, upsertReaction } from "./queries";
+import type { InferSelectModel } from "drizzle-orm";
 import { postReactions } from "./table";
 
 vi.mock("@/db/setup", () => ({
@@ -16,6 +16,7 @@ function mockReaction(overrides: Partial<Record<string, unknown>> = {}) {
 	return {
 		id: "reaction-1",
 		postId: "post-1",
+		commentId: null,
 		userId: "user-1",
 		reactionType: "heart" as const,
 		createdAt: now,
@@ -24,25 +25,40 @@ function mockReaction(overrides: Partial<Record<string, unknown>> = {}) {
 	};
 }
 
-describe("upsertReaction", () => {
-	it("inserts new reaction and returns it", async () => {
-		const expected = mockReaction();
-		const mockReturning = vi.fn().mockResolvedValue([expected]);
-		const mockOnConflictDoUpdate = vi.fn().mockReturnValue({ returning: mockReturning });
-		const mockValues = vi.fn().mockReturnValue({ onConflictDoUpdate: mockOnConflictDoUpdate });
-		const mockInsert = vi.fn().mockReturnValue({ values: mockValues });
-		mockGetDb.mockReturnValue({ insert: mockInsert } as never);
+type ReactionRow = InferSelectModel<typeof postReactions>;
 
-		const result = await upsertReaction({
-			postId: "post-1",
+function mockInsertChain(returningRows: ReactionRow[]) {
+	const mockReturning = vi.fn().mockResolvedValue(returningRows);
+	const mockOnConflictDoUpdate = vi.fn().mockReturnValue({ returning: mockReturning });
+	const mockValues = vi.fn().mockReturnValue({ onConflictDoUpdate: mockOnConflictDoUpdate });
+	const mockInsert = vi.fn().mockReturnValue({ values: mockValues });
+	mockGetDb.mockReturnValue({ insert: mockInsert } as never);
+	return { mockInsert, mockValues, mockOnConflictDoUpdate };
+}
+
+describe("upsertReaction", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
+
+	it("persists a POST reaction with comment_id null", async () => {
+		const { mockValues, mockOnConflictDoUpdate } = mockInsertChain([mockReaction()]);
+		const { upsertReaction } = await import("./queries");
+
+		await upsertReaction({
+			target: { kind: "post", postId: "post-1" },
 			userId: "user-1",
 			reactionType: "heart",
 		});
 
-		expect(result.reactionType).toBe("heart");
-		expect(result.postId).toBe("post-1");
-		expect(result.userId).toBe("user-1");
-		expect(mockInsert).toHaveBeenCalledWith(postReactions);
+		expect(mockValues).toHaveBeenCalledWith(
+			expect.objectContaining({
+				postId: "post-1",
+				commentId: null,
+				userId: "user-1",
+				reactionType: "heart",
+			}),
+		);
 		expect(mockOnConflictDoUpdate).toHaveBeenCalledWith(
 			expect.objectContaining({
 				target: expect.arrayContaining([postReactions.postId, postReactions.userId]),
@@ -50,83 +66,178 @@ describe("upsertReaction", () => {
 		);
 	});
 
-	it("updates existing reaction on conflict", async () => {
-		const updated = mockReaction({ reactionType: "thumbs_up", updatedAt: new Date() });
-		const mockReturning = vi.fn().mockResolvedValue([updated]);
-		const mockOnConflictDoUpdate = vi.fn().mockReturnValue({ returning: mockReturning });
-		const mockValues = vi.fn().mockReturnValue({ onConflictDoUpdate: mockOnConflictDoUpdate });
-		const mockInsert = vi.fn().mockReturnValue({ values: mockValues });
-		mockGetDb.mockReturnValue({ insert: mockInsert } as never);
+	it("persists a COMMENT reaction with comment_id set", async () => {
+		const { mockValues, mockOnConflictDoUpdate } = mockInsertChain([
+			mockReaction({ commentId: "comment-1" }),
+		]);
+		const { upsertReaction } = await import("./queries");
 
-		const result = await upsertReaction({
-			postId: "post-1",
+		await upsertReaction({
+			target: { kind: "comment", postId: "post-1", commentId: "comment-1" },
 			userId: "user-1",
-			reactionType: "thumbs_up",
+			reactionType: "flame",
 		});
 
-		expect(result.reactionType).toBe("thumbs_up");
-		expect(mockOnConflictDoUpdate).toHaveBeenCalledWith(
+		expect(mockValues).toHaveBeenCalledWith(
 			expect.objectContaining({
-				set: expect.objectContaining({ reactionType: "thumbs_up" }),
+				postId: "post-1",
+				commentId: "comment-1",
+				userId: "user-1",
+				reactionType: "flame",
 			}),
 		);
+		expect(mockOnConflictDoUpdate).toHaveBeenCalledWith(
+			expect.objectContaining({
+				target: expect.arrayContaining([postReactions.commentId, postReactions.userId]),
+			}),
+		);
+	});
+
+	it("throws when no rows are returned", async () => {
+		mockInsertChain([]);
+		const { upsertReaction } = await import("./queries");
+
+		await expect(
+			upsertReaction({
+				target: { kind: "post", postId: "post-1" },
+				userId: "user-1",
+				reactionType: "heart",
+			}),
+		).rejects.toThrow();
 	});
 });
 
 describe("getReactionCounts", () => {
-	it("returns counts grouped by reaction type", async () => {
-		const mockGroupBy = vi.fn().mockResolvedValue([
-			{ reactionType: "heart", count: 5 },
-			{ reactionType: "thumbs_up", count: 3 },
-			{ reactionType: "laugh", count: 1 },
-		]);
+	function mockCountsChain(rows: { reactionType: string; count: number }[]) {
+		const mockGroupBy = vi.fn().mockResolvedValue(rows);
 		const mockWhere = vi.fn().mockReturnValue({ groupBy: mockGroupBy });
 		const mockFrom = vi.fn().mockReturnValue({ where: mockWhere });
 		const mockSelect = vi.fn().mockReturnValue({ from: mockFrom });
 		mockGetDb.mockReturnValue({ select: mockSelect } as never);
+		return { mockWhere };
+	}
 
-		const result = await getReactionCounts("post-1");
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
+
+	it("returns counts grouped by type for a POST target", async () => {
+		const { mockWhere } = mockCountsChain([
+			{ reactionType: "heart", count: 5 },
+			{ reactionType: "flame", count: 2 },
+		]);
+		const { getReactionCounts } = await import("./queries");
+
+		const result = await getReactionCounts({ kind: "post", postId: "post-1" });
 
 		expect(result.get("heart")).toBe(5);
-		expect(result.get("thumbs_up")).toBe(3);
-		expect(result.get("laugh")).toBe(1);
+		expect(result.get("flame")).toBe(2);
+		// post target must apply a filter (excludes comment reactions)
+		expect(mockWhere).toHaveBeenCalledTimes(1);
+	});
+
+	it("returns counts grouped by type for a COMMENT target", async () => {
+		const { mockWhere } = mockCountsChain([{ reactionType: "laugh", count: 3 }]);
+		const { getReactionCounts } = await import("./queries");
+
+		const result = await getReactionCounts({
+			kind: "comment",
+			postId: "post-1",
+			commentId: "comment-1",
+		});
+
+		expect(result.get("laugh")).toBe(3);
+		expect(mockWhere).toHaveBeenCalledTimes(1);
 	});
 
 	it("returns empty map when no reactions exist", async () => {
-		const mockGroupBy = vi.fn().mockResolvedValue([]);
-		const mockWhere = vi.fn().mockReturnValue({ groupBy: mockGroupBy });
-		const mockFrom = vi.fn().mockReturnValue({ where: mockWhere });
-		const mockSelect = vi.fn().mockReturnValue({ from: mockFrom });
-		mockGetDb.mockReturnValue({ select: mockSelect } as never);
+		mockCountsChain([]);
+		const { getReactionCounts } = await import("./queries");
 
-		const result = await getReactionCounts("post-1");
+		const result = await getReactionCounts({ kind: "post", postId: "post-1" });
 
 		expect(result.size).toBe(0);
 	});
 });
 
 describe("getUserReaction", () => {
-	function mockSelectChain(mockRows: unknown[]) {
+	function mockSelectChain(mockRows: ReactionRow[]) {
 		const mockWhere = vi.fn().mockResolvedValue(mockRows);
 		const mockFrom = vi.fn().mockReturnValue({ where: mockWhere });
 		const mockSelect = vi.fn().mockReturnValue({ from: mockFrom });
 		mockGetDb.mockReturnValue({ select: mockSelect } as never);
+		return { mockWhere };
 	}
 
-	it("returns user reaction for a post", async () => {
-		mockSelectChain([mockReaction()]);
-
-		const result = await getUserReaction("post-1", "user-1");
-
-		expect(result).not.toBeNull();
-		expect(result?.reactionType).toBe("heart");
+	beforeEach(() => {
+		vi.clearAllMocks();
 	});
 
-	it("returns null when user has not reacted", async () => {
-		mockSelectChain([]);
+	it("returns the user reaction for a COMMENT target", async () => {
+		mockSelectChain([mockReaction({ commentId: "comment-1", reactionType: "laugh" })]);
+		const { getUserReaction } = await import("./queries");
 
-		const result = await getUserReaction("post-1", "user-1");
+		const result = await getUserReaction(
+			{ kind: "comment", postId: "post-1", commentId: "comment-1" },
+			"user-1",
+		);
+
+		expect(result).not.toBeNull();
+		expect(result?.reactionType).toBe("laugh");
+		expect(result?.commentId).toBe("comment-1");
+	});
+
+	it("returns null when the user has not reacted", async () => {
+		mockSelectChain([]);
+		const { getUserReaction } = await import("./queries");
+
+		const result = await getUserReaction(
+			{ kind: "comment", postId: "post-1", commentId: "comment-1" },
+			"user-1",
+		);
 
 		expect(result).toBeNull();
+	});
+});
+
+describe("getReactionsWithUsers", () => {
+	function mockJoinChain(rows: Record<string, unknown>[]) {
+		const mockWhere = vi.fn().mockResolvedValue(rows);
+		const mockLeftJoin = vi.fn().mockReturnValue({ where: mockWhere });
+		const mockFrom = vi.fn().mockReturnValue({ leftJoin: mockLeftJoin });
+		const mockSelect = vi.fn().mockReturnValue({ from: mockFrom });
+		mockGetDb.mockReturnValue({ select: mockSelect } as never);
+		return { mockWhere };
+	}
+
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
+
+	it("returns reactions joined with user names for a COMMENT target", async () => {
+		mockJoinChain([
+			{
+				id: "r1",
+				postId: "post-1",
+				commentId: "comment-1",
+				userId: "u1",
+				reactionType: "flame",
+				createdAt: now,
+				updatedAt: now,
+				userName: "Tomek",
+			},
+		]);
+		const { getReactionsWithUsers } = await import("./queries");
+
+		const result = await getReactionsWithUsers({
+			kind: "comment",
+			postId: "post-1",
+			commentId: "comment-1",
+		});
+
+		expect(result).toHaveLength(1);
+		expect(result[0]?.user?.name).toBe("Tomek");
+		expect(result[0]?.reactionType).toBe("flame");
+		expect(result[0]?.commentId).toBe("comment-1");
 	});
 });

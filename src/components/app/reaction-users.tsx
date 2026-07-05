@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { useQuery } from "@tanstack/react-query";
-import { Users } from "lucide-react";
+import { UserSearch } from "lucide-react";
+import { REACTION_CONFIG, targetKey, targetUrls } from "@/components/app/reaction-config";
 import {
 	Dialog,
 	DialogContent,
@@ -9,33 +10,25 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
-import type { ReactionWithUser } from "@/db/post-reactions/queries";
+import type { ReactionTarget, ReactionWithUser } from "@/db/post-reactions/queries";
 import type { ReactionType } from "@/db/post-reactions/table";
 
-const reactionEmojis: Record<ReactionType, string> = {
-	heart: "❤️",
-	thumbs_up: "👍",
-	thumbs_down: "👎",
-	laugh: "😂",
-	emphasize: "‼️",
-	question: "❓",
-};
-
 interface ReactionUsersProps {
-	postId: string;
+	target: ReactionTarget;
 }
 
-async function fetchReactionUsers(postId: string): Promise<ReactionWithUser[]> {
-	const res = await fetch(`/api/app/posts/${postId}/reactions/users`);
+async function fetchReactionUsers(url: string): Promise<ReactionWithUser[]> {
+	const res = await fetch(url);
 	if (!res.ok) throw new Error("Failed to fetch reaction users");
 	const json = (await res.json()) as { data: ReactionWithUser[] };
 	return json.data;
 }
 
-export function ReactionUsers({ postId }: ReactionUsersProps) {
+export function ReactionUsers({ target }: ReactionUsersProps) {
+	const usersKey = [...targetKey(target), "users"] as const;
 	const { data: reactions = [], isLoading } = useQuery({
-		queryKey: ["post-reactions-users", postId],
-		queryFn: () => fetchReactionUsers(postId),
+		queryKey: usersKey,
+		queryFn: () => fetchReactionUsers(targetUrls(target).users),
 	});
 
 	// Group by reaction type
@@ -55,7 +48,7 @@ export function ReactionUsers({ postId }: ReactionUsersProps) {
 					className="inline-flex items-center gap-1 rounded-md px-3 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
 					title="Pokaż kto zareagował"
 				>
-					<Users className="h-5 w-5" />
+					<UserSearch className="h-5 w-5" />
 				</button>
 			</DialogTrigger>
 			<DialogContent>
@@ -72,19 +65,26 @@ export function ReactionUsers({ postId }: ReactionUsersProps) {
 						<p className="text-center text-muted-foreground">Brak reakcji</p>
 					) : (
 						<div className="space-y-3">
-							{Array.from(grouped.entries()).map(([type, list]) => (
-								<div key={type} className="flex flex-wrap items-center gap-2">
-									<span className="text-2xl">{reactionEmojis[type]}</span>
-									{list.map((r) => (
-										<span
-											key={r.id}
-											className="rounded-md bg-muted px-2 py-1 text-sm text-foreground"
-										>
-											{r.user?.name ?? "Nieznany"}
-										</span>
-									))}
-								</div>
-							))}
+							{Array.from(grouped.entries()).map(([type, list]) => {
+								const { Icon, color, filled } = REACTION_CONFIG[type];
+								return (
+									<div key={type} className="flex flex-wrap items-center gap-2">
+										<Icon
+											className="size-6"
+											style={{ color }}
+											fill={filled ? "currentColor" : "none"}
+										/>
+										{list.map((r) => (
+											<span
+												key={r.id}
+												className="rounded-md bg-muted px-2 py-1 text-sm text-foreground"
+											>
+												{r.user?.name ?? "Nieznany"}
+											</span>
+										))}
+									</div>
+								);
+							})}
 						</div>
 					)}
 				</div>

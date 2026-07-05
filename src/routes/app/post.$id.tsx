@@ -4,7 +4,6 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { CommentSection } from "@/components/app/comment-section";
 import { PostView } from "@/components/app/post-view";
-import { ThemeToggle } from "@/components/theme";
 
 function useIsDesktop() {
 	const [isDesktop, setIsDesktop] = useState(false);
@@ -79,7 +78,6 @@ function PostPage() {
 						>
 							&larr; Wróć do feedu
 						</a>
-						<ThemeToggle size="sm" />
 					</div>
 				</div>
 			)}

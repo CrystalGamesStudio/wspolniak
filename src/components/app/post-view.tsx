@@ -3,7 +3,7 @@ import { Download } from "lucide-react";
 import { useEffect, useState } from "react";
 import { ImageLightbox } from "@/components/app/image-lightbox";
 import { PostActions } from "@/components/app/post-actions";
-import { ReactionButton } from "@/components/app/reaction-button";
+import { ReactionBar } from "@/components/app/reaction-bar";
 import { ReactionUsers } from "@/components/app/reaction-users";
 import { getImageUrl } from "@/images/client";
 import { downloadImage } from "@/lib/download-image";
@@ -74,12 +74,12 @@ export function PostView({
 						minute: "2-digit",
 					})}
 				</time>
-				{canManage && (
-					<div className="ml-auto flex items-center gap-1">
-						<ReactionUsers postId={post.id} />
+				<div className="ml-auto flex items-center gap-1">
+					<ReactionUsers target={{ kind: "post", postId: post.id }} />
+					{canManage && (
 						<PostActions postId={post.id} description={post.description} onDeleted={onDeleted} />
-					</div>
-				)}
+					)}
+				</div>
 			</div>
 
 			{post.description && (
@@ -88,8 +88,7 @@ export function PostView({
 
 			{currentUserId && (
 				<div className="flex items-center gap-2">
-					<ReactionButton postId={post.id} currentUserId={currentUserId} />
-					<ReactionUsers postId={post.id} />
+					<ReactionBar target={{ kind: "post", postId: post.id }} />
 				</div>
 			)}
 

@@ -3,9 +3,11 @@ import {
 	getReactionCounts,
 	getReactionsWithUsers,
 	getUserReaction,
+	type ReactionTarget,
 	upsertReaction,
 } from "@/db/post-reactions/queries";
 import { upsertReactionSchema } from "@/db/post-reactions/schema";
+import type { ReactionType } from "@/db/post-reactions/table";
 import { getPostById } from "@/db/posts/queries";
 import { createHono } from "@/hono/factory";
 import { authMiddleware } from "@/hono/middleware/auth";
@@ -13,6 +15,26 @@ import { authMiddleware } from "@/hono/middleware/auth";
 const reactionsEndpoint = createHono();
 
 reactionsEndpoint.use("*", authMiddleware());
+
+function countsToRecord(countsMap: Map<string, number>): Record<string, number> {
+	const counts: Record<string, number> = {};
+	for (const [type, count] of countsMap) {
+		counts[type] = count;
+	}
+	return counts;
+}
+
+async function parseReactionBody(
+	body: unknown,
+): Promise<
+	{ ok: true; reactionType: ReactionType } | { ok: false; status: 400; details: unknown }
+> {
+	const result = upsertReactionSchema.safeParse(body);
+	if (!result.success) {
+		return { ok: false, status: 400, details: result.error.flatten() };
+	}
+	return { ok: true, reactionType: result.data.reactionType };
+}
 
 reactionsEndpoint.post("/:postId/reactions", async (c) => {
 	const user = c.get("user");
@@ -23,16 +45,15 @@ reactionsEndpoint.post("/:postId/reactions", async (c) => {
 		return c.json({ error: "Not found" }, 404);
 	}
 
-	const body = await c.req.json();
-	const result = upsertReactionSchema.safeParse(body);
-	if (!result.success) {
-		return c.json({ error: "Validation failed", details: result.error.flatten() }, 400);
+	const parsed = await parseReactionBody(await c.req.json());
+	if (!parsed.ok) {
+		return c.json({ error: "Validation failed", details: parsed.details }, parsed.status);
 	}
 
 	const reaction = await upsertReaction({
-		postId,
+		target: { kind: "post", postId },
 		userId: user.userId,
-		reactionType: result.data.reactionType,
+		reactionType: parsed.reactionType,
 	});
 
 	return c.json({ data: reaction });
@@ -46,13 +67,8 @@ reactionsEndpoint.get("/:postId/reactions", async (c) => {
 		return c.json({ error: "Not found" }, 404);
 	}
 
-	const countsMap = await getReactionCounts(postId);
-	const counts: Record<string, number> = {};
-	for (const [type, count] of countsMap) {
-		counts[type] = count;
-	}
-
-	return c.json({ data: counts });
+	const countsMap = await getReactionCounts({ kind: "post", postId });
+	return c.json({ data: countsToRecord(countsMap) });
 });
 
 reactionsEndpoint.get("/:postId/my-reaction", async (c) => {
@@ -64,7 +80,7 @@ reactionsEndpoint.get("/:postId/my-reaction", async (c) => {
 		return c.json({ error: "Not found" }, 404);
 	}
 
-	const reaction = await getUserReaction(postId, user.userId);
+	const reaction = await getUserReaction({ kind: "post", postId }, user.userId);
 	return c.json({ data: reaction });
 });
 
@@ -76,7 +92,55 @@ reactionsEndpoint.get("/:postId/reactions/users", async (c) => {
 		return c.json({ error: "Not found" }, 404);
 	}
 
-	const reactions = await getReactionsWithUsers(postId);
+	const reactions = await getReactionsWithUsers({ kind: "post", postId });
+	return c.json({ data: reactions });
+});
+
+function commentTarget(postId: string, commentId: string): ReactionTarget {
+	return { kind: "comment", postId, commentId };
+}
+
+reactionsEndpoint.post("/:postId/comments/:commentId/reactions", async (c) => {
+	const user = c.get("user");
+	const postId = c.req.param("postId");
+	const commentId = c.req.param("commentId");
+
+	const parsed = await parseReactionBody(await c.req.json());
+	if (!parsed.ok) {
+		return c.json({ error: "Validation failed", details: parsed.details }, parsed.status);
+	}
+
+	const reaction = await upsertReaction({
+		target: commentTarget(postId, commentId),
+		userId: user.userId,
+		reactionType: parsed.reactionType,
+	});
+
+	return c.json({ data: reaction });
+});
+
+reactionsEndpoint.get("/:postId/comments/:commentId/reactions", async (c) => {
+	const postId = c.req.param("postId");
+	const commentId = c.req.param("commentId");
+
+	const countsMap = await getReactionCounts(commentTarget(postId, commentId));
+	return c.json({ data: countsToRecord(countsMap) });
+});
+
+reactionsEndpoint.get("/:postId/comments/:commentId/my-reaction", async (c) => {
+	const user = c.get("user");
+	const postId = c.req.param("postId");
+	const commentId = c.req.param("commentId");
+
+	const reaction = await getUserReaction(commentTarget(postId, commentId), user.userId);
+	return c.json({ data: reaction });
+});
+
+reactionsEndpoint.get("/:postId/comments/:commentId/reactions/users", async (c) => {
+	const postId = c.req.param("postId");
+	const commentId = c.req.param("commentId");
+
+	const reactions = await getReactionsWithUsers(commentTarget(postId, commentId));
 	return c.json({ data: reactions });
 });
 
