@@ -17,6 +17,8 @@ vi.mock("@/db/identity/queries", () => ({
 vi.mock("@/db/instance/queries", () => ({
 	getShareCode: vi.fn(),
 	setShareCode: vi.fn(),
+	getMaintenanceConfig: vi.fn(),
+	updateMaintenance: vi.fn(),
 }));
 
 import {
@@ -27,7 +29,12 @@ import {
 	softDeleteMember,
 } from "@/db/identity/queries";
 import { verifySessionCookie } from "@/db/identity/session";
-import { getShareCode, setShareCode } from "@/db/instance/queries";
+import {
+	getMaintenanceConfig,
+	getShareCode,
+	setShareCode,
+	updateMaintenance,
+} from "@/db/instance/queries";
 import adminEndpoint from "./admin";
 
 const mockVerify = vi.mocked(verifySessionCookie);
@@ -38,6 +45,8 @@ const mockRegenerateMemberToken = vi.mocked(regenerateMemberToken);
 const mockSoftDeleteMember = vi.mocked(softDeleteMember);
 const mockGetShareCode = vi.mocked(getShareCode);
 const mockSetShareCode = vi.mocked(setShareCode);
+const mockGetMaintenanceConfig = vi.mocked(getMaintenanceConfig);
+const mockUpdateMaintenance = vi.mocked(updateMaintenance);
 
 function createApi() {
 	const api = new Hono<{ Bindings: { SESSION_SECRET: string } }>().basePath("/api");
@@ -274,6 +283,134 @@ describe("PUT /api/admin/share-code", () => {
 				method: "PUT",
 				headers: { ...adminHeaders(), "Content-Type": "application/json" },
 				body: JSON.stringify({ code: "a".repeat(21) }),
+			},
+			{ SESSION_SECRET: "secret" },
+		);
+
+		expect(res.status).toBe(400);
+	});
+});
+
+describe("GET /api/admin/maintenance", () => {
+	it("returns current maintenance config", async () => {
+		mockGetMaintenanceConfig.mockResolvedValue({
+			enabled: true,
+			message: "Naprawa",
+			subtitle: "Wróć",
+			icon: "wrench",
+		});
+
+		const api = createApi();
+		const res = await api.request(
+			"/api/admin/maintenance",
+			{ headers: adminHeaders() },
+			{ SESSION_SECRET: "secret" },
+		);
+
+		expect(res.status).toBe(200);
+		const body = (await res.json()) as {
+			data: { enabled: boolean; message: string; subtitle: string; icon: string };
+		};
+		expect(body.data).toEqual({
+			enabled: true,
+			message: "Naprawa",
+			subtitle: "Wróć",
+			icon: "wrench",
+		});
+	});
+});
+
+describe("PUT /api/admin/maintenance", () => {
+	it("updates all fields and returns the new config", async () => {
+		mockGetMaintenanceConfig.mockResolvedValue({
+			enabled: true,
+			message: "X",
+			subtitle: "Y",
+			icon: "wrench",
+		});
+
+		const api = createApi();
+		const res = await api.request(
+			"/api/admin/maintenance",
+			{
+				method: "PUT",
+				headers: { ...adminHeaders(), "Content-Type": "application/json" },
+				body: JSON.stringify({ enabled: true, message: "X", subtitle: "Y", icon: "wrench" }),
+			},
+			{ SESSION_SECRET: "secret" },
+		);
+
+		expect(res.status).toBe(200);
+		expect(mockUpdateMaintenance).toHaveBeenCalledWith({
+			enabled: true,
+			message: "X",
+			subtitle: "Y",
+			icon: "wrench",
+		});
+	});
+
+	it("trims and forwards partial update (only enabled)", async () => {
+		mockGetMaintenanceConfig.mockResolvedValue({
+			enabled: true,
+			message: "Wspólniak jest w trakcie naprawy",
+			subtitle: "Wróć za chwilę",
+			icon: "alert-triangle",
+		});
+
+		const api = createApi();
+		const res = await api.request(
+			"/api/admin/maintenance",
+			{
+				method: "PUT",
+				headers: { ...adminHeaders(), "Content-Type": "application/json" },
+				body: JSON.stringify({ enabled: true }),
+			},
+			{ SESSION_SECRET: "secret" },
+		);
+
+		expect(res.status).toBe(200);
+		expect(mockUpdateMaintenance).toHaveBeenCalledWith({ enabled: true });
+	});
+
+	it("rejects message longer than 200 characters", async () => {
+		const api = createApi();
+		const res = await api.request(
+			"/api/admin/maintenance",
+			{
+				method: "PUT",
+				headers: { ...adminHeaders(), "Content-Type": "application/json" },
+				body: JSON.stringify({ message: "a".repeat(201) }),
+			},
+			{ SESSION_SECRET: "secret" },
+		);
+
+		expect(res.status).toBe(400);
+		expect(mockUpdateMaintenance).not.toHaveBeenCalled();
+	});
+
+	it("rejects subtitle longer than 100 characters", async () => {
+		const api = createApi();
+		const res = await api.request(
+			"/api/admin/maintenance",
+			{
+				method: "PUT",
+				headers: { ...adminHeaders(), "Content-Type": "application/json" },
+				body: JSON.stringify({ subtitle: "a".repeat(101) }),
+			},
+			{ SESSION_SECRET: "secret" },
+		);
+
+		expect(res.status).toBe(400);
+	});
+
+	it("rejects icon longer than 50 characters", async () => {
+		const api = createApi();
+		const res = await api.request(
+			"/api/admin/maintenance",
+			{
+				method: "PUT",
+				headers: { ...adminHeaders(), "Content-Type": "application/json" },
+				body: JSON.stringify({ icon: "a".repeat(51) }),
 			},
 			{ SESSION_SECRET: "secret" },
 		);

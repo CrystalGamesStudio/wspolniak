@@ -55,6 +55,10 @@ describe("POST /api/setup", () => {
 			setupCompleted: true,
 			shareCode: null,
 			createdAt: new Date(),
+			maintenanceMode: false,
+			maintenanceMessage: null,
+			maintenanceSubtitle: null,
+			maintenanceIcon: null,
 		});
 		mockCreateUser.mockResolvedValue({
 			id: "user-1",

@@ -11,7 +11,17 @@ describe("instance_config table", () => {
 
 	it("has all expected columns", () => {
 		expect(Object.keys(columns).sort()).toEqual(
-			["id", "familyName", "setupCompleted", "shareCode", "createdAt"].sort(),
+			[
+				"id",
+				"familyName",
+				"setupCompleted",
+				"shareCode",
+				"createdAt",
+				"maintenanceMode",
+				"maintenanceMessage",
+				"maintenanceSubtitle",
+				"maintenanceIcon",
+			].sort(),
 		);
 	});
 
@@ -34,6 +44,27 @@ describe("instance_config table", () => {
 	it("share_code is nullable text", () => {
 		expect(columns.shareCode.dataType).toBe("string");
 		expect(columns.shareCode.notNull).toBe(false);
+	});
+
+	it("maintenance_mode is boolean not null with default false", () => {
+		expect(columns.maintenanceMode.dataType).toBe("boolean");
+		expect(columns.maintenanceMode.notNull).toBe(true);
+		expect(columns.maintenanceMode.hasDefault).toBe(true);
+	});
+
+	it("maintenance_message is nullable text", () => {
+		expect(columns.maintenanceMessage.dataType).toBe("string");
+		expect(columns.maintenanceMessage.notNull).toBe(false);
+	});
+
+	it("maintenance_subtitle is nullable text", () => {
+		expect(columns.maintenanceSubtitle.dataType).toBe("string");
+		expect(columns.maintenanceSubtitle.notNull).toBe(false);
+	});
+
+	it("maintenance_icon is nullable text", () => {
+		expect(columns.maintenanceIcon.dataType).toBe("string");
+		expect(columns.maintenanceIcon.notNull).toBe(false);
 	});
 
 	it("created_at is timestamp not null with default", () => {

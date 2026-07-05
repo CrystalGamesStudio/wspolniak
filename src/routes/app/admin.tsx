@@ -1,8 +1,19 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { ArrowLeft, Check, Copy, Info, Link, Plus, Share2, Trash2 } from "lucide-react";
+import {
+	AlertTriangle,
+	ArrowLeft,
+	Check,
+	Copy,
+	Info,
+	Link,
+	Plus,
+	Share2,
+	Trash2,
+} from "lucide-react";
 import { useState } from "react";
+import { MaintenanceDialog } from "@/components/admin/maintenance-dialog";
 import { ShareCodeDialog } from "@/components/admin/share-code-dialog";
 import { ThemeToggle } from "@/components/theme";
 import { Alert } from "@/components/ui/alert";
@@ -39,6 +50,7 @@ function AdminPage() {
 	const [editingShareCode, setEditingShareCode] = useState(false);
 	const [shareDialogOpen, setShareDialogOpen] = useState(false);
 	const [addDialogOpen, setAddDialogOpen] = useState(false);
+	const [maintenanceDialogOpen, setMaintenanceDialogOpen] = useState(false);
 	const [shareCodeInput, setShareCodeInput] = useState("");
 
 	const configQuery = useQuery({
@@ -134,6 +146,40 @@ function AdminPage() {
 		},
 	});
 
+	const maintenanceQuery = useQuery({
+		queryKey: ["admin", "maintenance"],
+		queryFn: async () => {
+			const res = await fetch("/api/admin/maintenance");
+			if (!res.ok) throw new Error("Nie udało się pobrać konfiguracji trybu awaryjnego");
+			const json = (await res.json()) as {
+				data: { enabled: boolean; message: string; subtitle: string; icon: string };
+			};
+			return json.data;
+		},
+	});
+
+	const maintenanceMutation = useMutation({
+		mutationFn: async (input: {
+			enabled?: boolean;
+			message?: string;
+			subtitle?: string;
+			icon?: string;
+		}) => {
+			const res = await fetch("/api/admin/maintenance", {
+				method: "PUT",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(input),
+			});
+			if (!res.ok) {
+				const err = (await res.json()) as { error: string };
+				throw new Error(err.error);
+			}
+		},
+		onSuccess: async () => {
+			await queryClient.invalidateQueries({ queryKey: ["admin", "maintenance"] });
+		},
+	});
+
 	async function copyToClipboard(text: string) {
 		await navigator.clipboard.writeText(text);
 		setCopiedLink(text);
@@ -181,6 +227,14 @@ function AdminPage() {
 					<Button
 						variant="ghost"
 						size="lg"
+						onClick={() => setMaintenanceDialogOpen(true)}
+						title="Tryb awaryjny"
+					>
+						<AlertTriangle className="h-4 w-4" />
+					</Button>
+					<Button
+						variant="ghost"
+						size="lg"
 						onClick={() => setShareDialogOpen(true)}
 						title="Udostępnianie"
 					>
@@ -189,6 +243,25 @@ function AdminPage() {
 					<ThemeToggle size="lg" className="hidden sm:block" />
 				</div>
 			</div>
+
+			<MaintenanceDialog
+				open={maintenanceDialogOpen}
+				onOpenChange={setMaintenanceDialogOpen}
+				config={
+					maintenanceQuery.data ?? {
+						enabled: false,
+						message: "Wspólniak jest w trakcie naprawy",
+						subtitle: "Wróć za chwilę",
+						icon: "alert-triangle",
+					}
+				}
+				isSaving={maintenanceMutation.isPending}
+				errorMessage={maintenanceMutation.isError ? maintenanceMutation.error.message : undefined}
+				onSave={(input) => {
+					maintenanceMutation.reset();
+					maintenanceMutation.mutate(input);
+				}}
+			/>
 
 			<ShareCodeDialog
 				open={shareDialogOpen}

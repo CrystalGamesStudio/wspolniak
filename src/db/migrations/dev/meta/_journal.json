@@ -78,6 +78,13 @@
       "when": 1783230517513,
       "tag": "0010_peaceful_runaways",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1783246709493,
+      "tag": "0011_steady_anthem",
+      "breakpoints": true
     }
   ]
 }

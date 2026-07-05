@@ -5,7 +5,12 @@ import {
 	regenerateMemberToken,
 	softDeleteMember,
 } from "@/db/identity/queries";
-import { getShareCode, setShareCode } from "@/db/instance/queries";
+import {
+	getMaintenanceConfig,
+	getShareCode,
+	setShareCode,
+	updateMaintenance,
+} from "@/db/instance/queries";
 import { createHono, getOrigin } from "@/hono/factory";
 import { adminMiddleware } from "@/hono/middleware/admin";
 import { authMiddleware } from "@/hono/middleware/auth";
@@ -71,6 +76,49 @@ adminEndpoint.put("/share-code", async (c) => {
 
 	await setShareCode(code);
 	return c.json({ data: { code } });
+});
+
+adminEndpoint.get("/maintenance", async (c) => {
+	const config = await getMaintenanceConfig();
+	return c.json({ data: config });
+});
+
+adminEndpoint.put("/maintenance", async (c) => {
+	const body = await c.req.json<{
+		enabled?: boolean;
+		message?: string;
+		subtitle?: string;
+		icon?: string;
+	}>();
+
+	const message = body.message?.trim();
+	const subtitle = body.subtitle?.trim();
+	const icon = body.icon?.trim();
+
+	if (message !== undefined && message.length > 200) {
+		return c.json({ error: "Message max 200 characters" }, 400);
+	}
+	if (subtitle !== undefined && subtitle.length > 100) {
+		return c.json({ error: "Subtitle max 100 characters" }, 400);
+	}
+	if (icon !== undefined && icon.length > 50) {
+		return c.json({ error: "Icon max 50 characters" }, 400);
+	}
+
+	const update: {
+		enabled?: boolean;
+		message?: string;
+		subtitle?: string;
+		icon?: string;
+	} = {};
+	if (typeof body.enabled === "boolean") update.enabled = body.enabled;
+	if (message) update.message = message;
+	if (subtitle) update.subtitle = subtitle;
+	if (icon) update.icon = icon;
+
+	await updateMaintenance(update);
+	const config = await getMaintenanceConfig();
+	return c.json({ data: config });
 });
 
 export default adminEndpoint;
