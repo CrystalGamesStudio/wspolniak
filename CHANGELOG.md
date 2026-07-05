@@ -1,3 +1,10 @@
+# [1.45.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.44.0...v1.45.0) (2026-07-05)
+
+
+### Features
+
+* **comments:** add replies to comments ([#74](https://github.com/CrystalGamesStudio/wspolniak/issues/74)) ([3ebf625](https://github.com/CrystalGamesStudio/wspolniak/commit/3ebf62594e3fe5e73009eb5a9586459435d30093))
+
 # [1.44.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.43.0...v1.44.0) (2026-07-05)
 
 
