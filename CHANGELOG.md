@@ -1,3 +1,10 @@
+# [1.43.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.42.0...v1.43.0) (2026-07-05)
+
+
+### Features
+
+* **reactions:** redesign to heart/laugh/flame + reactions in comments ([303220e](https://github.com/CrystalGamesStudio/wspolniak/commit/303220e2ea1a2b4606718fea8c546116036defd5)), closes [#72](https://github.com/CrystalGamesStudio/wspolniak/issues/72)
+
 # [1.42.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.41.0...v1.42.0) (2026-07-04)
 
 
