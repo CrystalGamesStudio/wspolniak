@@ -1,3 +1,10 @@
+# [1.44.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.43.0...v1.44.0) (2026-07-05)
+
+
+### Features
+
+* **maintenance:** add configurable maintenance mode (tryb awaryjny) ([db3b812](https://github.com/CrystalGamesStudio/wspolniak/commit/db3b812e2e01236860a8945f9efb5abd06b3a150)), closes [#73](https://github.com/CrystalGamesStudio/wspolniak/issues/73)
+
 # [1.43.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.42.0...v1.43.0) (2026-07-05)
 
 
