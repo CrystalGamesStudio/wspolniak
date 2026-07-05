@@ -4,6 +4,8 @@ import { MessageCircleIcon } from "lucide-react";
 import { useState } from "react";
 import { CommentActions } from "@/components/app/comment-actions";
 import { optimisticCommentMutation } from "@/components/app/optimistic-comments";
+import { ReactionBar } from "@/components/app/reaction-bar";
+import { ReactionUsers } from "@/components/app/reaction-users";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { LoaderIcon } from "@/components/ui/spinner";
@@ -91,15 +93,21 @@ export function CommentSection({ postId, currentUserId, currentUserRole }: Comme
 										minute: "2-digit",
 									})}
 								</time>
-								{canManage && (
-									<div className="ml-auto">
+								<div className="ml-auto flex items-center gap-1">
+									<ReactionUsers target={{ kind: "comment", postId, commentId: comment.id }} />
+									{canManage && (
 										<CommentActions postId={postId} commentId={comment.id} body={comment.body} />
-									</div>
-								)}
+									)}
+								</div>
 							</div>
 							<p className="whitespace-pre-wrap break-words text-sm text-foreground">
 								{comment.body}
 							</p>
+							{currentUserId && (
+								<div className="mt-2 flex items-center gap-2">
+									<ReactionBar target={{ kind: "comment", postId, commentId: comment.id }} />
+								</div>
+							)}
 						</div>
 					);
 				})}

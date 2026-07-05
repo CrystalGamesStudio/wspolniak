@@ -71,6 +71,13 @@
       "when": 1779277281920,
       "tag": "0009_supreme_switch",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1783230517513,
+      "tag": "0010_peaceful_runaways",
+      "breakpoints": true
     }
   ]
 }

@@ -3,7 +3,7 @@ import { ExternalLinkIcon, MessageCircleIcon, RotateCcwIcon } from "lucide-react
 import { useState } from "react";
 import { ImageLightbox } from "@/components/app/image-lightbox";
 import { PostActions } from "@/components/app/post-actions";
-import { ReactionButton } from "@/components/app/reaction-button";
+import { ReactionBar } from "@/components/app/reaction-bar";
 import { ReactionUsers } from "@/components/app/reaction-users";
 import { Spinner } from "@/components/ui/spinner";
 import { getImageUrl } from "@/images/client";
@@ -84,7 +84,7 @@ export function Feed({
 								{formatRelativeTime(post.createdAt)}
 							</time>
 							<div className="ml-auto flex items-center gap-1">
-								<ReactionUsers postId={post.id} />
+								<ReactionUsers target={{ kind: "post", postId: post.id }} />
 								{(post.authorId === currentUserId || currentUserRole === "admin") && (
 									<PostActions postId={post.id} description={post.description} />
 								)}
@@ -141,7 +141,7 @@ export function Feed({
 									<MessageCircleIcon className="size-6 sm:size-4" />
 									{post.commentCount ?? 0}
 								</a>
-								<ReactionButton postId={post.id} currentUserId={currentUserId} />
+								<ReactionBar target={{ kind: "post", postId: post.id }} />
 							</div>
 							<a
 								href={`/app/post/${post.id}`}
