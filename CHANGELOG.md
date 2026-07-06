@@ -1,3 +1,10 @@
+# [1.49.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.48.0...v1.49.0) (2026-07-06)
+
+
+### Features
+
+* **perf:** SSR feed preload + optimistic post creation [#78](https://github.com/CrystalGamesStudio/wspolniak/issues/78) ([28ed064](https://github.com/CrystalGamesStudio/wspolniak/commit/28ed0646ffc92bf7cfca9bbeed6fbc4be9c6b017))
+
 # [1.48.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.47.0...v1.48.0) (2026-07-06)
 
 
