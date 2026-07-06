@@ -1,3 +1,10 @@
+# [1.47.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.46.0...v1.47.0) (2026-07-06)
+
+
+### Features
+
+* **pinned:** add pinned posts (F7) [#76](https://github.com/CrystalGamesStudio/wspolniak/issues/76) ([c97dac9](https://github.com/CrystalGamesStudio/wspolniak/commit/c97dac92c95d8a6e20576e4492eefd22bcc74834))
+
 # [1.46.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.45.0...v1.46.0) (2026-07-06)
 
 
