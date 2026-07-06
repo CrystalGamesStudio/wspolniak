@@ -1,3 +1,10 @@
+# [1.46.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.45.0...v1.46.0) (2026-07-06)
+
+
+### Features
+
+* **mentions:** add [@mentions](https://github.com/mentions) with dropdown + push notifications ([#75](https://github.com/CrystalGamesStudio/wspolniak/issues/75)) ([2cffbb5](https://github.com/CrystalGamesStudio/wspolniak/commit/2cffbb55b1bfde96d4d554210cdf382525df9db0))
+
 # [1.45.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.44.0...v1.45.0) (2026-07-05)
 
 
