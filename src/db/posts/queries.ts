@@ -41,7 +41,7 @@ export async function createPost(input: CreatePostInput) {
 	return { post, images };
 }
 
-interface PostWithAuthorAndImages {
+export interface PostWithAuthorAndImages {
 	id: string;
 	authorId: string;
 	description: string | null;

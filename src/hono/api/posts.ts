@@ -1,18 +1,15 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { canDeletePost, canEditPost } from "@/core/authorization";
+import { assembleFeedPage } from "@/core/feed";
 import { notifyMentions, notifyNewPost } from "@/core/notify";
 import { buildPushDeps } from "@/core/push-deps";
-import { countCommentsByPosts } from "@/db/comments/queries";
 import { createMentions, deleteMentionsByPost } from "@/db/mentions/queries";
-import { listPinnedPostIds } from "@/db/pinned-posts";
 import {
 	addPostImages,
 	countUserPostsToday,
 	createPost,
 	deletePostImage,
 	getPostById,
-	listPaginatedPosts,
-	listPostsByIds,
 	reorderPostImages,
 	softDeletePost,
 	updatePostDescription,
@@ -76,27 +73,12 @@ postsEndpoint.get("/", async (c) => {
 		};
 	}
 
-	const pinnedIds = await listPinnedPostIds();
-	const result = await listPaginatedPosts({ limit: 10, cursor, excludeIds: pinnedIds });
-
-	// Pinned posts live only on the first page (no cursor), always on top, excluded from chronology.
-	let pinned: typeof result.posts = [];
-	if (!cursor && pinnedIds.length > 0) {
-		pinned = await listPostsByIds(pinnedIds);
-	}
-	const allPosts = [...pinned.map((p) => ({ ...p, pinned: true })), ...result.posts];
-
-	const postIds = allPosts.map((p) => p.id);
-	const commentCounts = await countCommentsByPosts(postIds);
-	const postsWithComments = allPosts.map((p) => ({
-		...p,
-		commentCount: commentCounts.get(p.id) ?? 0,
-	}));
-
-	return c.json({
-		data: postsWithComments,
-		meta: { nextCursor: result.nextCursor, imageAccountHash: c.env.CLOUDFLARE_IMAGES_ACCOUNT_HASH },
+	const page = await assembleFeedPage({
+		cursor,
+		imageAccountHash: c.env.CLOUDFLARE_IMAGES_ACCOUNT_HASH,
 	});
+
+	return c.json(page);
 });
 
 postsEndpoint.get("/:id", async (c) => {

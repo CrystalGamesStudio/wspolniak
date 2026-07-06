@@ -2,10 +2,19 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
+import { createPostMutationOptions, type FeedImage } from "@/components/app/feed-query";
 import type { Mention } from "@/components/app/mention-input";
 import { NewPostForm } from "@/components/app/new-post-form";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { compressImage } from "@/images/compress";
+
+interface CreatePostVariables {
+	description: string | null;
+	files: File[];
+	mentions: Mention[];
+	/** Lokalne podglądy zdjęć do optimistycznego posta (puste = tekst pojawia się natychmiast, zdjęcia po confirmie). */
+	images: FeedImage[];
+}
 
 async function uploadFile(file: File): Promise<string> {
 	const urlRes = await fetch("/api/app/images/upload-url", { method: "POST" });
@@ -21,7 +30,7 @@ async function uploadFile(file: File): Promise<string> {
 	return data.cfImageId;
 }
 
-async function createPost(input: { description: string; files: File[]; mentions: Mention[] }) {
+async function createPost(input: CreatePostVariables): Promise<unknown> {
 	const cfImageIds = await Promise.all(input.files.map(uploadFile));
 
 	const res = await fetch("/api/app/posts", {
@@ -51,14 +60,11 @@ export const Route = createFileRoute("/app/new")({
 function NewPostPage() {
 	const navigate = useNavigate();
 	const queryClient = useQueryClient();
+	const { session } = Route.useRouteContext();
 
-	const mutation = useMutation({
-		mutationFn: createPost,
-		onSuccess: async () => {
-			await queryClient.invalidateQueries({ queryKey: ["posts"] });
-			navigate({ to: "/app" });
-		},
-	});
+	const mutation = useMutation(
+		createPostMutationOptions(queryClient, { id: session.userId, name: session.name }, createPost),
+	);
 
 	return (
 		<div className="max-w-2xl bg-background px-4 py-6 pb-50 sm:pb-6">
@@ -80,7 +86,20 @@ function NewPostPage() {
 				</Alert>
 			)}
 
-			<NewPostForm onSubmit={(data) => mutation.mutate(data)} isSubmitting={mutation.isPending} />
+			<NewPostForm
+				onSubmit={(data) => {
+					mutation.mutate({
+						description: data.description || null,
+						files: data.files,
+						mentions: data.mentions,
+						images: [],
+					});
+					// Optimistic UI: wracamy do feeda natychmiast — post pojawia się na górze z badge "Publikowanie…",
+					// upload i create biegną w tle; onSuccess (invalidate) podmieni placeholder na prawdziwy post.
+					navigate({ to: "/app" });
+				}}
+				isSubmitting={mutation.isPending}
+			/>
 		</div>
 	);
 }

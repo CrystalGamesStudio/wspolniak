@@ -1,0 +1,2 @@
+CREATE INDEX "posts_created_at_id_idx" ON "posts" USING btree ("created_at" DESC NULLS LAST,"id" DESC NULLS LAST);--> statement-breakpoint
+CREATE INDEX "posts_author_id_idx" ON "posts" USING btree ("author_id");

@@ -1,66 +1,39 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { infiniteQueryOptions, useInfiniteQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Feed } from "@/components/app/feed";
+import { type FeedPage, feedQueryKey } from "@/components/app/feed-query";
 import { PullToRefresh } from "@/components/app/pull-to-refresh";
-import { Spinner } from "@/components/ui/spinner";
+import { getFeedPage } from "@/core/functions/feed";
 
-interface FeedPost {
-	id: string;
-	authorId: string;
-	description: string | null;
-	createdAt: string;
-	updatedAt: string;
-	author: { id: string; name: string };
-	images: {
-		id: string;
-		postId: string;
-		cfImageId: string;
-		displayOrder: number;
-		createdAt: string;
-	}[];
-}
+type FeedCursor = NonNullable<FeedPage["meta"]["nextCursor"]>;
 
-interface FeedPage {
-	data: FeedPost[];
-	meta: {
-		nextCursor: { createdAt: string; id: string } | null;
-		imageAccountHash: string;
-	};
-}
-
-async function fetchPosts({ pageParam }: { pageParam?: string }): Promise<FeedPage> {
-	const url = pageParam ? `/api/app/posts?cursor=${pageParam}` : "/api/app/posts";
-	const res = await fetch(url);
-	if (!res.ok) throw new Error("Nie udało się pobrać postów");
-	return res.json() as Promise<FeedPage>;
-}
-
-export const Route = createFileRoute("/app/")({
-	component: FeedPage,
+/**
+ * Wspólne opcje infinite query feedu — używane przez SSR loader (preload pierwszej strony)
+ * oraz przez komponent (odczyt z cache + fetchNextPage). Serwer fn getFeedPage woła
+ * assembleFeedPage server-side; na kliencie RPC-uje. Wynik ma daty zserializowane do ISO (string).
+ */
+export const feedOptions = infiniteQueryOptions({
+	queryKey: feedQueryKey,
+	queryFn: ({ pageParam }: { pageParam: FeedCursor | undefined }) =>
+		getFeedPage({ data: { cursor: pageParam } }).then((page) => page as unknown as FeedPage),
+	initialPageParam: undefined as FeedCursor | undefined,
+	getNextPageParam: (lastPage: FeedPage) => lastPage.meta.nextCursor ?? undefined,
 });
 
-function FeedPage() {
+export const Route = createFileRoute("/app/")({
+	// SSR preload: pierwsza strona feedu trafia do cache przed renderem HTML,
+	// eliminując czarny ekran i podwójny loader (dane przychodzą razem z HTML).
+	loader: async ({ context }) => {
+		await context.queryClient.ensureInfiniteQueryData(feedOptions);
+	},
+	component: FeedScreen,
+});
+
+function FeedScreen() {
 	const { session } = Route.useRouteContext();
-
-	const { data, isLoading, hasNextPage, isFetchingNextPage, fetchNextPage, refetch } =
-		useInfiniteQuery({
-			queryKey: ["posts"],
-			queryFn: fetchPosts,
-			initialPageParam: undefined as string | undefined,
-			getNextPageParam: (lastPage) => {
-				const cursor = lastPage.meta.nextCursor;
-				return cursor ? `${cursor.createdAt}_${cursor.id}` : undefined;
-			},
-		});
-
-	if (isLoading) {
-		return (
-			<div className="flex min-h-screen items-center justify-center bg-background">
-				<Spinner size={8} />
-			</div>
-		);
-	}
+	const { data, hasNextPage, isFetchingNextPage, fetchNextPage, refetch } =
+		useInfiniteQuery(feedOptions);
 
 	const allPosts = data?.pages.flatMap((page) => page.data) ?? [];
 	const imageAccountHash = data?.pages[0]?.meta.imageAccountHash ?? "";
