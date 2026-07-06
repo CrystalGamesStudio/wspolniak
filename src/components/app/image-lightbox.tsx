@@ -1,5 +1,14 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-import { ChevronLeft, ChevronRight, Download, Loader2, X } from "lucide-react";
+import {
+	ChevronLeft,
+	ChevronRight,
+	Download,
+	Loader2,
+	Maximize,
+	X,
+	ZoomIn,
+	ZoomOut,
+} from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { downloadImage } from "@/lib/download-image";
 
@@ -17,6 +26,9 @@ interface ImageLightboxProps {
 }
 
 const SWIPE_THRESHOLD = 50;
+const MIN_ZOOM = 1;
+const MAX_ZOOM = 4;
+const ZOOM_STEP = 1;
 
 export function ImageLightbox({ images, initialIndex = 0, open, onClose }: ImageLightboxProps) {
 	const [visible, setVisible] = useState(false);
@@ -25,19 +37,27 @@ export function ImageLightbox({ images, initialIndex = 0, open, onClose }: Image
 	const [slideDirection, setSlideDirection] = useState<"right" | "left">("right");
 	const [downloading, setDownloading] = useState(false);
 	const [downloadProgress, setDownloadProgress] = useState(0);
+	const [zoom, setZoom] = useState(MIN_ZOOM);
+	const [offset, setOffset] = useState({ x: 0, y: 0 });
+	const [isPanning, setIsPanning] = useState(false);
 	const touchStartRef = useRef<{ x: number; y: number } | null>(null);
 	const wheelAccumRef = useRef(0);
+	const panStartRef = useRef<{ x: number; y: number; offsetX: number; offsetY: number } | null>(
+		null,
+	);
 
 	const goNext = useCallback(() => {
 		if (images.length <= 1) return;
 		setSlideDirection("right");
 		setCurrentIndex((i) => (i + 1) % images.length);
+		setZoom(MIN_ZOOM);
 	}, [images.length]);
 
 	const goPrev = useCallback(() => {
 		if (images.length <= 1) return;
 		setSlideDirection("left");
 		setCurrentIndex((i) => (i - 1 + images.length) % images.length);
+		setZoom(MIN_ZOOM);
 	}, [images.length]);
 
 	const handleClose = useCallback(() => {
@@ -77,26 +97,71 @@ export function ImageLightbox({ images, initialIndex = 0, open, onClose }: Image
 		setVisible(true);
 		setAnimatingOut(false);
 		setCurrentIndex(initialIndex);
+		setZoom(MIN_ZOOM);
 		wheelAccumRef.current = 0;
 
 		document.body.style.overflow = "hidden";
 		document.addEventListener("keydown", handleKeyDown);
 		document.addEventListener("wheel", handleWheel, { passive: false });
 
+		const handleMouseMove = (e: MouseEvent) => {
+			const start = panStartRef.current;
+			if (!start) return;
+			setOffset({
+				x: start.offsetX + (e.clientX - start.x),
+				y: start.offsetY + (e.clientY - start.y),
+			});
+		};
+		const handleMouseUp = () => {
+			panStartRef.current = null;
+			setIsPanning(false);
+		};
+		document.addEventListener("mousemove", handleMouseMove);
+		document.addEventListener("mouseup", handleMouseUp);
+
 		return () => {
 			document.body.style.overflow = "";
 			document.removeEventListener("keydown", handleKeyDown);
 			document.removeEventListener("wheel", handleWheel);
+			document.removeEventListener("mousemove", handleMouseMove);
+			document.removeEventListener("mouseup", handleMouseUp);
 		};
 	}, [open, initialIndex, handleKeyDown, handleWheel]);
 
 	const handleTouchStart = (e: React.TouchEvent) => {
 		const touch = e.touches[0];
 		if (!touch) return;
-		touchStartRef.current = { x: touch.clientX, y: touch.clientY };
+		if (zoom > MIN_ZOOM) {
+			panStartRef.current = {
+				x: touch.clientX,
+				y: touch.clientY,
+				offsetX: offset.x,
+				offsetY: offset.y,
+			};
+			setIsPanning(true);
+		} else {
+			touchStartRef.current = { x: touch.clientX, y: touch.clientY };
+		}
+	};
+
+	const handleTouchMove = (e: React.TouchEvent) => {
+		const start = panStartRef.current;
+		if (!start) return;
+		const touch = e.touches[0];
+		if (!touch) return;
+		e.preventDefault();
+		setOffset({
+			x: start.offsetX + (touch.clientX - start.x),
+			y: start.offsetY + (touch.clientY - start.y),
+		});
 	};
 
 	const handleTouchEnd = (e: React.TouchEvent) => {
+		if (panStartRef.current) {
+			panStartRef.current = null;
+			setIsPanning(false);
+			return;
+		}
 		const start = touchStartRef.current;
 		if (!start) return;
 		touchStartRef.current = null;
@@ -131,20 +196,40 @@ export function ImageLightbox({ images, initialIndex = 0, open, onClose }: Image
 			role="dialog"
 			aria-modal="true"
 			data-state={isOpen ? "open" : "closed"}
-			className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 transition-opacity duration-150 data-[state=open]:animate-in data-[state=open]:fade-in data-[state=closed]:animate-out data-[state=closed]:fade-out"
+			className="fixed top-0 left-0 right-0 h-dvh z-50 flex flex-col bg-black/90 transition-opacity duration-150 data-[state=open]:animate-in data-[state=open]:fade-in data-[state=closed]:animate-out data-[state=closed]:fade-out"
 			onClick={handleClose}
 			onKeyDown={(e) => {
 				if (e.key === "Enter" || e.key === " ") handleClose();
 			}}
 			onTouchStart={handleTouchStart}
+			onTouchMove={handleTouchMove}
 			onTouchEnd={handleTouchEnd}
 			style={{ touchAction: "none" }}
 		>
-			<div key={currentIndex} className={`relative max-h-screen max-w-screen-lg p-4 ${slideClass}`}>
+			<div
+				key={currentIndex}
+				className={`relative flex max-h-screen min-h-0 flex-1 items-center justify-center p-4 ${slideClass}`}
+			>
 				<img
 					src={image.src}
 					alt={image.alt}
-					className="max-h-[85vh] max-w-full rounded-lg object-contain"
+					className={`max-h-[72vh] max-w-full rounded-lg object-contain ${isPanning ? "" : "transition-transform duration-150"}`}
+					style={
+						zoom > MIN_ZOOM
+							? { transform: `translate(${offset.x}px, ${offset.y}px) scale(${zoom})` }
+							: undefined
+					}
+					onMouseDown={(e) => {
+						e.stopPropagation();
+						if (zoom <= MIN_ZOOM) return;
+						panStartRef.current = {
+							x: e.clientX,
+							y: e.clientY,
+							offsetX: offset.x,
+							offsetY: offset.y,
+						};
+						setIsPanning(true);
+					}}
 					onClick={(e) => e.stopPropagation()}
 					onKeyDown={(e) => e.stopPropagation()}
 				/>
@@ -216,6 +301,42 @@ export function ImageLightbox({ images, initialIndex = 0, open, onClose }: Image
 					</button>
 				</>
 			)}
+
+			<div className="z-[60] mb-36 mt-2 flex gap-1 self-center rounded-full border border-white/10 bg-black/50 p-1 shadow-lg backdrop-blur-md sm:mb-6">
+				<button
+					type="button"
+					onClick={(e) => {
+						e.stopPropagation();
+						setZoom((z) => Math.min(z + ZOOM_STEP, MAX_ZOOM));
+					}}
+					className="rounded-full p-3 text-white transition-colors hover:bg-white/20 sm:p-2"
+					aria-label="Powiększ zdjęcie"
+				>
+					<ZoomIn className="h-8 w-8 sm:h-5 sm:w-5" />
+				</button>
+				<button
+					type="button"
+					onClick={(e) => {
+						e.stopPropagation();
+						setZoom((z) => Math.max(z - ZOOM_STEP, MIN_ZOOM));
+					}}
+					className="rounded-full p-3 text-white transition-colors hover:bg-white/20 sm:p-2"
+					aria-label="Pomniejsz zdjęcie"
+				>
+					<ZoomOut className="h-8 w-8 sm:h-5 sm:w-5" />
+				</button>
+				<button
+					type="button"
+					onClick={(e) => {
+						e.stopPropagation();
+						setZoom(MIN_ZOOM);
+					}}
+					className="rounded-full p-3 text-white transition-colors hover:bg-white/20 sm:p-2"
+					aria-label="Wyzeruj powiększenie"
+				>
+					<Maximize className="h-8 w-8 sm:h-5 sm:w-5" />
+				</button>
+			</div>
 		</div>
 	);
 }

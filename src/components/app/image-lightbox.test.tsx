@@ -170,4 +170,113 @@ describe("ImageLightbox", () => {
 			expect(screen.getByRole("img").getAttribute("src")).toBe("https://example.com/1.jpg");
 		});
 	});
+
+	describe("zoom", () => {
+		it("renders zoom controls when open", () => {
+			render(<ImageLightbox images={images} open={true} onClose={() => {}} />);
+
+			expect(screen.getByLabelText("Powiększ zdjęcie")).toBeDefined();
+			expect(screen.getByLabelText("Pomniejsz zdjęcie")).toBeDefined();
+			expect(screen.getByLabelText("Wyzeruj powiększenie")).toBeDefined();
+		});
+
+		it("starts at scale 1 (no transform) and increases zoom on zoom-in click", () => {
+			render(<ImageLightbox images={images} open={true} onClose={() => {}} />);
+			const img = screen.getByRole("img");
+
+			expect(img.style.transform).toBe("");
+
+			fireEvent.click(screen.getByLabelText("Powiększ zdjęcie"));
+
+			expect(img.style.transform).toContain("scale(2)");
+		});
+
+		it("decreases zoom on zoom-out but never below 1", () => {
+			render(<ImageLightbox images={images} open={true} onClose={() => {}} />);
+			const img = screen.getByRole("img");
+
+			fireEvent.click(screen.getByLabelText("Powiększ zdjęcie"));
+			expect(img.style.transform).toContain("scale(2)");
+
+			fireEvent.click(screen.getByLabelText("Pomniejsz zdjęcie"));
+			fireEvent.click(screen.getByLabelText("Pomniejsz zdjęcie"));
+			fireEvent.click(screen.getByLabelText("Pomniejsz zdjęcie"));
+
+			expect(img.style.transform).toBe("");
+		});
+
+		it("resets zoom to 1 when navigating to another image", async () => {
+			const user = userEvent.setup();
+			render(<ImageLightbox images={images} open={true} onClose={() => {}} />);
+
+			fireEvent.click(screen.getByLabelText("Powiększ zdjęcie"));
+			expect(screen.getByRole("img").style.transform).toContain("scale(2)");
+
+			await user.click(screen.getByLabelText("Następne zdjęcie"));
+
+			expect(screen.getByRole("img").style.transform).toBe("");
+		});
+
+		it("resets zoom when lightbox reopens", () => {
+			const { rerender } = render(<ImageLightbox images={images} open={true} onClose={() => {}} />);
+
+			fireEvent.click(screen.getByLabelText("Powiększ zdjęcie"));
+			expect(screen.getByRole("img").style.transform).toContain("scale(2)");
+
+			rerender(<ImageLightbox images={images} open={false} onClose={() => {}} />);
+			rerender(<ImageLightbox images={images} open={true} onClose={() => {}} />);
+
+			expect(screen.getByRole("img").style.transform).toBe("");
+		});
+
+		it("resets zoom to 1 via reset button", () => {
+			render(<ImageLightbox images={images} open={true} onClose={() => {}} />);
+
+			fireEvent.click(screen.getByLabelText("Powiększ zdjęcie"));
+			fireEvent.click(screen.getByLabelText("Powiększ zdjęcie"));
+			expect(screen.getByRole("img").style.transform).toContain("scale(3)");
+
+			fireEvent.click(screen.getByLabelText("Wyzeruj powiększenie"));
+
+			expect(screen.getByRole("img").style.transform).toBe("");
+		});
+
+		it("pans the image when zoomed in and dragged with mouse", () => {
+			render(<ImageLightbox images={images} open={true} onClose={() => {}} />);
+
+			fireEvent.click(screen.getByLabelText("Powiększ zdjęcie"));
+
+			const img = screen.getByRole("img");
+			fireEvent.mouseDown(img, { clientX: 100, clientY: 100 });
+			fireEvent.mouseMove(document, { clientX: 150, clientY: 120 });
+			fireEvent.mouseUp(document);
+
+			expect(img.style.transform).toContain("translate(50px, 20px)");
+		});
+
+		it("does not pan when zoom is 1 (no zoom)", () => {
+			render(<ImageLightbox images={images} open={true} onClose={() => {}} />);
+
+			const img = screen.getByRole("img");
+			fireEvent.mouseDown(img, { clientX: 100, clientY: 100 });
+			fireEvent.mouseMove(document, { clientX: 200, clientY: 200 });
+			fireEvent.mouseUp(document);
+
+			expect(img.style.transform).toBe("");
+		});
+
+		it("pans instead of navigating on swipe when zoomed in", () => {
+			render(<ImageLightbox images={images} initialIndex={0} open={true} onClose={() => {}} />);
+
+			fireEvent.click(screen.getByLabelText("Powiększ zdjęcie"));
+
+			const dialog = screen.getByRole("dialog");
+			touchStart(dialog, 200, 100);
+			fireEvent.touchMove(dialog, { touches: [{ clientX: 100, clientY: 100 }] });
+			touchEnd(dialog, 100, 100);
+
+			expect(screen.getByRole("img").getAttribute("src")).toBe("https://example.com/1.jpg");
+			expect(screen.getByRole("img").style.transform).toContain("translate(-100px, 0px)");
+		});
+	});
 });
