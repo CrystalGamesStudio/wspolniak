@@ -3,11 +3,11 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { MessageCircleIcon } from "lucide-react";
 import { useState } from "react";
 import { CommentItem } from "@/components/app/comment-item";
+import { type Mention, MentionInput } from "@/components/app/mention-input";
 import { optimisticCommentMutation } from "@/components/app/optimistic-comments";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { LoaderIcon } from "@/components/ui/spinner";
-import { Textarea } from "@/components/ui/textarea";
 
 export interface CommentWithAuthor {
 	id: string;
@@ -34,11 +34,11 @@ async function fetchComments(postId: string): Promise<CommentWithAuthor[]> {
 	return json.data;
 }
 
-async function addComment(postId: string, body: string) {
+async function addComment(postId: string, body: string, mentions: Mention[]) {
 	const res = await fetch(`/api/app/posts/${postId}/comments`, {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify({ body }),
+		body: JSON.stringify({ body, mentions }),
 	});
 	if (!res.ok) {
 		const json = (await res.json()) as { error: string };
@@ -50,6 +50,7 @@ async function addComment(postId: string, body: string) {
 export function CommentSection({ postId, currentUserId, currentUserRole }: CommentSectionProps) {
 	const queryClient = useQueryClient();
 	const [newComment, setNewComment] = useState("");
+	const [mentions, setMentions] = useState<Mention[]>([]);
 
 	const { data: comments = [] } = useQuery({
 		queryKey: ["comments", postId],
@@ -62,11 +63,13 @@ export function CommentSection({ postId, currentUserId, currentUserRole }: Comme
 	});
 
 	const mutation = useMutation({
-		mutationFn: (body: string) => addComment(postId, body),
-		onMutate: optimistic.onMutate,
-		onError: optimistic.onError,
+		mutationFn: ({ body, mentions: ms }: { body: string; mentions: Mention[] }) =>
+			addComment(postId, body, ms),
+		onMutate: async ({ body }) => optimistic.onMutate(body),
+		onError: (error, _vars, context) => optimistic.onError(error, "", context),
 		onSuccess: async () => {
 			setNewComment("");
+			setMentions([]);
 			await optimistic.onSuccess();
 		},
 	});
@@ -96,10 +99,12 @@ export function CommentSection({ postId, currentUserId, currentUserRole }: Comme
 						<AlertDescription>{mutation.error.message}</AlertDescription>
 					</Alert>
 				)}
-				<Textarea
+				<MentionInput
 					value={newComment}
-					onChange={(e) => setNewComment(e.target.value)}
-					placeholder="Napisz komentarz..."
+					onChange={setNewComment}
+					onMentionsChange={setMentions}
+					currentUserId={currentUserId}
+					placeholder="Napisz komentarz... (@aby kogoś oznaczyć)"
 					maxLength={1000}
 					rows={2}
 				/>
@@ -109,7 +114,9 @@ export function CommentSection({ postId, currentUserId, currentUserRole }: Comme
 						className="h-11 sm:h-8"
 						onClick={() => {
 							mutation.reset();
-							mutation.mutate(newComment);
+							// Tylko wspomnienia, których `@imię` nadal figuruje w tekście.
+							const validMentions = mentions.filter((m) => newComment.includes(`@${m.name}`));
+							mutation.mutate({ body: newComment, mentions: validMentions });
 						}}
 						disabled={mutation.isPending || !newComment.trim()}
 					>

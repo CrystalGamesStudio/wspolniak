@@ -4,6 +4,7 @@ import {
 	createUser,
 	findUserByTokenHash,
 	listActiveMembers,
+	listMembersForMentions,
 	regenerateMemberToken,
 	softDeleteMember,
 } from "./queries";
@@ -209,5 +210,35 @@ describe("softDeleteMember", () => {
 
 		expect(mockUpdate).toHaveBeenCalledWith(users);
 		expect(mockSet).toHaveBeenCalledWith(expect.objectContaining({ deletedAt: expect.any(Date) }));
+	});
+});
+
+describe("listMembersForMentions", () => {
+	function mockSelectChain(rows: unknown[]) {
+		const mockLimit = vi.fn().mockResolvedValue(rows);
+		const mockOrderBy = vi.fn().mockReturnValue({ limit: mockLimit });
+		const mockWhere = vi.fn().mockReturnValue({ orderBy: mockOrderBy });
+		const mockFrom = vi.fn().mockReturnValue({ where: mockWhere });
+		const mockSelect = vi.fn().mockReturnValue({ from: mockFrom });
+		mockGetDb.mockReturnValue({ select: mockSelect } as never);
+	}
+
+	it("returns id+name of active members matching the query", async () => {
+		mockSelectChain([{ id: "u2", name: "Ania" }]);
+
+		const result = await listMembersForMentions("an");
+
+		expect(result).toEqual([{ id: "u2", name: "Ania" }]);
+	});
+
+	it("returns all active members when query is empty", async () => {
+		mockSelectChain([
+			{ id: "u1", name: "Tomek" },
+			{ id: "u2", name: "Ania" },
+		]);
+
+		const result = await listMembersForMentions("");
+
+		expect(result).toHaveLength(2);
 	});
 });

@@ -2,6 +2,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
+import type { Mention } from "@/components/app/mention-input";
 import { NewPostForm } from "@/components/app/new-post-form";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { compressImage } from "@/images/compress";
@@ -20,7 +21,7 @@ async function uploadFile(file: File): Promise<string> {
 	return data.cfImageId;
 }
 
-async function createPost(input: { description: string; files: File[] }) {
+async function createPost(input: { description: string; files: File[]; mentions: Mention[] }) {
 	const cfImageIds = await Promise.all(input.files.map(uploadFile));
 
 	const res = await fetch("/api/app/posts", {
@@ -29,6 +30,7 @@ async function createPost(input: { description: string; files: File[] }) {
 		body: JSON.stringify({
 			description: input.description || null,
 			cfImageIds,
+			mentions: input.mentions,
 		}),
 	});
 

@@ -2,6 +2,7 @@
 import { Download } from "lucide-react";
 import { useEffect, useState } from "react";
 import { ImageLightbox } from "@/components/app/image-lightbox";
+import { MentionText } from "@/components/app/mention-text";
 import { PostActions } from "@/components/app/post-actions";
 import { ReactionBar } from "@/components/app/reaction-bar";
 import { ReactionUsers } from "@/components/app/reaction-users";
@@ -83,7 +84,10 @@ export function PostView({
 			</div>
 
 			{post.description && (
-				<p className="whitespace-pre-wrap break-words text-foreground">{post.description}</p>
+				<MentionText
+					text={post.description}
+					className="whitespace-pre-wrap break-words text-foreground"
+				/>
 			)}
 
 			{currentUserId && (

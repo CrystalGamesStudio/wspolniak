@@ -27,9 +27,15 @@ vi.mock("@/db/comments/queries", () => ({
 	countCommentsByPosts: vi.fn(),
 }));
 
+vi.mock("@/db/mentions/queries", () => ({
+	createMentions: vi.fn(),
+	deleteMentionsByPost: vi.fn(),
+}));
+
 import { countCommentsByPosts } from "@/db/comments/queries";
 import { findActiveUserById } from "@/db/identity/queries";
 import { verifySessionCookie } from "@/db/identity/session";
+import { createMentions, deleteMentionsByPost } from "@/db/mentions/queries";
 import {
 	addPostImages,
 	countUserPostsToday,
@@ -55,6 +61,8 @@ const mockSoftDelete = vi.mocked(softDeletePost);
 const mockAddPostImages = vi.mocked(addPostImages);
 const mockReorderPostImages = vi.mocked(reorderPostImages);
 const mockDeletePostImage = vi.mocked(deletePostImage);
+const mockCreateMentions = vi.mocked(createMentions);
+const mockDeleteMentionsByPost = vi.mocked(deleteMentionsByPost);
 
 function createApi() {
 	const api = new Hono<{
@@ -203,6 +211,42 @@ describe("POST /api/app/posts", () => {
 		expect(res.status).toBe(429);
 		const body = (await res.json()) as { error: string };
 		expect(body.error).toContain("limit");
+	});
+
+	it("registers dropdown mentions with the new post id (post-level, commentId null)", async () => {
+		mockCountToday.mockResolvedValue(0);
+		mockCreatePost.mockResolvedValue({
+			post: {
+				id: "post-1",
+				authorId: "u1",
+				description: "Hej @Ania",
+				deletedAt: null,
+				createdAt: new Date(),
+				updatedAt: new Date(),
+			},
+			images: [],
+		});
+
+		const api = createApi();
+		const res = await api.request(
+			"/api/app/posts",
+			authedRequest("/api/app/posts", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					description: "Hej @Ania",
+					mentions: [{ userId: "u-ania", name: "Ania" }],
+				}),
+			}),
+			env,
+		);
+
+		expect(res.status).toBe(201);
+		expect(mockCreateMentions).toHaveBeenCalledWith({
+			postId: "post-1",
+			commentId: null,
+			userIds: ["u-ania"],
+		});
 	});
 });
 
@@ -546,6 +590,33 @@ describe("PATCH /api/app/posts/:id", () => {
 		);
 
 		expect(res.status).toBe(400);
+	});
+
+	it("replaces mentions on edit (delete old then create new from current text)", async () => {
+		mockGetPost.mockResolvedValue(samplePost);
+		mockUpdateDescription.mockResolvedValue({ ...samplePost, description: "Nowy @Ania" });
+
+		const api = createApi();
+		const res = await api.request(
+			"/api/app/posts/post-1",
+			authedRequest("/api/app/posts/post-1", {
+				method: "PATCH",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					description: "Nowy @Ania",
+					mentions: [{ userId: "u-ania", name: "Ania" }],
+				}),
+			}),
+			env,
+		);
+
+		expect(res.status).toBe(200);
+		expect(mockDeleteMentionsByPost).toHaveBeenCalledWith("post-1");
+		expect(mockCreateMentions).toHaveBeenCalledWith({
+			postId: "post-1",
+			commentId: null,
+			userIds: ["u-ania"],
+		});
 	});
 });
 

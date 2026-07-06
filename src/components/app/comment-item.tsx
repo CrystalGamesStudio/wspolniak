@@ -4,12 +4,13 @@ import { ReplyIcon } from "lucide-react";
 import { useState } from "react";
 import { CommentActions } from "@/components/app/comment-actions";
 import type { CommentWithAuthor } from "@/components/app/comment-section";
+import { type Mention, MentionInput } from "@/components/app/mention-input";
+import { MentionText } from "@/components/app/mention-text";
 import { ReactionBar } from "@/components/app/reaction-bar";
 import { ReactionUsers } from "@/components/app/reaction-users";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { LoaderIcon } from "@/components/ui/spinner";
-import { Textarea } from "@/components/ui/textarea";
 import { canAddReply } from "@/db/comments/queries";
 
 interface CommentItemProps {
@@ -19,11 +20,11 @@ interface CommentItemProps {
 	currentUserRole: string;
 }
 
-async function addReply(postId: string, commentId: string, body: string) {
+async function addReply(postId: string, commentId: string, body: string, mentions: Mention[]) {
 	const res = await fetch(`/api/app/posts/${postId}/comments/${commentId}/replies`, {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify({ body }),
+		body: JSON.stringify({ body, mentions }),
 	});
 	if (!res.ok) {
 		const json = (await res.json().catch(() => ({ error: "" }))) as { error?: string };
@@ -45,15 +46,18 @@ export function CommentItem({ comment, postId, currentUserId, currentUserRole }:
 	const queryClient = useQueryClient();
 	const [showReplyForm, setShowReplyForm] = useState(false);
 	const [replyBody, setReplyBody] = useState("");
+	const [replyMentions, setReplyMentions] = useState<Mention[]>([]);
 
 	const isTopLevel = comment.parentId === null;
 	const canManage = currentUserId === comment.authorId || currentUserRole === "admin";
 	const replyAllowed = isTopLevel && canAddReply(comment.replies.length);
 
 	const replyMutation = useMutation({
-		mutationFn: (body: string) => addReply(postId, comment.id, body),
+		mutationFn: ({ body, mentions }: { body: string; mentions: Mention[] }) =>
+			addReply(postId, comment.id, body, mentions),
 		onSuccess: async () => {
 			setReplyBody("");
+			setReplyMentions([]);
 			setShowReplyForm(false);
 			await queryClient.invalidateQueries({ queryKey: ["comments", postId] });
 		},
@@ -98,7 +102,10 @@ export function CommentItem({ comment, postId, currentUserId, currentUserRole }:
 					)}
 				</div>
 			</div>
-			<p className="whitespace-pre-wrap break-words text-sm text-foreground">{comment.body}</p>
+			<MentionText
+				text={comment.body}
+				className="whitespace-pre-wrap break-words text-sm text-foreground"
+			/>
 
 			{currentUserId && (
 				<div className="mt-2 flex items-center gap-2">
@@ -113,10 +120,12 @@ export function CommentItem({ comment, postId, currentUserId, currentUserRole }:
 							<AlertDescription>{replyMutation.error.message}</AlertDescription>
 						</Alert>
 					)}
-					<Textarea
+					<MentionInput
 						value={replyBody}
-						onChange={(e) => setReplyBody(e.target.value)}
-						placeholder="Napisz odpowiedź..."
+						onChange={setReplyBody}
+						onMentionsChange={setReplyMentions}
+						currentUserId={currentUserId}
+						placeholder="Napisz odpowiedź... (@aby kogoś oznaczyć)"
 						maxLength={1000}
 						rows={2}
 					/>
@@ -130,6 +139,7 @@ export function CommentItem({ comment, postId, currentUserId, currentUserRole }:
 								onClick={() => {
 									setShowReplyForm(false);
 									setReplyBody("");
+									setReplyMentions([]);
 									replyMutation.reset();
 								}}
 							>
@@ -140,7 +150,10 @@ export function CommentItem({ comment, postId, currentUserId, currentUserRole }:
 								className="h-8"
 								onClick={() => {
 									replyMutation.reset();
-									replyMutation.mutate(replyBody);
+									const validMentions = replyMentions.filter((m) =>
+										replyBody.includes(`@${m.name}`),
+									);
+									replyMutation.mutate({ body: replyBody, mentions: validMentions });
 								}}
 								disabled={replyMutation.isPending || !replyBody.trim()}
 							>

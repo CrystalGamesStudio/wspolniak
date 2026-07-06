@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 type PushPayloadInput =
 	| { type: "new_post"; authorName: string; postId: string }
-	| { type: "new_comment"; authorName: string; postId: string; snippet: string };
+	| { type: "new_comment"; authorName: string; postId: string; snippet: string }
+	| { type: "mention"; actorName: string; postId: string };
 
 export interface PushPayload {
 	title: string;
@@ -39,6 +40,13 @@ export function buildPushPayload(input: PushPayloadInput): PushPayload {
 			return {
 				title: `${input.authorName} skomentował(a) Twoje zdjęcie`,
 				body: input.snippet,
+				icon: ICON,
+				url: `/app/post/${input.postId}`,
+			};
+		case "mention":
+			return {
+				title: `${input.actorName} wspomniał(a) o Tobie w komentarzu`,
+				body: "",
 				icon: ICON,
 				url: `/app/post/${input.postId}`,
 			};

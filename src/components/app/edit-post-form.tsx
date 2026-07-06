@@ -12,11 +12,11 @@ import { rectSortingStrategy, SortableContext, useSortable } from "@dnd-kit/sort
 import { CSS } from "@dnd-kit/utilities";
 import { ImagePlus, X } from "lucide-react";
 import { type ChangeEvent, type FormEvent, useCallback, useMemo, useRef, useState } from "react";
+import { type Mention, MentionInput } from "@/components/app/mention-input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { LoaderIcon } from "@/components/ui/spinner";
-import { Textarea } from "@/components/ui/textarea";
 import { getImageUrl } from "@/images/client";
 import { reorder } from "@/lib/reorder";
 
@@ -47,6 +47,7 @@ interface EditPostFormProps {
 		files: File[];
 		removedImageIds: string[];
 		imageOrder: string[];
+		mentions: Mention[];
 	}) => void;
 	isSubmitting: boolean;
 }
@@ -116,6 +117,7 @@ export function EditPostForm({
 	isSubmitting,
 }: EditPostFormProps) {
 	const [description, setDescription] = useState(initialDescription ?? "");
+	const [mentions, setMentions] = useState<Mention[]>([]);
 	const [error, setError] = useState<string | null>(null);
 	const [overId, setOverId] = useState<string | null>(null);
 	const fileInputRef = useRef<HTMLInputElement>(null);
@@ -230,9 +232,10 @@ export function EditPostForm({
 
 			const imageOrder = currentExistingIds;
 
-			onSubmit({ description, files, removedImageIds, imageOrder });
+			const validMentions = mentions.filter((m) => description.includes(`@${m.name}`));
+			onSubmit({ description, files, removedImageIds, imageOrder, mentions: validMentions });
 		},
-		[description, items, existingImages, newFiles, onSubmit],
+		[description, items, existingImages, newFiles, onSubmit, mentions.filter],
 	);
 
 	const canSubmit = useMemo(
@@ -250,15 +253,15 @@ export function EditPostForm({
 
 			<div className="space-y-2">
 				<Label htmlFor="description">Tekst</Label>
-				<Textarea
+				<MentionInput
 					id="description"
 					value={description}
-					onChange={(e) => setDescription(e.target.value)}
+					onChange={setDescription}
+					onMentionsChange={setMentions}
+					placeholder="Co się wydarzyło? (@aby kogoś oznaczyć)"
 					maxLength={2000}
-					rows={24}
-					placeholder="Co się wydarzyło?"
-					className="min-h-96 resize-y"
-					enterKeyHint="enter"
+					rows={6}
+					className="min-h-36 resize-y"
 				/>
 			</div>
 

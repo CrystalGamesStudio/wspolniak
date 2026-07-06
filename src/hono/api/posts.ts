@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { canDeletePost, canEditPost } from "@/core/authorization";
-import { notifyNewPost } from "@/core/notify";
-import { createSendWebPushFromEnv } from "@/core/web-push";
+import { notifyMentions, notifyNewPost } from "@/core/notify";
+import { buildPushDeps } from "@/core/push-deps";
 import { countCommentsByPosts } from "@/db/comments/queries";
+import { createMentions, deleteMentionsByPost } from "@/db/mentions/queries";
 import {
 	addPostImages,
 	countUserPostsToday,
@@ -15,10 +16,6 @@ import {
 	updatePostDescription,
 } from "@/db/posts/queries";
 import { createPostSchema, updatePostSchema } from "@/db/posts/schema";
-import {
-	deleteSubscriptionByEndpoint,
-	getActiveSubscriptions,
-} from "@/db/push-subscriptions/queries";
 import { createHono } from "@/hono/factory";
 import { authMiddleware } from "@/hono/middleware/auth";
 
@@ -48,52 +45,19 @@ postsEndpoint.post("/", async (c) => {
 		cfImageIds: result.data.cfImageIds ?? [],
 	});
 
-	const baseSendPush = createSendWebPushFromEnv(c.env);
-	if (baseSendPush) {
-		const sendPush: typeof baseSendPush = async (subscription, payload) => {
-			try {
-				const res = await baseSendPush(subscription, payload);
-				if (!res.ok && res.status !== 410) {
-					const body = await res
-						.clone()
-						.text()
-						.catch(() => "<no body>");
-					// biome-ignore lint/suspicious/noConsole: surface push delivery failures in `wrangler tail`
-					console.error("[push] non-OK response", {
-						status: res.status,
-						endpoint: subscription.endpoint,
-						body,
-					});
-				}
-				return res;
-			} catch (error) {
-				// biome-ignore lint/suspicious/noConsole: surface push delivery failures in `wrangler tail`
-				console.error("[push] threw", { endpoint: subscription.endpoint, error: String(error) });
-				throw error;
-			}
-		};
-		c.executionCtx.waitUntil(
-			notifyNewPost(
-				{
-					getActiveSubscriptions,
-					getSubscriptionsByUserId: async () => [],
-					sendPush,
-					deleteSubscription: deleteSubscriptionByEndpoint,
-					onSendError: (endpoint, status) => {
-						// biome-ignore lint/suspicious/noConsole: surface push delivery failures in `wrangler tail`
-						console.error("[push] send failed", {
-							status,
-							endpoint,
-							postId: post.post.id,
-							kind: "post",
-						});
-					},
-				},
-				user.userId,
-				user.name,
-				post.post.id,
-			),
-		);
+	const mentionUserIds = result.data.mentions.map((m) => m.userId);
+	if (mentionUserIds.length > 0) {
+		await createMentions({ postId: post.post.id, commentId: null, userIds: mentionUserIds });
+	}
+
+	const pushDeps = buildPushDeps(c.env, post.post.id, "post");
+	if (pushDeps) {
+		c.executionCtx.waitUntil(notifyNewPost(pushDeps, user.userId, user.name, post.post.id));
+		if (mentionUserIds.length > 0) {
+			c.executionCtx.waitUntil(
+				notifyMentions(pushDeps, user.userId, user.name, mentionUserIds, post.post.id),
+			);
+		}
 	}
 
 	return c.json({ data: post.post }, 201);
@@ -166,6 +130,21 @@ postsEndpoint.patch("/:id", async (c) => {
 	}
 
 	const updated = await updatePostDescription(post.id, result.data.description);
+
+	const mentionUserIds = result.data.mentions.map((m) => m.userId);
+	if (mentionUserIds.length > 0) {
+		// Edycja opisu: replace mentions — usuń stare, stwórz nowe z aktualnej treści.
+		await deleteMentionsByPost(post.id);
+		await createMentions({ postId: post.id, commentId: null, userIds: mentionUserIds });
+	}
+
+	const pushDeps = buildPushDeps(c.env, post.id, "post");
+	if (pushDeps && mentionUserIds.length > 0) {
+		c.executionCtx.waitUntil(
+			notifyMentions(pushDeps, user.userId, user.name, mentionUserIds, post.id),
+		);
+	}
+
 	return c.json({ data: updated });
 });
 

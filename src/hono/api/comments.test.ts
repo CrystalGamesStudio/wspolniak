@@ -25,6 +25,10 @@ vi.mock("@/db/comments/queries", () => ({
 	softDeleteComment: vi.fn(),
 }));
 
+vi.mock("@/db/mentions/queries", () => ({
+	createMentions: vi.fn(),
+}));
+
 import {
 	countRepliesByComment,
 	createComment,
@@ -36,6 +40,7 @@ import {
 } from "@/db/comments/queries";
 import { findActiveUserById } from "@/db/identity/queries";
 import { verifySessionCookie } from "@/db/identity/session";
+import { createMentions } from "@/db/mentions/queries";
 import { getPostById } from "@/db/posts/queries";
 import commentsEndpoint from "./comments";
 
@@ -49,6 +54,7 @@ const mockListComments = vi.mocked(listCommentsByPost);
 const mockGetComment = vi.mocked(getCommentById);
 const mockUpdateBody = vi.mocked(updateCommentBody);
 const mockSoftDelete = vi.mocked(softDeleteComment);
+const mockCreateMentions = vi.mocked(createMentions);
 
 function createApi() {
 	const api = new Hono<{
@@ -654,5 +660,132 @@ describe("POST /api/app/posts/:postId/comments/:commentId/replies", () => {
 		);
 
 		expect(res.status).toBe(401);
+	});
+});
+
+describe("POST /api/app/posts/:postId/comments — mentions", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		mockVerify.mockResolvedValue({ userId: "u1", name: "Tomek", role: "member" });
+		mockFindUser.mockResolvedValue({
+			id: "u1",
+			name: "Tomek",
+			role: "member",
+			tokenHash: "hash",
+			deletedAt: null,
+			createdAt: new Date(),
+		});
+	});
+
+	it("registers dropdown mentions with the new comment id", async () => {
+		mockGetPost.mockResolvedValue(samplePost);
+		mockCreateComment.mockResolvedValue(sampleComment);
+
+		const api = createApi();
+		const res = await api.request(
+			"/api/app/posts/post-1/comments",
+			authedRequest("/", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					body: "Hej @Ania",
+					mentions: [
+						{ userId: "u-ania", name: "Ania" },
+						{ userId: "u-andrzej", name: "Andrzej" },
+					],
+				}),
+			}),
+			env,
+		);
+
+		expect(res.status).toBe(201);
+		expect(mockCreateMentions).toHaveBeenCalledWith({
+			postId: "post-1",
+			commentId: "comment-1",
+			userIds: ["u-ania", "u-andrzej"],
+		});
+	});
+
+	it("registers nothing when no mentions are provided (manual @imię → no push)", async () => {
+		mockGetPost.mockResolvedValue(samplePost);
+		mockCreateComment.mockResolvedValue(sampleComment);
+
+		const api = createApi();
+		const res = await api.request(
+			"/api/app/posts/post-1/comments",
+			authedRequest("/", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ body: "Hej @Ania wpisana z palca" }),
+			}),
+			env,
+		);
+
+		expect(res.status).toBe(201);
+		expect(mockCreateMentions).not.toHaveBeenCalled();
+	});
+
+	it("rejects mention with empty userId via schema validation", async () => {
+		mockGetPost.mockResolvedValue(samplePost);
+
+		const api = createApi();
+		const res = await api.request(
+			"/api/app/posts/post-1/comments",
+			authedRequest("/", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					body: "Hej",
+					mentions: [{ userId: "", name: "Ania" }],
+				}),
+			}),
+			env,
+		);
+
+		expect(res.status).toBe(400);
+		expect(mockCreateMentions).not.toHaveBeenCalled();
+	});
+});
+
+describe("POST /api/app/posts/:postId/comments/:commentId/replies — mentions", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		mockVerify.mockResolvedValue({ userId: "u1", name: "Tomek", role: "member" });
+		mockFindUser.mockResolvedValue({
+			id: "u1",
+			name: "Tomek",
+			role: "member",
+			tokenHash: "hash",
+			deletedAt: null,
+			createdAt: new Date(),
+		});
+	});
+
+	it("registers dropdown mentions with the new reply id", async () => {
+		mockGetPost.mockResolvedValue(samplePost);
+		mockGetComment.mockResolvedValue(sampleComment);
+		mockCountReplies.mockResolvedValue(0);
+		mockCreateReply.mockResolvedValue({ ...sampleComment, id: "reply-1", parentId: "comment-1" });
+
+		const api = createApi();
+		const res = await api.request(
+			"/api/app/posts/post-1/comments/comment-1/replies",
+			authedRequest("/", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					body: "Odp @Ania",
+					mentions: [{ userId: "u-ania", name: "Ania" }],
+				}),
+			}),
+			env,
+		);
+
+		expect(res.status).toBe(201);
+		expect(mockCreateMentions).toHaveBeenCalledWith({
+			postId: "post-1",
+			commentId: "reply-1",
+			userIds: ["u-ania"],
+		});
 	});
 });

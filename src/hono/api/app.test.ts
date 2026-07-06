@@ -8,14 +8,16 @@ vi.mock("@/db/identity/session", () => ({
 
 vi.mock("@/db/identity/queries", () => ({
 	findActiveUserById: vi.fn(),
+	listMembersForMentions: vi.fn(),
 }));
 
-import { findActiveUserById } from "@/db/identity/queries";
+import { findActiveUserById, listMembersForMentions } from "@/db/identity/queries";
 import { verifySessionCookie } from "@/db/identity/session";
 import appEndpoint from "./app";
 
 const mockVerify = vi.mocked(verifySessionCookie);
 const mockFindUser = vi.mocked(findActiveUserById);
+const mockListMembers = vi.mocked(listMembersForMentions);
 
 function createApi() {
 	const api = new Hono<{ Bindings: { SESSION_SECRET: string } }>().basePath("/api");
@@ -60,5 +62,49 @@ describe("GET /api/app/me", () => {
 		expect(res.status).toBe(401);
 		const body = (await res.json()) as { error: string };
 		expect(body.error).toBe("Unauthorized");
+	});
+});
+
+describe("GET /api/app/users", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		mockVerify.mockResolvedValue({ userId: "u1", name: "Tomek", role: "member" });
+		mockFindUser.mockResolvedValue({
+			id: "u1",
+			name: "Tomek",
+			role: "member",
+			tokenHash: "hash",
+			deletedAt: null,
+			createdAt: new Date(),
+		});
+	});
+
+	it("returns active members filtered by ?q=", async () => {
+		mockListMembers.mockResolvedValue([
+			{ id: "u2", name: "Ania" },
+			{ id: "u3", name: "Andrzej" },
+		]);
+
+		const api = createApi();
+		const res = await api.request(
+			"/api/app/users?q=an",
+			{ headers: { Cookie: "session=valid-jwt" } },
+			{ SESSION_SECRET: "secret" },
+		);
+
+		expect(res.status).toBe(200);
+		const body = (await res.json()) as { data: Array<{ id: string; name: string }> };
+		expect(body.data).toEqual([
+			{ id: "u2", name: "Ania" },
+			{ id: "u3", name: "Andrzej" },
+		]);
+		expect(mockListMembers).toHaveBeenCalledWith("an");
+	});
+
+	it("returns 401 without session cookie", async () => {
+		const api = createApi();
+		const res = await api.request("/api/app/users", {}, { SESSION_SECRET: "secret" });
+
+		expect(res.status).toBe(401);
 	});
 });

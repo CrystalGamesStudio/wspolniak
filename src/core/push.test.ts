@@ -32,6 +32,21 @@ describe("buildPushPayload", () => {
 			url: "/app/post/post-456",
 		});
 	});
+
+	it("builds payload for a mention notification", () => {
+		const payload = buildPushPayload({
+			type: "mention",
+			actorName: "Kasia",
+			postId: "post-789",
+		});
+
+		expect(payload).toEqual({
+			title: "Kasia wspomniał(a) o Tobie w komentarzu",
+			body: "",
+			icon: "/logo192.png",
+			url: "/app/post/post-789",
+		});
+	});
 });
 
 describe("fanOutPush", () => {

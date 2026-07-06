@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import type { InferSelectModel } from "drizzle-orm";
-import { and, asc, eq, isNull } from "drizzle-orm";
+import { and, asc, eq, ilike, isNull } from "drizzle-orm";
 import { getDb } from "@/db/setup";
 import { generateToken } from "./crypto";
 import { users } from "./table";
@@ -58,4 +58,28 @@ export async function findUserByTokenHash(tokenHash: string): Promise<User | nul
 		.from(users)
 		.where(and(eq(users.tokenHash, tokenHash), isNull(users.deletedAt)));
 	return rows[0] ?? null;
+}
+
+export interface MemberOption {
+	id: string;
+	name: string;
+}
+
+/**
+ * Aktywni członkowie do dropdownu @mention. Opcjonalnie filtrowani po imieniu
+ * (case-insensitive, contains). Limit 20 — dropdown pokazuje pierwsze trafienia,
+ * co wystarcza dla rodzinnej apki i chroni przed过度 dużym payloadem.
+ */
+export async function listMembersForMentions(query?: string): Promise<MemberOption[]> {
+	const trimmed = query?.trim() ?? "";
+	const condition = trimmed
+		? and(isNull(users.deletedAt), ilike(users.name, `%${trimmed}%`))
+		: isNull(users.deletedAt);
+
+	return getDb()
+		.select({ id: users.id, name: users.name })
+		.from(users)
+		.where(condition)
+		.orderBy(asc(users.name))
+		.limit(20);
 }

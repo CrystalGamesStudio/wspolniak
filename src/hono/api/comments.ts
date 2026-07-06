@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { canDeleteComment, canEditComment } from "@/core/authorization";
-import { notifyNewComment } from "@/core/notify";
-import { createSendWebPushFromEnv } from "@/core/web-push";
+import { notifyMentions, notifyNewComment } from "@/core/notify";
+import { buildPushDeps } from "@/core/push-deps";
 import {
 	countRepliesByComment,
 	createComment,
@@ -13,11 +13,8 @@ import {
 	updateCommentBody,
 } from "@/db/comments/queries";
 import { createCommentSchema, createReplySchema, updateCommentSchema } from "@/db/comments/schema";
+import { createMentions } from "@/db/mentions/queries";
 import { getPostById } from "@/db/posts/queries";
-import {
-	deleteSubscriptionByEndpoint,
-	getSubscriptionsByUserId,
-} from "@/db/push-subscriptions/queries";
 import { createHono } from "@/hono/factory";
 import { authMiddleware } from "@/hono/middleware/auth";
 
@@ -84,6 +81,18 @@ commentsEndpoint.post("/:postId/comments/:commentId/replies", async (c) => {
 		body: result.data.body,
 	});
 
+	const mentionUserIds = result.data.mentions.map((m) => m.userId);
+	if (mentionUserIds.length > 0) {
+		await createMentions({ postId, commentId: reply.id, userIds: mentionUserIds });
+	}
+
+	const pushDeps = buildPushDeps(c.env, postId, "mention");
+	if (pushDeps && mentionUserIds.length > 0) {
+		c.executionCtx.waitUntil(
+			notifyMentions(pushDeps, user.userId, user.name, mentionUserIds, postId),
+		);
+	}
+
 	return c.json({ data: reply }, 201);
 });
 
@@ -108,50 +117,22 @@ commentsEndpoint.post("/:postId/comments", async (c) => {
 		body: result.data.body,
 	});
 
-	const baseSendPush = createSendWebPushFromEnv(c.env);
-	if (baseSendPush) {
-		const sendPush: typeof baseSendPush = async (subscription, payload) => {
-			try {
-				const res = await baseSendPush(subscription, payload);
-				if (!res.ok && res.status !== 410) {
-					const body = await res
-						.clone()
-						.text()
-						.catch(() => "<no body>");
-					// biome-ignore lint/suspicious/noConsole: surface push delivery failures in `wrangler tail`
-					console.error("[push] non-OK response", {
-						status: res.status,
-						endpoint: subscription.endpoint,
-						body,
-					});
-				}
-				return res;
-			} catch (error) {
-				// biome-ignore lint/suspicious/noConsole: surface push delivery failures in `wrangler tail`
-				console.error("[push] threw", { endpoint: subscription.endpoint, error: String(error) });
-				throw error;
-			}
-		};
-		const snippet = result.data.body.slice(0, 100);
+	const mentionUserIds = result.data.mentions.map((m) => m.userId);
+	if (mentionUserIds.length > 0) {
+		await createMentions({ postId, commentId: comment.id, userIds: mentionUserIds });
+	}
+
+	const snippet = result.data.body.slice(0, 100);
+	const pushDeps = buildPushDeps(c.env, postId, "comment");
+	if (pushDeps) {
 		c.executionCtx.waitUntil(
-			notifyNewComment(
-				{
-					getActiveSubscriptions: async () => [],
-					getSubscriptionsByUserId,
-					sendPush,
-					deleteSubscription: deleteSubscriptionByEndpoint,
-					onSendError: (endpoint, status) => {
-						// biome-ignore lint/suspicious/noConsole: surface push delivery failures in `wrangler tail`
-						console.error("[push] send failed", { status, endpoint, postId, kind: "comment" });
-					},
-				},
-				user.userId,
-				user.name,
-				post.authorId,
-				postId,
-				snippet,
-			),
+			notifyNewComment(pushDeps, user.userId, user.name, post.authorId, postId, snippet),
 		);
+		if (mentionUserIds.length > 0) {
+			c.executionCtx.waitUntil(
+				notifyMentions(pushDeps, user.userId, user.name, mentionUserIds, postId),
+			);
+		}
 	}
 
 	return c.json({ data: comment }, 201);

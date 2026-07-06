@@ -4,6 +4,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 import { useCallback } from "react";
 import { EditPostForm } from "@/components/app/edit-post-form";
+import type { Mention } from "@/components/app/mention-input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { compressImage } from "@/images/compress";
 
@@ -66,6 +67,7 @@ function EditPostPage() {
 			files: File[];
 			removedImageIds: string[];
 			imageOrder: string[];
+			mentions: Mention[];
 		}) => {
 			// Delete removed images
 			await Promise.all(
@@ -99,7 +101,10 @@ function EditPostPage() {
 			const res = await fetch(`/api/app/posts/${id}`, {
 				method: "PATCH",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ description: input.description || null }),
+				body: JSON.stringify({
+					description: input.description || null,
+					mentions: input.mentions,
+				}),
 			});
 			if (res.status === 403) throw new Error("Brak uprawnień do edycji tego posta");
 			if (!res.ok) throw new Error("Nie udało się edytować posta");
@@ -119,6 +124,7 @@ function EditPostPage() {
 			files: File[];
 			removedImageIds: string[];
 			imageOrder: string[];
+			mentions: Mention[];
 		}) => {
 			mutation.reset();
 			mutation.mutate(data);

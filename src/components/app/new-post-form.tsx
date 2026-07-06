@@ -12,11 +12,11 @@ import { rectSortingStrategy, SortableContext, useSortable } from "@dnd-kit/sort
 import { CSS } from "@dnd-kit/utilities";
 import { ImagePlus, X } from "lucide-react";
 import { type ChangeEvent, type FormEvent, useCallback, useMemo, useRef, useState } from "react";
+import { type Mention, MentionInput } from "@/components/app/mention-input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { LoaderIcon } from "@/components/ui/spinner";
-import { Textarea } from "@/components/ui/textarea";
 import { reorder } from "@/lib/reorder";
 
 const ACCEPTED_IMAGE_TYPES = "image/jpeg,image/png,image/webp,image/heic,image/heif";
@@ -25,7 +25,7 @@ const MAX_FILE_SIZE_MB = 15;
 const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 
 interface NewPostFormProps {
-	onSubmit: (data: { description: string; files: File[] }) => void;
+	onSubmit: (data: { description: string; files: File[]; mentions: Mention[] }) => void;
 	isSubmitting: boolean;
 }
 
@@ -89,6 +89,7 @@ function SortablePreview({
 
 export function NewPostForm({ onSubmit, isSubmitting }: NewPostFormProps) {
 	const [description, setDescription] = useState("");
+	const [mentions, setMentions] = useState<Mention[]>([]);
 	const [media, setMedia] = useState<MediaItem[]>([]);
 	const [error, setError] = useState<string | null>(null);
 	const [overId, setOverId] = useState<string | null>(null);
@@ -178,12 +179,14 @@ export function NewPostForm({ onSubmit, isSubmitting }: NewPostFormProps) {
 				return;
 			}
 			const files = images.map((i) => i.file!).filter(Boolean);
+			const validMentions = mentions.filter((m) => description.includes(`@${m.name}`));
 			onSubmit({
 				description,
 				files,
+				mentions: validMentions,
 			});
 		},
-		[description, images, onSubmit],
+		[description, images, onSubmit, mentions.filter],
 	);
 
 	const canSubmit = useMemo(() => {
@@ -200,15 +203,15 @@ export function NewPostForm({ onSubmit, isSubmitting }: NewPostFormProps) {
 
 			<div className="space-y-2">
 				<Label htmlFor="description">Tekst</Label>
-				<Textarea
+				<MentionInput
 					id="description"
 					value={description}
-					onChange={(e) => setDescription(e.target.value)}
+					onChange={setDescription}
+					onMentionsChange={setMentions}
+					placeholder="Co się wydarzyło? (@aby kogoś oznaczyć)"
 					maxLength={2000}
-					rows={24}
-					placeholder="Co się wydarzyło?"
-					className="min-h-96 resize-y"
-					enterKeyHint="enter"
+					rows={6}
+					className="min-h-36 resize-y"
 				/>
 			</div>
 

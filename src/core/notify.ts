@@ -52,3 +52,39 @@ export async function notifyNewComment(
 		onSendError: deps.onSendError,
 	});
 }
+
+/**
+ * Wysyła powiadomienie push o @mention do wszystkich wspomnianych osób.
+ *
+ * userId pochodzi WYŁĄCZNIE z kliknięć w dropdown (frontend przesyła jawną listę) —
+ * nigdy z parsowania imienia. To mityguje duplikaty imion (dwaj "Andrzej" → powiadomienie
+ * trafia do właściwej osoby z kliknięcia). Ręcznie wpisany `@imię` nie trafia tu w ogóle.
+ *
+ * - Self-mention (actor wspomniał sam siebie) → brak pusha.
+ * - Duplikaty tego samego userId → jedno powiadomienie.
+ */
+export async function notifyMentions(
+	deps: NotifyDeps,
+	actorId: string,
+	actorName: string,
+	mentionedUserIds: string[],
+	postId: string,
+): Promise<void> {
+	const uniqueOthers = [...new Set(mentionedUserIds)].filter((id) => id !== actorId);
+	if (uniqueOthers.length === 0) return;
+
+	const subscriptionGroups = await Promise.all(
+		uniqueOthers.map((id) => deps.getSubscriptionsByUserId(id)),
+	);
+	const subscriptions = subscriptionGroups.flat();
+	if (subscriptions.length === 0) return;
+
+	const payload = buildPushPayload({ type: "mention", actorName, postId });
+	await fanOutPush({
+		subscriptions,
+		payload,
+		sendPush: deps.sendPush,
+		deleteSubscription: deps.deleteSubscription,
+		onSendError: deps.onSendError,
+	});
+}
