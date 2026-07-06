@@ -99,6 +99,13 @@
       "when": 1783336717774,
       "tag": "0013_third_lady_mastermind",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1783361307269,
+      "tag": "0014_cool_vampiro",
+      "breakpoints": true
     }
   ]
 }

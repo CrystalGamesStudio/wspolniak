@@ -67,4 +67,22 @@ describe("PostView", () => {
 		expect(screen.getByText("Kasia")).toBeDefined();
 		expect(screen.getAllByRole("img")).toHaveLength(1);
 	});
+
+	it("shows pin badge for a pinned post", () => {
+		const now = new Date().toISOString();
+		const post = {
+			id: "post-pin",
+			authorId: "u2",
+			description: "Ważne ogłoszenie",
+			createdAt: now,
+			updatedAt: now,
+			author: { id: "u2", name: "Kasia" },
+			images: [],
+			pinned: true,
+		};
+
+		render(<PostView post={post} imageAccountHash="hash-1" />, { wrapper: createWrapper() });
+
+		expect(screen.getByLabelText("Przypięty post")).toBeDefined();
+	});
 });

@@ -226,4 +226,43 @@ describe("Feed", () => {
 
 		expect(screen.getByRole("button", { name: /pokaż kto zareagował/i })).toBeDefined();
 	});
+
+	it("shows pin badge for pinned posts", () => {
+		const now = new Date().toISOString();
+		const posts = [
+			{
+				id: "post-pin",
+				authorId: "u2",
+				description: "Ważne ogłoszenie",
+				createdAt: now,
+				updatedAt: now,
+				author: { id: "u2", name: "Kasia" },
+				images: [],
+				pinned: true,
+			},
+		];
+
+		render(<Feed posts={posts} {...defaultProps} />, { wrapper: createWrapper() });
+
+		expect(screen.getByLabelText("Przypięty post")).toBeDefined();
+	});
+
+	it("does not show pin badge for regular posts", () => {
+		const now = new Date().toISOString();
+		const posts = [
+			{
+				id: "post-1",
+				authorId: "u2",
+				description: "zwykły post",
+				createdAt: now,
+				updatedAt: now,
+				author: { id: "u2", name: "Kasia" },
+				images: [],
+			},
+		];
+
+		render(<Feed posts={posts} {...defaultProps} />, { wrapper: createWrapper() });
+
+		expect(screen.queryByLabelText("Przypięty post")).toBeNull();
+	});
 });

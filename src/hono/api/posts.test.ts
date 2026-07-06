@@ -14,6 +14,7 @@ vi.mock("@/db/posts/queries", () => ({
 	createPost: vi.fn(),
 	listRecentPosts: vi.fn(),
 	listPaginatedPosts: vi.fn(),
+	listPostsByIds: vi.fn(),
 	getPostById: vi.fn(),
 	countUserPostsToday: vi.fn(),
 	updatePostDescription: vi.fn(),
@@ -30,6 +31,10 @@ vi.mock("@/db/comments/queries", () => ({
 vi.mock("@/db/mentions/queries", () => ({
 	createMentions: vi.fn(),
 	deleteMentionsByPost: vi.fn(),
+}));
+
+vi.mock("@/db/pinned-posts", () => ({
+	listPinnedPostIds: vi.fn(),
 }));
 
 import { countCommentsByPosts } from "@/db/comments/queries";
@@ -326,7 +331,7 @@ describe("GET /api/app/posts/:id", () => {
 });
 
 describe("GET /api/app/posts (paginated)", () => {
-	beforeEach(() => {
+	beforeEach(async () => {
 		vi.clearAllMocks();
 		mockVerify.mockResolvedValue({ userId: "u1", name: "Tomek", role: "member" });
 		mockFindUser.mockResolvedValue({
@@ -338,6 +343,8 @@ describe("GET /api/app/posts (paginated)", () => {
 			createdAt: new Date(),
 		});
 		mockCountComments.mockResolvedValue(new Map());
+		const { listPinnedPostIds } = await import("@/db/pinned-posts");
+		vi.mocked(listPinnedPostIds).mockResolvedValue([]);
 	});
 
 	it("returns first page with nextCursor", async () => {
@@ -368,7 +375,11 @@ describe("GET /api/app/posts (paginated)", () => {
 		expect(body.data).toHaveLength(1);
 		expect(body.meta.nextCursor).not.toBeNull();
 		expect(body.meta.nextCursor?.id).toBe("post-1");
-		expect(mockListPaginated).toHaveBeenCalledWith({ limit: 10, cursor: undefined });
+		expect(mockListPaginated).toHaveBeenCalledWith({
+			limit: 10,
+			cursor: undefined,
+			excludeIds: [],
+		});
 	});
 
 	it("passes cursor from query params to listPaginatedPosts", async () => {
@@ -385,6 +396,7 @@ describe("GET /api/app/posts (paginated)", () => {
 		expect(mockListPaginated).toHaveBeenCalledWith({
 			limit: 10,
 			cursor: { createdAt: "2026-01-01T12:00:00.000Z", id: "post-5" },
+			excludeIds: [],
 		});
 	});
 
@@ -926,5 +938,50 @@ describe("DELETE /api/app/posts/:id/images/:imageId", () => {
 		const res = await api.request("/api/app/posts/post-1/images/img-1", { method: "DELETE" }, env);
 
 		expect(res.status).toBe(401);
+	});
+});
+
+describe("GET /api/app/posts (pinned)", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		mockVerify.mockResolvedValue({ userId: "u1", name: "Tomek", role: "member" });
+		mockFindUser.mockResolvedValue({
+			id: "u1",
+			name: "Tomek",
+			role: "member",
+			tokenHash: "h",
+			deletedAt: null,
+			createdAt: new Date(),
+		});
+	});
+
+	it("prepends pinned posts on the first page, marks them pinned, and excludes them from pagination", async () => {
+		const { listPinnedPostIds } = await import("@/db/pinned-posts");
+		const { listPostsByIds } = await import("@/db/posts/queries");
+		const mockListPinnedIds = vi.mocked(listPinnedPostIds);
+		const mockListPostsByIds = vi.mocked(listPostsByIds);
+
+		mockListPinnedIds.mockResolvedValue(["p1"]);
+		const pinnedPost = {
+			id: "p1",
+			authorId: "u2",
+			description: "pinned",
+			createdAt: new Date(),
+			updatedAt: new Date(),
+			author: { id: "u2", name: "Kasia" },
+			images: [],
+		};
+		mockListPostsByIds.mockResolvedValue([pinnedPost]);
+		mockListPaginated.mockResolvedValue({ posts: [], nextCursor: null });
+		mockCountComments.mockResolvedValue(new Map());
+
+		const api = createApi();
+		const res = await api.request("/api/app/posts", authedRequest("/api/app/posts"), env);
+
+		expect(res.status).toBe(200);
+		const body = (await res.json()) as { data: Array<{ id: string; pinned?: boolean }> };
+		expect(body.data[0]?.id).toBe("p1");
+		expect(body.data[0]?.pinned).toBe(true);
+		expect(mockListPaginated).toHaveBeenCalledWith(expect.objectContaining({ excludeIds: ["p1"] }));
 	});
 });

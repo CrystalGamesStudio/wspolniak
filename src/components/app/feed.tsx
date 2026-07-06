@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-import { ExternalLinkIcon, MessageCircleIcon, RotateCcwIcon } from "lucide-react";
+import { ExternalLinkIcon, MessageCircleIcon, PinIcon, RotateCcwIcon } from "lucide-react";
 import { useState } from "react";
 import { ImageLightbox } from "@/components/app/image-lightbox";
 import { PostActions } from "@/components/app/post-actions";
@@ -27,6 +27,7 @@ interface FeedPost {
 	author: { id: string; name: string };
 	images: FeedImage[];
 	commentCount?: number;
+	pinned?: boolean;
 }
 
 interface FeedProps {
@@ -77,7 +78,21 @@ export function Feed({
 				const remaining = post.images.length - MAX_FEED_IMAGES;
 
 				return (
-					<article key={post.id} className="rounded-lg border border-border bg-card p-4">
+					<article
+						key={post.id}
+						className={`relative rounded-lg border bg-card p-4 ${
+							post.pinned ? "border-2 border-primary" : "border-border"
+						}`}
+					>
+						{post.pinned && (
+							<span
+								role="img"
+								aria-label="Przypięty post"
+								className="absolute -top-2 -left-2 flex size-7 items-center justify-center rounded-full bg-primary text-primary-foreground shadow"
+							>
+								<PinIcon className="size-4" />
+							</span>
+						)}
 						<div className="mb-2 flex items-center gap-2">
 							<span className="font-semibold text-foreground">{post.author.name}</span>
 							<time className="text-sm text-muted-foreground" dateTime={post.createdAt}>
@@ -86,7 +101,12 @@ export function Feed({
 							<div className="ml-auto flex items-center gap-1">
 								<ReactionUsers target={{ kind: "post", postId: post.id }} />
 								{(post.authorId === currentUserId || currentUserRole === "admin") && (
-									<PostActions postId={post.id} description={post.description} />
+									<PostActions
+										postId={post.id}
+										description={post.description}
+										isAdmin={currentUserRole === "admin"}
+										pinned={post.pinned}
+									/>
 								)}
 							</div>
 						</div>

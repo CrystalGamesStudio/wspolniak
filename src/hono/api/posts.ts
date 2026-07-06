@@ -4,6 +4,7 @@ import { notifyMentions, notifyNewPost } from "@/core/notify";
 import { buildPushDeps } from "@/core/push-deps";
 import { countCommentsByPosts } from "@/db/comments/queries";
 import { createMentions, deleteMentionsByPost } from "@/db/mentions/queries";
+import { listPinnedPostIds } from "@/db/pinned-posts";
 import {
 	addPostImages,
 	countUserPostsToday,
@@ -11,6 +12,7 @@ import {
 	deletePostImage,
 	getPostById,
 	listPaginatedPosts,
+	listPostsByIds,
 	reorderPostImages,
 	softDeletePost,
 	updatePostDescription,
@@ -74,10 +76,19 @@ postsEndpoint.get("/", async (c) => {
 		};
 	}
 
-	const result = await listPaginatedPosts({ limit: 10, cursor });
-	const postIds = result.posts.map((p) => p.id);
+	const pinnedIds = await listPinnedPostIds();
+	const result = await listPaginatedPosts({ limit: 10, cursor, excludeIds: pinnedIds });
+
+	// Pinned posts live only on the first page (no cursor), always on top, excluded from chronology.
+	let pinned: typeof result.posts = [];
+	if (!cursor && pinnedIds.length > 0) {
+		pinned = await listPostsByIds(pinnedIds);
+	}
+	const allPosts = [...pinned.map((p) => ({ ...p, pinned: true })), ...result.posts];
+
+	const postIds = allPosts.map((p) => p.id);
 	const commentCounts = await countCommentsByPosts(postIds);
-	const postsWithComments = result.posts.map((p) => ({
+	const postsWithComments = allPosts.map((p) => ({
 		...p,
 		commentCount: commentCounts.get(p.id) ?? 0,
 	}));

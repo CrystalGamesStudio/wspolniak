@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-import { Download } from "lucide-react";
+import { Download, Pin } from "lucide-react";
 import { useEffect, useState } from "react";
 import { ImageLightbox } from "@/components/app/image-lightbox";
 import { MentionText } from "@/components/app/mention-text";
@@ -25,6 +25,7 @@ interface PostData {
 	updatedAt: string;
 	author: { id: string; name: string };
 	images: PostImage[];
+	pinned?: boolean;
 }
 
 interface PostViewProps {
@@ -63,7 +64,20 @@ export function PostView({
 	}));
 
 	return (
-		<article className="space-y-4">
+		<article
+			className={`relative space-y-4 rounded-lg border bg-card p-4 ${
+				post.pinned ? "border-2 border-primary" : "border-border"
+			}`}
+		>
+			{post.pinned && (
+				<span
+					role="img"
+					aria-label="Przypięty post"
+					className="absolute -top-2 -left-2 flex size-7 items-center justify-center rounded-full bg-primary text-primary-foreground shadow"
+				>
+					<Pin className="size-4" />
+				</span>
+			)}
 			<div className="flex items-center gap-2">
 				<span className="font-semibold text-foreground">{post.author.name}</span>
 				<time className="text-sm text-muted-foreground" dateTime={post.createdAt}>
@@ -78,7 +92,13 @@ export function PostView({
 				<div className="ml-auto flex items-center gap-1">
 					<ReactionUsers target={{ kind: "post", postId: post.id }} />
 					{canManage && (
-						<PostActions postId={post.id} description={post.description} onDeleted={onDeleted} />
+						<PostActions
+							postId={post.id}
+							description={post.description}
+							onDeleted={onDeleted}
+							isAdmin={currentUserRole === "admin"}
+							pinned={post.pinned}
+						/>
 					)}
 				</div>
 			</div>

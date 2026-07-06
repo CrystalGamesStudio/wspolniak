@@ -20,6 +20,10 @@ export function canDeletePost(actor: Actor, post: PostTarget): boolean {
 	return isOwnerOrAdmin(actor, post.authorId);
 }
 
+export function canPinPost(actor: Actor): boolean {
+	return actor.role === "admin";
+}
+
 export interface CommentTarget {
 	authorId: string;
 }

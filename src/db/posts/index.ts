@@ -7,6 +7,7 @@ export {
 	deletePostImage,
 	getPostById,
 	listPaginatedPosts,
+	listPostsByIds,
 	listRecentPosts,
 	reorderPostImages,
 } from "./queries";

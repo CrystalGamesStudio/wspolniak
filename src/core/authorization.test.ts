@@ -92,3 +92,15 @@ describe("canDeleteComment", () => {
 		).toBe(false);
 	});
 });
+
+describe("canPinPost", () => {
+	it("allows admin to pin", async () => {
+		const { canPinPost } = await import("./authorization");
+		expect(canPinPost(actor({ role: "admin" }))).toBe(true);
+	});
+
+	it("denies member (even acting on their own behalf)", async () => {
+		const { canPinPost } = await import("./authorization");
+		expect(canPinPost(actor({ role: "member" }))).toBe(false);
+	});
+});

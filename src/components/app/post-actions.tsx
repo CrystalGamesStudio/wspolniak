@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { MoreHorizontalIcon, PencilIcon, TrashIcon } from "lucide-react";
+import { MoreHorizontalIcon, PencilIcon, PinIcon, TrashIcon } from "lucide-react";
 import { useRef, useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,8 @@ interface PostActionsProps {
 	postId: string;
 	description: string | null;
 	onDeleted?: () => void;
+	isAdmin?: boolean;
+	pinned?: boolean;
 }
 
 async function deletePost(postId: string) {
@@ -34,7 +36,13 @@ async function deletePost(postId: string) {
 	return res.json();
 }
 
-export function PostActions({ postId, description: _description, onDeleted }: PostActionsProps) {
+export function PostActions({
+	postId,
+	description: _description,
+	onDeleted,
+	isAdmin,
+	pinned,
+}: PostActionsProps) {
 	const queryClient = useQueryClient();
 	const navigate = useNavigate();
 	const [deleteOpen, setDeleteOpen] = useState(false);
@@ -47,6 +55,21 @@ export function PostActions({ postId, description: _description, onDeleted }: Po
 			queryClient.invalidateQueries({ queryKey: ["posts", postId] });
 			setDeleteOpen(false);
 			onDeleted?.();
+		},
+	});
+
+	const pinMutation = useMutation({
+		mutationFn: async () => {
+			const method = pinned ? "DELETE" : "POST";
+			const res = await fetch(`/api/app/posts/${postId}/pin`, { method });
+			if (res.status === 403) throw new Error("Brak uprawnień do przypinania postów");
+			if (res.status === 422) throw new Error("Osiągnięto limit przypiętych postów (3)");
+			if (!res.ok) throw new Error("Nie udało się przypiąć posta");
+			return res.json();
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["posts"] });
+			queryClient.invalidateQueries({ queryKey: ["posts", postId] });
 		},
 	});
 
@@ -67,6 +90,15 @@ export function PostActions({ postId, description: _description, onDeleted }: Po
 						<PencilIcon />
 						Edytuj
 					</DropdownMenuItem>
+					{isAdmin && (
+						<DropdownMenuItem
+							onSelect={() => pinMutation.mutate()}
+							className="py-3 sm:py-1.5 text-base sm:text-sm"
+						>
+							<PinIcon />
+							{pinned ? "Odepnij post" : "Przypnij post"}
+						</DropdownMenuItem>
+					)}
 					<DropdownMenuItem
 						variant="destructive"
 						onSelect={() => {

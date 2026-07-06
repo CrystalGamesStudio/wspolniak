@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import type { InferSelectModel } from "drizzle-orm";
-import { and, asc, count, desc, eq, gte, inArray, isNull, lt, or } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, inArray, isNull, lt, not, or } from "drizzle-orm";
 import { users } from "@/db/identity/table";
 import { getDb } from "@/db/setup";
 import { postImages, posts } from "./table";
@@ -100,6 +100,7 @@ export async function listRecentPosts(limit: number): Promise<PostWithAuthorAndI
 interface PaginatedPostsInput {
 	limit: number;
 	cursor?: { createdAt: string; id: string };
+	excludeIds?: string[];
 }
 
 interface PaginatedPostsResult {
@@ -110,9 +111,12 @@ interface PaginatedPostsResult {
 export async function listPaginatedPosts(
 	input: PaginatedPostsInput,
 ): Promise<PaginatedPostsResult> {
-	const { limit, cursor } = input;
+	const { limit, cursor, excludeIds = [] } = input;
 
 	const conditions = [isNull(posts.deletedAt)];
+	if (excludeIds.length > 0) {
+		conditions.push(not(inArray(posts.id, excludeIds)));
+	}
 	if (cursor) {
 		const cursorDate = new Date(cursor.createdAt);
 		conditions.push(
@@ -272,4 +276,26 @@ export async function countUserPostsToday(userId: string): Promise<number> {
 		.where(and(eq(posts.authorId, userId), gte(posts.createdAt, startOfDay)));
 
 	return rows[0]?.count ?? 0;
+}
+
+export async function listPostsByIds(ids: string[]): Promise<PostWithAuthorAndImages[]> {
+	if (ids.length === 0) return [];
+	const rows = await getDb()
+		.select({
+			post: posts,
+			author: { id: users.id, name: users.name },
+			image: postImages,
+		})
+		.from(posts)
+		.leftJoin(users, eq(posts.authorId, users.id))
+		.leftJoin(postImages, eq(posts.id, postImages.postId))
+		.where(and(inArray(posts.id, ids), isNull(posts.deletedAt)))
+		.orderBy(asc(postImages.displayOrder));
+
+	const aggregated = aggregatePostRows(rows);
+	const byId = new Map(aggregated.map((p) => [p.id, p]));
+	return ids.flatMap((id) => {
+		const post = byId.get(id);
+		return post ? [post] : [];
+	});
 }

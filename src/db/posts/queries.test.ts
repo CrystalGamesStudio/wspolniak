@@ -495,6 +495,44 @@ describe("listPaginatedPosts", () => {
 	});
 });
 
+function mockListByIdsSelectChain(rows: unknown[]) {
+	const mockOrderBy = vi.fn().mockResolvedValue(rows);
+	const mockWhere = vi.fn().mockReturnValue({ orderBy: mockOrderBy });
+	const mockLeftJoin2 = vi.fn().mockReturnValue({ where: mockWhere });
+	const mockLeftJoin1 = vi.fn().mockReturnValue({ leftJoin: mockLeftJoin2 });
+	const mockFrom = vi.fn().mockReturnValue({ leftJoin: mockLeftJoin1 });
+	const mockSelect = vi.fn().mockReturnValue({ from: mockFrom });
+	mockGetDb.mockReturnValue({ select: mockSelect } as never);
+}
+
+describe("listPostsByIds", () => {
+	it("returns posts in the requested id order, regardless of DB row order", async () => {
+		const now = new Date();
+		const rows = [
+			_makePostRow("post-2", "Tomek", now, "img-2"),
+			_makePostRow("post-1", "Kasia", now, "img-1"),
+		];
+		mockListByIdsSelectChain(rows);
+		const { listPostsByIds } = await import("./queries");
+
+		const result = await listPostsByIds(["post-1", "post-2"]);
+
+		expect(result.map((p) => p.id)).toEqual(["post-1", "post-2"]);
+		expect(result[0]?.author.name).toBe("Kasia");
+		expect(result[1]?.author.name).toBe("Tomek");
+	});
+
+	it("returns empty array for empty ids without querying", async () => {
+		mockGetDb.mockClear();
+		const { listPostsByIds } = await import("./queries");
+
+		const result = await listPostsByIds([]);
+
+		expect(result).toEqual([]);
+		expect(mockGetDb).not.toHaveBeenCalled();
+	});
+});
+
 function mockUpdateChain(returnedRows: unknown[]) {
 	const mockReturning = vi.fn().mockResolvedValue(returnedRows);
 	const mockWhere = vi.fn().mockReturnValue({ returning: mockReturning });
