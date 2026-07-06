@@ -1,3 +1,10 @@
+# [1.48.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.47.0...v1.48.0) (2026-07-06)
+
+
+### Features
+
+* **lightbox:** add photo zoom and pan [#80](https://github.com/CrystalGamesStudio/wspolniak/issues/80) ([88a5d3a](https://github.com/CrystalGamesStudio/wspolniak/commit/88a5d3aeacb31817ef26f64f0e9203bab330bc22))
+
 # [1.47.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.46.0...v1.47.0) (2026-07-06)
 
 
