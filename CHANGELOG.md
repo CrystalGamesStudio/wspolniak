@@ -1,3 +1,10 @@
+# [1.50.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.49.0...v1.50.0) (2026-07-07)
+
+
+### Features
+
+* Wielka aktualizacja 1.5 — statystyki admina, mobilny sidebar, push tracking, porządki ([cd2f8a0](https://github.com/CrystalGamesStudio/wspolniak/commit/cd2f8a070a3045eb10b18a9868f42e15a843cacf)), closes [#27](https://github.com/CrystalGamesStudio/wspolniak/issues/27) [#29](https://github.com/CrystalGamesStudio/wspolniak/issues/29) [#30](https://github.com/CrystalGamesStudio/wspolniak/issues/30) [#31](https://github.com/CrystalGamesStudio/wspolniak/issues/31)
+
 ## Project Metrics
 
 - Current application codebase size: **22,436 lines of code** as measured on 2026-07-07.
