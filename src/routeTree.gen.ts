@@ -9,7 +9,6 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as ShareRouteImport } from './routes/share'
 import { Route as SetupRouteImport } from './routes/setup'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
@@ -17,16 +16,11 @@ import { Route as AppIndexRouteImport } from './routes/app/index'
 import { Route as SharedPostIdRouteImport } from './routes/shared-post.$id'
 import { Route as AuthErrorRouteImport } from './routes/auth/error'
 import { Route as AppNewRouteImport } from './routes/app/new'
-import { Route as AppFeedbackRouteImport } from './routes/app/feedback'
+import { Route as AppInfoRouteImport } from './routes/app/info'
 import { Route as AppAdminRouteImport } from './routes/app/admin'
 import { Route as AppPostIdRouteImport } from './routes/app/post.$id'
 import { Route as AppPostIdEditRouteImport } from './routes/app/post.$id_.edit'
 
-const ShareRoute = ShareRouteImport.update({
-  id: '/share',
-  path: '/share',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const SetupRoute = SetupRouteImport.update({
   id: '/setup',
   path: '/setup',
@@ -62,9 +56,9 @@ const AppNewRoute = AppNewRouteImport.update({
   path: '/new',
   getParentRoute: () => AppRoute,
 } as any)
-const AppFeedbackRoute = AppFeedbackRouteImport.update({
-  id: '/feedback',
-  path: '/feedback',
+const AppInfoRoute = AppInfoRouteImport.update({
+  id: '/info',
+  path: '/info',
   getParentRoute: () => AppRoute,
 } as any)
 const AppAdminRoute = AppAdminRouteImport.update({
@@ -87,9 +81,8 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
   '/setup': typeof SetupRoute
-  '/share': typeof ShareRoute
   '/app/admin': typeof AppAdminRoute
-  '/app/feedback': typeof AppFeedbackRoute
+  '/app/info': typeof AppInfoRoute
   '/app/new': typeof AppNewRoute
   '/auth/error': typeof AuthErrorRoute
   '/shared-post/$id': typeof SharedPostIdRoute
@@ -100,9 +93,8 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/setup': typeof SetupRoute
-  '/share': typeof ShareRoute
   '/app/admin': typeof AppAdminRoute
-  '/app/feedback': typeof AppFeedbackRoute
+  '/app/info': typeof AppInfoRoute
   '/app/new': typeof AppNewRoute
   '/auth/error': typeof AuthErrorRoute
   '/shared-post/$id': typeof SharedPostIdRoute
@@ -115,9 +107,8 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
   '/setup': typeof SetupRoute
-  '/share': typeof ShareRoute
   '/app/admin': typeof AppAdminRoute
-  '/app/feedback': typeof AppFeedbackRoute
+  '/app/info': typeof AppInfoRoute
   '/app/new': typeof AppNewRoute
   '/auth/error': typeof AuthErrorRoute
   '/shared-post/$id': typeof SharedPostIdRoute
@@ -131,9 +122,8 @@ export interface FileRouteTypes {
     | '/'
     | '/app'
     | '/setup'
-    | '/share'
     | '/app/admin'
-    | '/app/feedback'
+    | '/app/info'
     | '/app/new'
     | '/auth/error'
     | '/shared-post/$id'
@@ -144,9 +134,8 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/setup'
-    | '/share'
     | '/app/admin'
-    | '/app/feedback'
+    | '/app/info'
     | '/app/new'
     | '/auth/error'
     | '/shared-post/$id'
@@ -158,9 +147,8 @@ export interface FileRouteTypes {
     | '/'
     | '/app'
     | '/setup'
-    | '/share'
     | '/app/admin'
-    | '/app/feedback'
+    | '/app/info'
     | '/app/new'
     | '/auth/error'
     | '/shared-post/$id'
@@ -173,20 +161,12 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
   SetupRoute: typeof SetupRoute
-  ShareRoute: typeof ShareRoute
   AuthErrorRoute: typeof AuthErrorRoute
   SharedPostIdRoute: typeof SharedPostIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/share': {
-      id: '/share'
-      path: '/share'
-      fullPath: '/share'
-      preLoaderRoute: typeof ShareRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/setup': {
       id: '/setup'
       path: '/setup'
@@ -236,11 +216,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppNewRouteImport
       parentRoute: typeof AppRoute
     }
-    '/app/feedback': {
-      id: '/app/feedback'
-      path: '/feedback'
-      fullPath: '/app/feedback'
-      preLoaderRoute: typeof AppFeedbackRouteImport
+    '/app/info': {
+      id: '/app/info'
+      path: '/info'
+      fullPath: '/app/info'
+      preLoaderRoute: typeof AppInfoRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/admin': {
@@ -269,7 +249,7 @@ declare module '@tanstack/react-router' {
 
 interface AppRouteChildren {
   AppAdminRoute: typeof AppAdminRoute
-  AppFeedbackRoute: typeof AppFeedbackRoute
+  AppInfoRoute: typeof AppInfoRoute
   AppNewRoute: typeof AppNewRoute
   AppIndexRoute: typeof AppIndexRoute
   AppPostIdRoute: typeof AppPostIdRoute
@@ -278,7 +258,7 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppAdminRoute: AppAdminRoute,
-  AppFeedbackRoute: AppFeedbackRoute,
+  AppInfoRoute: AppInfoRoute,
   AppNewRoute: AppNewRoute,
   AppIndexRoute: AppIndexRoute,
   AppPostIdRoute: AppPostIdRoute,
@@ -291,7 +271,6 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
   SetupRoute: SetupRoute,
-  ShareRoute: ShareRoute,
   AuthErrorRoute: AuthErrorRoute,
   SharedPostIdRoute: SharedPostIdRoute,
 }

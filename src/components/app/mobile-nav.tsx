@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { Link, useLocation } from "@tanstack/react-router";
-import { Home, Plus, RefreshCw, SlidersHorizontal } from "lucide-react";
-import { ThemeToggle } from "@/components/theme";
+import { Home, Plus, RefreshCw } from "lucide-react";
+import { MobileSidebar } from "@/components/app/mobile-sidebar";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -17,6 +17,8 @@ export function MobileNav({ role }: MobileNavProps) {
 	return (
 		<nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background pb-safe sm:hidden">
 			<div className="flex items-center justify-around px-2 py-3">
+				<MobileSidebar role={role} />
+
 				<Link
 					to="/app"
 					className={cn(
@@ -28,12 +30,12 @@ export function MobileNav({ role }: MobileNavProps) {
 					<span className="text-xs text-muted-foreground">Home</span>
 				</Link>
 
-				{role === "admin" && (
-					<Link to="/app/admin" className="flex flex-col items-center gap-1.5 rounded-md p-1.5">
-						<SlidersHorizontal className="h-6 w-6 text-foreground" />
-						<span className="text-xs text-muted-foreground">Admin</span>
-					</Link>
-				)}
+				<Link to="/app/new" className="flex flex-col items-center gap-1.5">
+					<Button size="lg" className="h-14 w-14 rounded-full px-0">
+						<Plus className="h-6 w-6" />
+					</Button>
+					<span className="text-xs text-muted-foreground">Dodaj</span>
+				</Link>
 
 				<button
 					type="button"
@@ -44,18 +46,6 @@ export function MobileNav({ role }: MobileNavProps) {
 					<RefreshCw className="h-6 w-6 text-foreground" />
 					<span className="text-xs text-muted-foreground">Odśwież</span>
 				</button>
-
-				<Link to="/app/new" className="flex flex-col items-center gap-1.5">
-					<Button size="lg" className="h-14 w-14 rounded-full px-0">
-						<Plus className="h-6 w-6" />
-					</Button>
-					<span className="text-xs text-muted-foreground">Dodaj</span>
-				</Link>
-
-				<div className="flex flex-col items-center gap-1.5">
-					<ThemeToggle size="sm" />
-					<span className="text-xs text-muted-foreground">Tryb</span>
-				</div>
 			</div>
 		</nav>
 	);

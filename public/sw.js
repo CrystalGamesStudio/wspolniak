@@ -8,6 +8,11 @@ const CACHE_NAME = "wspolniak-__BUILD_ID__";
 
 const PRECACHE_URLS = ["/", "/manifest.webmanifest", "/logo192.png", "/favicon.ico"];
 
+// Localhost = lokalny dev (vite). Tam pliki .js/.css zmieniają zawartość pod
+// tym samym adresem przy każdej edycji (HMR), więc strategia cache-first
+// serwowałaby stary bundle. Produkcja jest na innej domenie → cache-first.
+const isLocalDev = self.location.hostname === "localhost";
+
 self.addEventListener("install", (event) => {
 	event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE_URLS)));
 	self.skipWaiting();
@@ -36,8 +41,22 @@ self.addEventListener("fetch", (event) => {
 	// Skip /app routes — let TanStack Start handle them without service worker interference
 	if (url.pathname.startsWith("/app")) return;
 
-	// Static assets: cache-first strategy
+	// Static assets: cache-first w produkcji, network-first na localhost (dev).
 	if (isStaticAsset(url.pathname)) {
+		if (isLocalDev) {
+			event.respondWith(
+				fetch(event.request)
+					.then((response) => {
+						if (response.ok) {
+							const clone = response.clone();
+							caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+						}
+						return response;
+					})
+					.catch(() => caches.match(event.request).then((cached) => cached ?? Response.error())),
+			);
+			return;
+		}
 		event.respondWith(
 			caches.match(event.request).then((cached) => {
 				if (cached) return cached;

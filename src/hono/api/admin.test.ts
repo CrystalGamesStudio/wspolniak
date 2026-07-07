@@ -15,10 +15,12 @@ vi.mock("@/db/identity/queries", () => ({
 }));
 
 vi.mock("@/db/instance/queries", () => ({
-	getShareCode: vi.fn(),
-	setShareCode: vi.fn(),
 	getMaintenanceConfig: vi.fn(),
 	updateMaintenance: vi.fn(),
+}));
+
+vi.mock("@/db/stats", () => ({
+	getStatsSummary: vi.fn(),
 }));
 
 import {
@@ -29,12 +31,8 @@ import {
 	softDeleteMember,
 } from "@/db/identity/queries";
 import { verifySessionCookie } from "@/db/identity/session";
-import {
-	getMaintenanceConfig,
-	getShareCode,
-	setShareCode,
-	updateMaintenance,
-} from "@/db/instance/queries";
+import { getMaintenanceConfig, updateMaintenance } from "@/db/instance/queries";
+import { getStatsSummary } from "@/db/stats";
 import adminEndpoint from "./admin";
 
 const mockVerify = vi.mocked(verifySessionCookie);
@@ -43,10 +41,9 @@ const mockCreateMember = vi.mocked(createMember);
 const mockListActiveMembers = vi.mocked(listActiveMembers);
 const mockRegenerateMemberToken = vi.mocked(regenerateMemberToken);
 const mockSoftDeleteMember = vi.mocked(softDeleteMember);
-const mockGetShareCode = vi.mocked(getShareCode);
-const mockSetShareCode = vi.mocked(setShareCode);
 const mockGetMaintenanceConfig = vi.mocked(getMaintenanceConfig);
 const mockUpdateMaintenance = vi.mocked(updateMaintenance);
+const mockGetStatsSummary = vi.mocked(getStatsSummary);
 
 function createApi() {
 	const api = new Hono<{ Bindings: { SESSION_SECRET: string } }>().basePath("/api");
@@ -224,73 +221,6 @@ describe("admin authorization", () => {
 	});
 });
 
-describe("GET /api/admin/share-code", () => {
-	it("returns current share code", async () => {
-		mockGetShareCode.mockResolvedValue("7843");
-
-		const api = createApi();
-		const res = await api.request(
-			"/api/admin/share-code",
-			{ headers: adminHeaders() },
-			{ SESSION_SECRET: "secret" },
-		);
-
-		expect(res.status).toBe(200);
-		const body = (await res.json()) as { data: { code: string | null } };
-		expect(body.data.code).toBe("7843");
-	});
-});
-
-describe("PUT /api/admin/share-code", () => {
-	it("updates share code", async () => {
-		mockSetShareCode.mockResolvedValue(undefined);
-
-		const api = createApi();
-		const res = await api.request(
-			"/api/admin/share-code",
-			{
-				method: "PUT",
-				headers: { ...adminHeaders(), "Content-Type": "application/json" },
-				body: JSON.stringify({ code: "9999" }),
-			},
-			{ SESSION_SECRET: "secret" },
-		);
-
-		expect(res.status).toBe(200);
-		expect(mockSetShareCode).toHaveBeenCalledWith("9999");
-	});
-
-	it("returns 400 when code is empty", async () => {
-		const api = createApi();
-		const res = await api.request(
-			"/api/admin/share-code",
-			{
-				method: "PUT",
-				headers: { ...adminHeaders(), "Content-Type": "application/json" },
-				body: JSON.stringify({ code: "" }),
-			},
-			{ SESSION_SECRET: "secret" },
-		);
-
-		expect(res.status).toBe(400);
-	});
-
-	it("returns 400 when code exceeds 20 characters", async () => {
-		const api = createApi();
-		const res = await api.request(
-			"/api/admin/share-code",
-			{
-				method: "PUT",
-				headers: { ...adminHeaders(), "Content-Type": "application/json" },
-				body: JSON.stringify({ code: "a".repeat(21) }),
-			},
-			{ SESSION_SECRET: "secret" },
-		);
-
-		expect(res.status).toBe(400);
-	});
-});
-
 describe("GET /api/admin/maintenance", () => {
 	it("returns current maintenance config", async () => {
 		mockGetMaintenanceConfig.mockResolvedValue({
@@ -416,5 +346,69 @@ describe("PUT /api/admin/maintenance", () => {
 		);
 
 		expect(res.status).toBe(400);
+	});
+});
+
+describe("GET /api/admin/stats", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		mockVerify.mockResolvedValue({ userId: "u1", name: "Tomek", role: "admin" });
+		mockFindUser.mockResolvedValue({
+			id: "u1",
+			name: "Tomek",
+			role: "admin",
+			tokenHash: "hash",
+			deletedAt: null,
+			createdAt: new Date(),
+		});
+	});
+
+	it("returns the stats summary", async () => {
+		const summary = {
+			dau: 3,
+			wau: 5,
+			photosLast7Days: 12,
+			pushDeliveryLast7Days: { attempts: 10, successes: 8, rate: 0.8 },
+			totalPosts: 150,
+			totalComments: 800,
+			totalPhotos: 320,
+			totalReactions: 1240,
+			totalMentions: 95,
+			windowStart: "2026-06-30T12:00:00.000Z",
+			windowEnd: "2026-07-07T12:00:00.000Z",
+		};
+		mockGetStatsSummary.mockResolvedValue(summary);
+
+		const api = createApi();
+		const res = await api.request(
+			"/api/admin/stats",
+			{ headers: adminHeaders() },
+			{ SESSION_SECRET: "secret" },
+		);
+
+		expect(res.status).toBe(200);
+		const body = (await res.json()) as { data: typeof summary };
+		expect(body.data).toEqual(summary);
+	});
+
+	it("returns 403 for a non-admin member", async () => {
+		mockVerify.mockResolvedValue({ userId: "u2", name: "Kasia", role: "member" });
+		mockFindUser.mockResolvedValue({
+			id: "u2",
+			name: "Kasia",
+			role: "member",
+			tokenHash: "hash",
+			deletedAt: null,
+			createdAt: new Date(),
+		});
+
+		const api = createApi();
+		const res = await api.request(
+			"/api/admin/stats",
+			{ headers: adminHeaders() },
+			{ SESSION_SECRET: "secret" },
+		);
+
+		expect(res.status).toBe(403);
 	});
 });

@@ -1,21 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import {
-	AlertTriangle,
-	ArrowLeft,
-	Check,
-	Copy,
-	Info,
-	Link,
-	Plus,
-	Share2,
-	Trash2,
-} from "lucide-react";
+import { AlertTriangle, ArrowLeft, Check, Copy, Link, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { MaintenanceDialog } from "@/components/admin/maintenance-dialog";
-import { ShareCodeDialog } from "@/components/admin/share-code-dialog";
-import { ThemeToggle } from "@/components/theme";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -47,51 +35,8 @@ function AdminPage() {
 	const [newName, setNewName] = useState("");
 	const [copiedLink, setCopiedLink] = useState<string | null>(null);
 	const [lastMagicLink, setLastMagicLink] = useState<{ name: string; link: string } | null>(null);
-	const [editingShareCode, setEditingShareCode] = useState(false);
-	const [shareDialogOpen, setShareDialogOpen] = useState(false);
 	const [addDialogOpen, setAddDialogOpen] = useState(false);
 	const [maintenanceDialogOpen, setMaintenanceDialogOpen] = useState(false);
-	const [shareCodeInput, setShareCodeInput] = useState("");
-
-	const configQuery = useQuery({
-		queryKey: ["config"],
-		queryFn: async () => {
-			const res = await fetch("/api/app/config");
-			if (!res.ok) throw new Error("Nie udało się pobrać konfiguracji");
-			const json = (await res.json()) as { data: { appUrl: string } };
-			return json.data.appUrl;
-		},
-	});
-
-	const appUrl = configQuery.data ?? (typeof window !== "undefined" ? window.location.origin : "");
-
-	const shareCodeQuery = useQuery({
-		queryKey: ["admin", "share-code"],
-		queryFn: async (): Promise<string | null> => {
-			const res = await fetch("/api/admin/share-code");
-			if (!res.ok) throw new Error("Nie udało się pobrać kodu");
-			const json = (await res.json()) as { data: { code: string | null } };
-			return json.data.code;
-		},
-	});
-
-	const shareCodeMutation = useMutation({
-		mutationFn: async (code: string) => {
-			const res = await fetch("/api/admin/share-code", {
-				method: "PUT",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ code }),
-			});
-			if (!res.ok) {
-				const err = (await res.json()) as { error: string };
-				throw new Error(err.error);
-			}
-		},
-		onSuccess: async () => {
-			setEditingShareCode(false);
-			await queryClient.invalidateQueries({ queryKey: ["admin", "share-code"] });
-		},
-	});
 
 	const membersQuery = useQuery({
 		queryKey: ["admin", "members"],
@@ -194,13 +139,6 @@ function AdminPage() {
 		createMutation.mutate(trimmed);
 	}
 
-	const currentShareCode = shareCodeQuery.data;
-
-	function startEditShareCode() {
-		setShareCodeInput(currentShareCode ?? "");
-		setEditingShareCode(true);
-	}
-
 	return (
 		<div className="max-w-2xl bg-background px-4 py-6 pb-28 sm:pb-6">
 			<div className="mb-6 flex items-center gap-2">
@@ -232,15 +170,6 @@ function AdminPage() {
 					>
 						<AlertTriangle className="h-4 w-4" />
 					</Button>
-					<Button
-						variant="ghost"
-						size="lg"
-						onClick={() => setShareDialogOpen(true)}
-						title="Udostępnianie"
-					>
-						<Share2 className="h-4 w-4" />
-					</Button>
-					<ThemeToggle size="lg" className="hidden sm:block" />
 				</div>
 			</div>
 
@@ -260,33 +189,6 @@ function AdminPage() {
 				onSave={(input) => {
 					maintenanceMutation.reset();
 					maintenanceMutation.mutate(input);
-				}}
-			/>
-
-			<ShareCodeDialog
-				open={shareDialogOpen}
-				appUrl={appUrl}
-				currentShareCode={currentShareCode}
-				copiedLink={copiedLink}
-				editingShareCode={editingShareCode}
-				shareCodeInput={shareCodeInput}
-				isSaving={shareCodeMutation.isPending}
-				errorMessage={shareCodeMutation.isError ? shareCodeMutation.error.message : undefined}
-				onOpenChange={setShareDialogOpen}
-				onClose={() => {
-					setEditingShareCode(false);
-					shareCodeMutation.reset();
-				}}
-				onCopy={copyToClipboard}
-				onStartEdit={startEditShareCode}
-				onCancelEdit={() => {
-					setEditingShareCode(false);
-					shareCodeMutation.reset();
-				}}
-				onShareCodeInputChange={setShareCodeInput}
-				onSaveShareCode={(code) => {
-					shareCodeMutation.reset();
-					shareCodeMutation.mutate(code);
 				}}
 			/>
 
@@ -350,20 +252,6 @@ function AdminPage() {
 						Wyślij ten link osobie — po kliknięciu zostanie zalogowana.
 					</p>
 				</div>
-			)}
-
-			{membersQuery.data && !currentShareCode && (
-				<button
-					type="button"
-					onClick={() => setShareDialogOpen(true)}
-					className="mb-4 flex w-full items-start gap-2 rounded-lg border border-border bg-muted/50 p-3 text-left text-sm text-muted-foreground hover:bg-muted"
-				>
-					<Info className="mt-0.5 h-4 w-4 shrink-0" />
-					<span>
-						<strong className="text-foreground">Udostępnianie jest wyłączone.</strong> Ustaw kod
-						dostępu w sekcji <strong>Udostępnianie</strong>. Kliknij, aby otworzyć.
-					</span>
-				</button>
 			)}
 
 			{membersQuery.data && (

@@ -61,11 +61,13 @@ describe("fanOutPush", () => {
 		endpoint: "https://push.example.com/sub1",
 		p256dh: "key1",
 		auth: "auth1",
+		userId: "u1",
 	};
 	const sub2: SubscriptionInfo = {
 		endpoint: "https://push.example.com/sub2",
 		p256dh: "key2",
 		auth: "auth2",
+		userId: "u2",
 	};
 
 	it("sends push to all provided subscriptions", async () => {
@@ -114,6 +116,71 @@ describe("fanOutPush", () => {
 
 		expect(deleteSubscription).not.toHaveBeenCalled();
 		expect(onSendError).toHaveBeenCalledWith(sub1.endpoint, 500);
+	});
+
+	it("calls onSendOutcome with 'success' on OK response", async () => {
+		const sendPush = vi.fn().mockResolvedValue(new Response(null, { status: 201 }));
+		const onSendOutcome = vi.fn();
+
+		await fanOutPush({
+			subscriptions: [sub1],
+			payload,
+			sendPush,
+			deleteSubscription: vi.fn(),
+			onSendOutcome,
+		});
+
+		expect(onSendOutcome).toHaveBeenCalledWith("success", sub1.endpoint, sub1.userId, 201);
+	});
+
+	it("calls onSendOutcome with 'gone' on 410 and still deletes subscription", async () => {
+		const sendPush = vi.fn().mockResolvedValue(new Response(null, { status: 410 }));
+		const deleteSubscription = vi.fn();
+		const onSendOutcome = vi.fn();
+
+		await fanOutPush({
+			subscriptions: [sub1],
+			payload,
+			sendPush,
+			deleteSubscription,
+			onSendOutcome,
+		});
+
+		expect(deleteSubscription).toHaveBeenCalledWith(sub1.endpoint);
+		expect(onSendOutcome).toHaveBeenCalledWith("gone", sub1.endpoint, sub1.userId, 410);
+	});
+
+	it("calls onSendOutcome with 'failure' and null status when sendPush throws", async () => {
+		const sendPush = vi.fn().mockRejectedValue(new Error("network down"));
+		const onSendOutcome = vi.fn();
+
+		await fanOutPush({
+			subscriptions: [sub1],
+			payload,
+			sendPush,
+			deleteSubscription: vi.fn(),
+			onSendOutcome,
+		});
+
+		expect(onSendOutcome).toHaveBeenCalledWith("failure", sub1.endpoint, sub1.userId, null);
+	});
+
+	it("calls both onSendError and onSendOutcome on non-410 failure", async () => {
+		const sendPush = vi.fn().mockResolvedValue(new Response(null, { status: 500 }));
+		const onSendError = vi.fn();
+		const onSendOutcome = vi.fn();
+
+		await fanOutPush({
+			subscriptions: [sub1],
+			payload,
+			sendPush,
+			deleteSubscription: vi.fn(),
+			onSendError,
+			onSendOutcome,
+		});
+
+		expect(onSendError).toHaveBeenCalledWith(sub1.endpoint, 500);
+		expect(onSendOutcome).toHaveBeenCalledWith("failure", sub1.endpoint, sub1.userId, 500);
 	});
 
 	it("handles empty subscriptions list", async () => {

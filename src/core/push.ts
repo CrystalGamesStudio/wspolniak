@@ -15,6 +15,8 @@ export interface SubscriptionInfo {
 	endpoint: string;
 	p256dh: string;
 	auth: string;
+	// Potrzebne do logowania delivery events (recordDelivery) w fan-out.
+	userId: string;
 }
 
 interface FanOutDeps {
@@ -22,7 +24,15 @@ interface FanOutDeps {
 	payload: PushPayload;
 	sendPush: (subscription: SubscriptionInfo, payload: PushPayload) => Promise<Response>;
 	deleteSubscription: (endpoint: string) => Promise<unknown>;
+	// backward compat — wołane tylko przy non-OK (failure HTTP).
 	onSendError?: (endpoint: string, status: number) => void;
+	// Wołane po KAŻDEJ próbie (success/gone/failure), z userId i statusem (null przy throw).
+	onSendOutcome?: (
+		outcome: "success" | "gone" | "failure",
+		endpoint: string,
+		userId: string,
+		statusCode: number | null,
+	) => void | Promise<void>;
 }
 
 const ICON = "/logo192.png";
@@ -59,14 +69,24 @@ export async function fanOutPush({
 	sendPush,
 	deleteSubscription,
 	onSendError,
+	onSendOutcome,
 }: FanOutDeps): Promise<void> {
 	await Promise.allSettled(
 		subscriptions.map(async (sub) => {
-			const response = await sendPush(sub, payload);
-			if (response.status === 410) {
-				await deleteSubscription(sub.endpoint);
-			} else if (!response.ok) {
-				onSendError?.(sub.endpoint, response.status);
+			try {
+				const response = await sendPush(sub, payload);
+				if (response.status === 410) {
+					await deleteSubscription(sub.endpoint);
+					await onSendOutcome?.("gone", sub.endpoint, sub.userId, response.status);
+				} else if (response.ok) {
+					await onSendOutcome?.("success", sub.endpoint, sub.userId, response.status);
+				} else {
+					onSendError?.(sub.endpoint, response.status);
+					await onSendOutcome?.("failure", sub.endpoint, sub.userId, response.status);
+				}
+			} catch {
+				// sendPush rzucił — logujemy failure bez statusu, fan-out kontynuuje.
+				await onSendOutcome?.("failure", sub.endpoint, sub.userId, null);
 			}
 		}),
 	);

@@ -8,6 +8,12 @@ interface NotifyDeps {
 	sendPush: (subscription: SubscriptionInfo, payload: PushPayload) => Promise<Response>;
 	deleteSubscription: (endpoint: string) => Promise<unknown>;
 	onSendError?: (endpoint: string, status: number) => void;
+	onSendOutcome?: (
+		outcome: "success" | "gone" | "failure",
+		endpoint: string,
+		userId: string,
+		statusCode: number | null,
+	) => void | Promise<void>;
 }
 
 export async function notifyNewPost(
@@ -24,6 +30,7 @@ export async function notifyNewPost(
 		sendPush: deps.sendPush,
 		deleteSubscription: deps.deleteSubscription,
 		onSendError: deps.onSendError,
+		onSendOutcome: deps.onSendOutcome,
 	});
 }
 
@@ -50,6 +57,7 @@ export async function notifyNewComment(
 		sendPush: deps.sendPush,
 		deleteSubscription: deps.deleteSubscription,
 		onSendError: deps.onSendError,
+		onSendOutcome: deps.onSendOutcome,
 	});
 }
 
@@ -86,5 +94,6 @@ export async function notifyMentions(
 		sendPush: deps.sendPush,
 		deleteSubscription: deps.deleteSubscription,
 		onSendError: deps.onSendError,
+		onSendOutcome: deps.onSendOutcome,
 	});
 }

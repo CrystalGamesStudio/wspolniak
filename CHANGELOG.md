@@ -1,3 +1,9 @@
+## Project Metrics
+
+- Current application codebase size: **22,436 lines of code** as measured on 2026-07-07.
+- Scope: `src/` and `scripts/` source files, excluding generated files, SQL migrations, build artifacts, and dependencies.
+- This metric must be recalculated and kept current whenever the codebase changes in a way that materially affects line count.
+
 # [1.49.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.48.0...v1.49.0) (2026-07-06)
 
 

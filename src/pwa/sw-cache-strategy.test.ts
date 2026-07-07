@@ -78,7 +78,9 @@ interface SwEnv {
 
 const TEST_BUILD_ID = "testbuild1234";
 
-function loadSw(): SwEnv {
+function loadSw(opts: { hostname?: string; origin?: string } = {}): SwEnv {
+	const hostname = opts.hostname ?? "wspolniak.com";
+	const origin = opts.origin ?? "https://wspolniak.com";
 	const path = resolve(import.meta.dirname, "..", "..", "public", "sw.js");
 	const rawSource = readFileSync(path, "utf-8");
 	// Simulate what scripts/inject-sw-version.mjs does at build time.
@@ -95,7 +97,7 @@ function loadSw(): SwEnv {
 		skipWaiting: vi.fn(),
 		clients: { claim: vi.fn(), matchAll: vi.fn() },
 		registration: { showNotification: vi.fn() },
-		location: { origin: "https://wspolniak.com" },
+		location: { origin, hostname },
 	};
 
 	const captured: { cacheName?: string } = {};
@@ -191,6 +193,63 @@ describe("public/sw.js caching strategy (issue #62)", () => {
 			// Bug repro: cache-first returns the STALE html. Fix: network-first returns FRESH.
 			expect(text).toContain('data-version="new"');
 			expect(fetchMock).toHaveBeenCalled();
+		});
+	});
+
+	describe("Static assets on localhost (dev): network-first", () => {
+		it("serves fresh JS from network even when a stale copy is cached", async () => {
+			const { listeners, cacheStorage, fetchMock } = loadSw({
+				hostname: "localhost",
+				origin: "http://localhost:3000",
+			});
+
+			// Pre-populate cache with a STALE JS bundle.
+			const cache = await cacheStorage.open((await cacheStorage.keys())[0] ?? "wspolniak");
+			await cache.put(
+				"http://localhost:3000/assets/app.js",
+				new Response("STALE-BUNDLE", { status: 200 }),
+			);
+
+			// Network returns a FRESH JS bundle.
+			fetchMock.mockResolvedValueOnce(new Response("FRESH-BUNDLE", { status: 200 }));
+
+			const fetchHandler = listeners.get("fetch");
+			expect(fetchHandler).toBeDefined();
+
+			const event = makeFetchEvent("http://localhost:3000/assets/app.js");
+			fetchHandler?.(event as unknown);
+
+			const response = await event.responded;
+			expect(response).toBeDefined();
+			const text = await response?.text();
+			// Network-first on localhost: returns FRESH, never the stale cache. Fix
+			// for "must hard-refresh in dev" — vite rewrites bundle contents under
+			// the same URL, so cache-first would serve stale forever.
+			expect(text).toBe("FRESH-BUNDLE");
+			expect(fetchMock).toHaveBeenCalled();
+		});
+
+		it("still uses cache-first in production (non-localhost) for static assets", async () => {
+			const { listeners, cacheStorage, fetchMock } = loadSw();
+
+			const cache = await cacheStorage.open((await cacheStorage.keys())[0] ?? "wspolniak");
+			await cache.put(
+				"https://wspolniak.com/assets/app.js",
+				new Response("CACHED-BUNDLE", { status: 200 }),
+			);
+
+			const fetchHandler = listeners.get("fetch");
+			expect(fetchHandler).toBeDefined();
+
+			const event = makeFetchEvent("https://wspolniak.com/assets/app.js");
+			fetchHandler?.(event as unknown);
+
+			const response = await event.responded;
+			expect(response).toBeDefined();
+			const text = await response?.text();
+			// Cache-first in production: serves cached bundle without hitting network.
+			expect(text).toBe("CACHED-BUNDLE");
+			expect(fetchMock).not.toHaveBeenCalled();
 		});
 	});
 });

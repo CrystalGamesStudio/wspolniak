@@ -5,12 +5,8 @@ import {
 	regenerateMemberToken,
 	softDeleteMember,
 } from "@/db/identity/queries";
-import {
-	getMaintenanceConfig,
-	getShareCode,
-	setShareCode,
-	updateMaintenance,
-} from "@/db/instance/queries";
+import { getMaintenanceConfig, updateMaintenance } from "@/db/instance/queries";
+import { getStatsSummary } from "@/db/stats";
 import { createHono, getOrigin } from "@/hono/factory";
 import { adminMiddleware } from "@/hono/middleware/admin";
 import { authMiddleware } from "@/hono/middleware/auth";
@@ -62,22 +58,6 @@ adminEndpoint.delete("/members/:id", async (c) => {
 	return c.json({ data: { deleted: true } });
 });
 
-adminEndpoint.get("/share-code", async (c) => {
-	const code = await getShareCode();
-	return c.json({ data: { code } });
-});
-
-adminEndpoint.put("/share-code", async (c) => {
-	const body = await c.req.json<{ code?: string }>();
-	const code = body.code?.trim();
-
-	if (!code) return c.json({ error: "Code is required" }, 400);
-	if (code.length > 20) return c.json({ error: "Code must be max 20 characters" }, 400);
-
-	await setShareCode(code);
-	return c.json({ data: { code } });
-});
-
 adminEndpoint.get("/maintenance", async (c) => {
 	const config = await getMaintenanceConfig();
 	return c.json({ data: config });
@@ -119,6 +99,11 @@ adminEndpoint.put("/maintenance", async (c) => {
 	await updateMaintenance(update);
 	const config = await getMaintenanceConfig();
 	return c.json({ data: config });
+});
+
+adminEndpoint.get("/stats", async (c) => {
+	const summary = await getStatsSummary(new Date());
+	return c.json({ data: summary });
 });
 
 export default adminEndpoint;

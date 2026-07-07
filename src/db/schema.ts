@@ -6,4 +6,5 @@ export { mentions } from "./mentions/table";
 export { pinnedPosts } from "./pinned-posts/table";
 export { postReactions } from "./post-reactions/table";
 export { postImages, posts } from "./posts/table";
+export { pushDeliveryEvents } from "./push-delivery-events/table";
 export { pushSubscriptions } from "./push-subscriptions/table";
