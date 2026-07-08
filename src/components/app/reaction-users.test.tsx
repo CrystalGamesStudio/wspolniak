@@ -74,6 +74,44 @@ describe("ReactionUsers", () => {
 		expect(await screen.findByText("Ania")).toBeDefined();
 	});
 
+	it("does not crash on legacy reaction types not in REACTION_CONFIG (#88)", async () => {
+		vi.stubGlobal(
+			"fetch",
+			mockFetchUsers([
+				{
+					id: "r1",
+					postId: "post-1",
+					commentId: null,
+					userId: "u1",
+					// Legacy type from before the heart/laugh/flame redesign (303220e).
+					reactionType: "thumbs_up",
+					createdAt: "2026-01-01",
+					updatedAt: "2026-01-01",
+					user: { name: "Legacy" },
+				},
+				{
+					id: "r2",
+					postId: "post-1",
+					commentId: null,
+					userId: "u2",
+					reactionType: "heart",
+					createdAt: "2026-01-01",
+					updatedAt: "2026-01-01",
+					user: { name: "Tomek" },
+				},
+			]),
+		);
+
+		render(<ReactionUsers target={POST_TARGET} />, { wrapper: createWrapper() });
+
+		const trigger = await screen.findByRole("button", { name: /pokaż kto zareagował/i });
+		await userEvent.click(trigger);
+
+		// The known reaction still renders; the legacy one is skipped, no crash.
+		expect(await screen.findByText("Tomek")).toBeDefined();
+		expect(screen.queryByText("Legacy")).toBeNull();
+	});
+
 	it("shows empty state when no reactions", async () => {
 		vi.stubGlobal("fetch", mockFetchUsers([]));
 		render(<ReactionUsers target={POST_TARGET} />, { wrapper: createWrapper() });

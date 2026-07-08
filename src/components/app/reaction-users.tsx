@@ -66,7 +66,9 @@ export function ReactionUsers({ target }: ReactionUsersProps) {
 					) : (
 						<div className="space-y-3">
 							{Array.from(grouped.entries()).map(([type, list]) => {
-								const { Icon, color, filled } = REACTION_CONFIG[type];
+								const config = REACTION_CONFIG[type];
+								if (!config) return null; // skip legacy/unknown reaction types (#88)
+								const { Icon, color, filled } = config;
 								return (
 									<div key={type} className="flex flex-wrap items-center gap-2">
 										<Icon
