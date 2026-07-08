@@ -36,6 +36,20 @@
       "when": 1779277479074,
       "tag": "0004_wakeful_reaper",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1780156865636,
+      "tag": "0005_dapper_shiva",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1783493226300,
+      "tag": "0006_fantastic_namor",
+      "breakpoints": true
     }
   ]
 }
