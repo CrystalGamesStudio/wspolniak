@@ -1,3 +1,10 @@
+## [1.50.2](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.50.1...v1.50.2) (2026-07-08)
+
+
+### Bug Fixes
+
+* **reactions:** skip legacy reaction types in ReactionUsers ([#88](https://github.com/CrystalGamesStudio/wspolniak/issues/88)) ([29f8644](https://github.com/CrystalGamesStudio/wspolniak/commit/29f8644e6be35096e9b8fe75d539ce25e415e699))
+
 # [1.50.1](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.50.0...v1.50.1) (2026-07-07)
 
 
