@@ -17,6 +17,7 @@ import { Route as SharedPostIdRouteImport } from './routes/shared-post.$id'
 import { Route as AuthErrorRouteImport } from './routes/auth/error'
 import { Route as AppNewRouteImport } from './routes/app/new'
 import { Route as AppInfoRouteImport } from './routes/app/info'
+import { Route as AppCalendarRouteImport } from './routes/app/calendar'
 import { Route as AppAdminRouteImport } from './routes/app/admin'
 import { Route as AppPostIdRouteImport } from './routes/app/post.$id'
 import { Route as AppPostIdEditRouteImport } from './routes/app/post.$id_.edit'
@@ -61,6 +62,11 @@ const AppInfoRoute = AppInfoRouteImport.update({
   path: '/info',
   getParentRoute: () => AppRoute,
 } as any)
+const AppCalendarRoute = AppCalendarRouteImport.update({
+  id: '/calendar',
+  path: '/calendar',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppAdminRoute = AppAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -82,6 +88,7 @@ export interface FileRoutesByFullPath {
   '/app': typeof AppRouteWithChildren
   '/setup': typeof SetupRoute
   '/app/admin': typeof AppAdminRoute
+  '/app/calendar': typeof AppCalendarRoute
   '/app/info': typeof AppInfoRoute
   '/app/new': typeof AppNewRoute
   '/auth/error': typeof AuthErrorRoute
@@ -94,6 +101,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/setup': typeof SetupRoute
   '/app/admin': typeof AppAdminRoute
+  '/app/calendar': typeof AppCalendarRoute
   '/app/info': typeof AppInfoRoute
   '/app/new': typeof AppNewRoute
   '/auth/error': typeof AuthErrorRoute
@@ -108,6 +116,7 @@ export interface FileRoutesById {
   '/app': typeof AppRouteWithChildren
   '/setup': typeof SetupRoute
   '/app/admin': typeof AppAdminRoute
+  '/app/calendar': typeof AppCalendarRoute
   '/app/info': typeof AppInfoRoute
   '/app/new': typeof AppNewRoute
   '/auth/error': typeof AuthErrorRoute
@@ -123,6 +132,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/setup'
     | '/app/admin'
+    | '/app/calendar'
     | '/app/info'
     | '/app/new'
     | '/auth/error'
@@ -135,6 +145,7 @@ export interface FileRouteTypes {
     | '/'
     | '/setup'
     | '/app/admin'
+    | '/app/calendar'
     | '/app/info'
     | '/app/new'
     | '/auth/error'
@@ -148,6 +159,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/setup'
     | '/app/admin'
+    | '/app/calendar'
     | '/app/info'
     | '/app/new'
     | '/auth/error'
@@ -223,6 +235,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppInfoRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/calendar': {
+      id: '/app/calendar'
+      path: '/calendar'
+      fullPath: '/app/calendar'
+      preLoaderRoute: typeof AppCalendarRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/admin': {
       id: '/app/admin'
       path: '/admin'
@@ -249,6 +268,7 @@ declare module '@tanstack/react-router' {
 
 interface AppRouteChildren {
   AppAdminRoute: typeof AppAdminRoute
+  AppCalendarRoute: typeof AppCalendarRoute
   AppInfoRoute: typeof AppInfoRoute
   AppNewRoute: typeof AppNewRoute
   AppIndexRoute: typeof AppIndexRoute
@@ -258,6 +278,7 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppAdminRoute: AppAdminRoute,
+  AppCalendarRoute: AppCalendarRoute,
   AppInfoRoute: AppInfoRoute,
   AppNewRoute: AppNewRoute,
   AppIndexRoute: AppIndexRoute,

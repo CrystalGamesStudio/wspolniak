@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { Link, useLocation } from "@tanstack/react-router";
-import { Home, Info, Plus, SlidersHorizontal } from "lucide-react";
+import { Calendar, Home, Info, Plus, SlidersHorizontal } from "lucide-react";
 import { ThemeToggle } from "@/components/theme";
 import { useTheme } from "@/components/theme/theme-provider";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,7 @@ interface DesktopSidebarProps {
 const NAV_ITEMS: NavItem[] = [
 	{ to: "/app", icon: Home, label: "Feed", exact: true },
 	{ to: "/app/admin", icon: SlidersHorizontal, label: "Admin", adminOnly: true },
+	{ to: "/app/calendar", icon: Calendar, label: "Kalendarz", adminOnly: true },
 	{ to: "/app/info", icon: Info, label: "Więcej", adminOnly: true },
 ];
 
