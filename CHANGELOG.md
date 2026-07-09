@@ -1,3 +1,10 @@
+# [1.51.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.50.2...v1.51.0) (2026-07-09)
+
+
+### Features
+
+* **calendar:** F1 — dodawanie i lista wydarzeń (foundation) ([1c97ddc](https://github.com/CrystalGamesStudio/wspolniak/commit/1c97ddc1fc4a4d2d7db6104b2d9a0a53c528eca0)), closes [#82](https://github.com/CrystalGamesStudio/wspolniak/issues/82)
+
 ## [1.50.2](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.50.1...v1.50.2) (2026-07-08)
 
 
