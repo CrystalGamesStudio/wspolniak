@@ -1,3 +1,10 @@
+# [1.52.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.51.0...v1.52.0) (2026-07-12)
+
+
+### Features
+
+* **mentions:** scroll-follow, zielony feed, myślnik w nazwach [[#90](https://github.com/CrystalGamesStudio/wspolniak/issues/90)] ([5cad8e6](https://github.com/CrystalGamesStudio/wspolniak/commit/5cad8e67ee84675562314cb7d546eea1206d7e3f))
+
 # [1.51.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.50.2...v1.51.0) (2026-07-09)
 
 
