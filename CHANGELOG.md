@@ -1,3 +1,10 @@
+# [1.53.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.52.0...v1.53.0) (2026-07-12)
+
+
+### Features
+
+* **lightbox:** pinch-to-zoom dwoma palcami (1–4×) [[#91](https://github.com/CrystalGamesStudio/wspolniak/issues/91)] ([f506a82](https://github.com/CrystalGamesStudio/wspolniak/commit/f506a8235e10f06ab446605f5afb248f8eeb474f))
+
 # [1.52.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.51.0...v1.52.0) (2026-07-12)
 
 
