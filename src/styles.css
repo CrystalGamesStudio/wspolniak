@@ -345,6 +345,15 @@ code {
   }
 }
 
+@keyframes publish-indeterminate {
+  0% {
+    transform: scaleX(0);
+  }
+  100% {
+    transform: scaleX(1);
+  }
+}
+
 @utility pb-safe {
   padding-bottom: env(safe-area-inset-bottom, 0);
 }

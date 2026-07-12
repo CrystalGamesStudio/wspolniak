@@ -16,7 +16,6 @@ import { type Mention, MentionInput } from "@/components/app/mention-input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { LoaderIcon } from "@/components/ui/spinner";
 import { reorder } from "@/lib/reorder";
 
 const ACCEPTED_IMAGE_TYPES = "image/jpeg,image/png,image/webp,image/heic,image/heif";
@@ -267,9 +266,18 @@ export function NewPostForm({ onSubmit, isSubmitting }: NewPostFormProps) {
 				</DndContext>
 			)}
 
-			<Button type="submit" className="h-11 w-full sm:h-9" disabled={!canSubmit}>
-				<LoaderIcon loading={isSubmitting} />
-				{isSubmitting ? "Publikowanie..." : "Opublikuj"}
+			<Button
+				type="submit"
+				className="relative h-11 w-full overflow-hidden sm:h-9"
+				disabled={!canSubmit}
+			>
+				{isSubmitting ? (
+					<span
+						aria-hidden
+						className="absolute inset-0 origin-left animate-[publish-indeterminate_7s_ease-out_forwards] bg-primary-foreground/20"
+					/>
+				) : null}
+				<span className="relative">{isSubmitting ? "Publikowanie..." : "Opublikuj"}</span>
 			</Button>
 		</form>
 	);

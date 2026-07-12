@@ -29,7 +29,6 @@ interface FeedPost {
 	images: FeedImage[];
 	commentCount?: number;
 	pinned?: boolean;
-	pending?: boolean;
 }
 
 interface FeedProps {
@@ -82,7 +81,6 @@ export function Feed({
 				return (
 					<article
 						key={post.id}
-						aria-busy={post.pending}
 						className={`relative rounded-lg border bg-card p-4 ${
 							post.pinned ? "border-2 border-primary" : "border-border"
 						}`}
@@ -101,11 +99,6 @@ export function Feed({
 							<time className="text-sm text-muted-foreground" dateTime={post.createdAt}>
 								{formatRelativeTime(post.createdAt)}
 							</time>
-							{post.pending && (
-								<span className="rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
-									Publikowanie…
-								</span>
-							)}
 							<div className="ml-auto flex items-center gap-1">
 								<ReactionUsers target={{ kind: "post", postId: post.id }} />
 								{(post.authorId === currentUserId || currentUserRole === "admin") && (
