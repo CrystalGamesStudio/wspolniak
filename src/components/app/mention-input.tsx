@@ -47,6 +47,7 @@ export function MentionInput({
 	className,
 }: MentionInputProps) {
 	const textareaRef = useRef<HTMLTextAreaElement>(null);
+	const activeItemRef = useRef<HTMLLIElement>(null);
 	const [detection, setDetection] = useState<MentionDetection | null>(null);
 	const [users, setUsers] = useState<MemberOption[]>([]);
 	const [activeIndex, setActiveIndex] = useState(0);
@@ -147,6 +148,14 @@ export function MentionInput({
 
 	const showDropdown = detection !== null && filteredUsers.length > 0 && caretCoords !== null;
 
+	// Utrzymuj aktywny (zaznaczony klawiaturą) wiersz dropdownu w widoku — bez tego
+	// strzałki przewijają selekcję poza `max-h-[200px]` okno listy. Reagujemy na zmianę
+	// zaznaczenia i widoczności listy; scroll idzie przez ref, nie przez closure.
+	// biome-ignore lint/correctness/useExhaustiveDependencies: celowe deps — czytamy ref.current, nie wartości z closure
+	useEffect(() => {
+		activeItemRef.current?.scrollIntoView({ block: "nearest" });
+	}, [activeIndex, showDropdown]);
+
 	return (
 		<div className="relative">
 			<textarea
@@ -172,6 +181,7 @@ export function MentionInput({
 					{filteredUsers.map((user, index) => (
 						<li
 							key={user.id}
+							ref={index === activeIndex ? activeItemRef : undefined}
 							data-active={index === activeIndex}
 							onMouseDown={(event) => {
 								event.preventDefault();

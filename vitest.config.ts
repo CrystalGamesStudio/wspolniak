@@ -8,5 +8,6 @@ export default defineConfig({
 		include: ["src/**/*.test.ts", "src/**/*.test.tsx"],
 		exclude: ["src/routes/**"],
 		environment: "jsdom",
+		setupFiles: ["./src/test/setup.ts"],
 	},
 });

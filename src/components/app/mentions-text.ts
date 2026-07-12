@@ -52,13 +52,14 @@ export interface TextSegment {
 }
 
 /**
- * Dzieli tekst na segmenty, oznaczając `@imię` (ciąg liter/cyfr po `@`) jako mention.
- * Używane do zielonego podświetlenia `@imię` w renderowanym komentarzu.
- * Obsługuje polskie znaki przez `\p{L}`.
+ * Dzieli tekst na segmenty, oznaczając `@imię` (ciąg liter/cyfr/myślników po `@`) jako mention.
+ * Używane do zielonego podświetlenia `@imię` w renderowanym komentarzu i feedzie.
+ * Obsługuje polskie znaki przez `\p{L}` oraz wieloczłonowe imiona z myślnikiem (np. `@Jan-Kowalski`).
+ * Negative lookbehind `(?<![\p{L}\d])` blokuje emaile: `a@b` nie jest wzmianką.
  */
 export function highlightMentions(text: string): TextSegment[] {
 	const segments: TextSegment[] = [];
-	const regex = /@[\p{L}\d]+/gu;
+	const regex = /(?<![\p{L}\d])@[\p{L}\d-]+/gu;
 	let lastIndex = 0;
 	for (const match of text.matchAll(regex)) {
 		if (match.index > lastIndex) {

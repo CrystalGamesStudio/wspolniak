@@ -265,4 +265,24 @@ describe("Feed", () => {
 
 		expect(screen.queryByLabelText("Przypięty post")).toBeNull();
 	});
+
+	it("renders a @mention in the description as green", () => {
+		const now = new Date().toISOString();
+		const posts = [
+			{
+				id: "post-1",
+				authorId: "u2",
+				description: "Hej @Ania co tam",
+				createdAt: now,
+				updatedAt: now,
+				author: { id: "u2", name: "Kasia" },
+				images: [],
+			},
+		];
+
+		render(<Feed posts={posts} {...defaultProps} />, { wrapper: createWrapper() });
+
+		const mention = screen.getByText("@Ania");
+		expect(mention.className).toContain("text-primary");
+	});
 });

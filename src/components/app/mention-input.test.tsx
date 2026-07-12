@@ -122,4 +122,34 @@ describe("MentionInput", () => {
 
 		expect(screen.queryByText("Tomek")).toBeNull();
 	});
+
+	it("scrolls the highlighted option into view when arrowing through the dropdown", async () => {
+		vi.stubGlobal(
+			"fetch",
+			mockFetchUsers(
+				Array.from({ length: 8 }, (_, i) => ({ id: `u${i + 1}`, name: `User${i + 1}` })),
+			),
+		);
+		const user = userEvent.setup();
+		render(<TestHost />, { wrapper: createWrapper() });
+
+		await user.type(screen.getByRole("textbox"), "@");
+		await screen.findByText("User2");
+
+		// jsdom nie implementuje scrollowania — mockujemy metodę na instancjach <li>
+		// (DOM API = granica systemu), żeby zweryfikować że scrollIntoView jest podłączony
+		// do aktywnego wiersza. Aktywny <li> zmienia się z 0 na 1 po ArrowDown.
+		const spyByLi = new Map<Element, ReturnType<typeof vi.fn>>();
+		for (const li of document.querySelectorAll("li")) {
+			const spy = vi.fn();
+			spyByLi.set(li, spy);
+			Object.assign(li, { scrollIntoView: spy });
+		}
+
+		await user.type(screen.getByRole("textbox"), "{ArrowDown}");
+
+		const activeLi = document.querySelector('li[data-active="true"]');
+		expect(activeLi).not.toBeNull();
+		expect(spyByLi.get(activeLi as Element)).toHaveBeenCalled();
+	});
 });

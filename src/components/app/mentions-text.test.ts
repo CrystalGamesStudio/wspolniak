@@ -84,4 +84,38 @@ describe("highlightMentions", () => {
 	it("returns empty array for empty string", () => {
 		expect(highlightMentions("")).toEqual([]);
 	});
+
+	it("highlights a hyphenated multi-word name as one whole mention", () => {
+		expect(highlightMentions("Cześć @Jan-Kowalski")).toEqual([
+			{ text: "Cześć ", isMention: false },
+			{ text: "@Jan-Kowalski", isMention: true },
+		]);
+	});
+
+	it("leaves plain trailing text uncolored after a hyphenated mention", () => {
+		expect(highlightMentions("@Jan-Kowalski był wczoraj")).toEqual([
+			{ text: "@Jan-Kowalski", isMention: true },
+			{ text: " był wczoraj", isMention: false },
+		]);
+	});
+
+	it("matches Polish characters together with a hyphen", () => {
+		expect(highlightMentions("@Żaneta-Łukasik")).toEqual([
+			{ text: "@Żaneta-Łukasik", isMention: true },
+		]);
+	});
+
+	it("highlights a hyphenated mention surrounded by punctuation", () => {
+		expect(highlightMentions("Pisze do (@Jan-Kowalski)")).toEqual([
+			{ text: "Pisze do (", isMention: false },
+			{ text: "@Jan-Kowalski", isMention: true },
+			{ text: ")", isMention: false },
+		]);
+	});
+
+	it("does not treat an email-like fragment as a mention", () => {
+		expect(highlightMentions("kontakt: email@example.com")).toEqual([
+			{ text: "kontakt: email@example.com", isMention: false },
+		]);
+	});
 });
