@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { downloadImage } from "@/lib/download-image";
+import { MAX_ZOOM, MIN_ZOOM, usePinchZoom } from "./use-pinch-zoom";
 
 interface LightboxImage {
 	id: string;
@@ -26,8 +27,6 @@ interface ImageLightboxProps {
 }
 
 const SWIPE_THRESHOLD = 50;
-const MIN_ZOOM = 1;
-const MAX_ZOOM = 4;
 const ZOOM_STEP = 1;
 
 export function ImageLightbox({ images, initialIndex = 0, open, onClose }: ImageLightboxProps) {
@@ -45,6 +44,11 @@ export function ImageLightbox({ images, initialIndex = 0, open, onClose }: Image
 	const panStartRef = useRef<{ x: number; y: number; offsetX: number; offsetY: number } | null>(
 		null,
 	);
+	const pinch = usePinchZoom({
+		zoom,
+		onZoomChange: setZoom,
+		onOffsetReset: () => setOffset({ x: 0, y: 0 }),
+	});
 
 	const goNext = useCallback(() => {
 		if (images.length <= 1) return;
@@ -129,6 +133,16 @@ export function ImageLightbox({ images, initialIndex = 0, open, onClose }: Image
 	}, [open, initialIndex, handleKeyDown, handleWheel]);
 
 	const handleTouchStart = (e: React.TouchEvent) => {
+		if (e.touches.length === 2) {
+			const a = e.touches[0];
+			const b = e.touches[1];
+			if (a && b) {
+				panStartRef.current = null;
+				setIsPanning(false);
+				pinch.beginPinch([a, b]);
+			}
+			return;
+		}
 		const touch = e.touches[0];
 		if (!touch) return;
 		if (zoom > MIN_ZOOM) {
@@ -145,6 +159,15 @@ export function ImageLightbox({ images, initialIndex = 0, open, onClose }: Image
 	};
 
 	const handleTouchMove = (e: React.TouchEvent) => {
+		if (e.touches.length === 2) {
+			const a = e.touches[0];
+			const b = e.touches[1];
+			if (a && b) {
+				e.preventDefault();
+				pinch.movePinch([a, b]);
+			}
+			return;
+		}
 		const start = panStartRef.current;
 		if (!start) return;
 		const touch = e.touches[0];
@@ -157,6 +180,10 @@ export function ImageLightbox({ images, initialIndex = 0, open, onClose }: Image
 	};
 
 	const handleTouchEnd = (e: React.TouchEvent) => {
+		if (pinch.isPinching()) {
+			pinch.endPinch();
+			return;
+		}
 		if (panStartRef.current) {
 			panStartRef.current = null;
 			setIsPanning(false);

@@ -21,6 +21,24 @@ function touchEnd(target: Element, x: number, y: number) {
 	});
 }
 
+function pinchStart(target: Element, ax: number, ay: number, bx: number, by: number) {
+	fireEvent.touchStart(target, {
+		touches: [
+			{ clientX: ax, clientY: ay },
+			{ clientX: bx, clientY: by },
+		],
+	});
+}
+
+function pinchMove(target: Element, ax: number, ay: number, bx: number, by: number) {
+	fireEvent.touchMove(target, {
+		touches: [
+			{ clientX: ax, clientY: ay },
+			{ clientX: bx, clientY: by },
+		],
+	});
+}
+
 describe("ImageLightbox", () => {
 	it("renders nothing when closed", () => {
 		render(<ImageLightbox images={images} open={false} onClose={() => {}} />);
@@ -277,6 +295,69 @@ describe("ImageLightbox", () => {
 
 			expect(screen.getByRole("img").getAttribute("src")).toBe("https://example.com/1.jpg");
 			expect(screen.getByRole("img").style.transform).toContain("translate(-100px, 0px)");
+		});
+	});
+
+	describe("pinch zoom", () => {
+		it("zooms in when spreading two fingers apart", () => {
+			render(<ImageLightbox images={images} open={true} onClose={() => {}} />);
+			const dialog = screen.getByRole("dialog");
+			const img = screen.getByRole("img");
+
+			pinchStart(dialog, 100, 100, 200, 100);
+			pinchMove(dialog, 100, 100, 300, 100);
+
+			expect(img.style.transform).toContain("scale(2)");
+		});
+
+		it("resets the pan offset when a pinch returns the zoom to 1x", () => {
+			render(<ImageLightbox images={images} open={true} onClose={() => {}} />);
+			const dialog = screen.getByRole("dialog");
+			const img = screen.getByRole("img");
+
+			fireEvent.click(screen.getByLabelText("Powiększ zdjęcie"));
+			touchStart(dialog, 200, 100);
+			fireEvent.touchMove(dialog, { touches: [{ clientX: 100, clientY: 100 }] });
+			touchEnd(dialog, 100, 100);
+			expect(img.style.transform).toContain("translate(-100px, 0px)");
+
+			pinchStart(dialog, 100, 100, 200, 100);
+			pinchMove(dialog, 100, 100, 150, 100);
+
+			expect(img.style.transform).toBe("");
+
+			fireEvent.click(screen.getByLabelText("Powiększ zdjęcie"));
+			expect(img.style.transform).toContain("translate(0px, 0px)");
+		});
+
+		it("does not navigate when a pinch ends, even after a one-finger swipe start", () => {
+			render(<ImageLightbox images={images} initialIndex={0} open={true} onClose={() => {}} />);
+			const dialog = screen.getByRole("dialog");
+
+			touchStart(dialog, 200, 100);
+			pinchStart(dialog, 100, 100, 200, 100);
+			pinchMove(dialog, 100, 100, 300, 100);
+			fireEvent.touchEnd(dialog, { changedTouches: [{ clientX: 100, clientY: 100 }] });
+
+			expect(screen.getByRole("img").getAttribute("src")).toBe("https://example.com/1.jpg");
+		});
+
+		it("still swipes with one finger after a pinch returns the zoom to 1x", () => {
+			render(<ImageLightbox images={images} initialIndex={0} open={true} onClose={() => {}} />);
+			const dialog = screen.getByRole("dialog");
+
+			pinchStart(dialog, 100, 100, 200, 100);
+			pinchMove(dialog, 100, 100, 300, 100);
+			fireEvent.touchEnd(dialog, { changedTouches: [{ clientX: 100, clientY: 100 }] });
+
+			pinchStart(dialog, 100, 100, 200, 100);
+			pinchMove(dialog, 100, 100, 150, 100);
+			fireEvent.touchEnd(dialog, { changedTouches: [{ clientX: 100, clientY: 100 }] });
+
+			touchStart(dialog, 200, 100);
+			touchEnd(dialog, 100, 100);
+
+			expect(screen.getByRole("img").getAttribute("src")).toBe("https://example.com/2.jpg");
 		});
 	});
 });
