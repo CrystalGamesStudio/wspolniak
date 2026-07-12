@@ -1,3 +1,10 @@
+# [1.54.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.53.0...v1.54.0) (2026-07-12)
+
+
+### Features
+
+* **publish:** blokujący flow + pasek postępu, usunięcie optimistic UI [[#92](https://github.com/CrystalGamesStudio/wspolniak/issues/92)] ([3792e78](https://github.com/CrystalGamesStudio/wspolniak/commit/3792e78bf0c238dd36e3fdf74fecc952531296ba))
+
 # [1.53.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.52.0...v1.53.0) (2026-07-12)
 
 
