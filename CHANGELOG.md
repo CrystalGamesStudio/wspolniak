@@ -1,3 +1,10 @@
+# [1.55.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.54.0...v1.55.0) (2026-07-13)
+
+
+### Features
+
+* **stats:** publiczne rankingi top-3 + rename /info → /stats [[#93](https://github.com/CrystalGamesStudio/wspolniak/issues/93)] ([bc7e1c9](https://github.com/CrystalGamesStudio/wspolniak/commit/bc7e1c9f8a006cf162172543f0a54cf5e190c419))
+
 # [1.54.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.53.0...v1.54.0) (2026-07-12)
 
 
