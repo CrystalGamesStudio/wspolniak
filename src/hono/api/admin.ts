@@ -4,6 +4,7 @@ import {
 	listActiveMembers,
 	regenerateMemberToken,
 	softDeleteMember,
+	updateMemberName,
 } from "@/db/identity/queries";
 import { getMaintenanceConfig, updateMaintenance } from "@/db/instance/queries";
 import { getStatsSummary } from "@/db/stats";
@@ -56,6 +57,23 @@ adminEndpoint.delete("/members/:id", async (c) => {
 	const userId = c.req.param("id");
 	await softDeleteMember(userId);
 	return c.json({ data: { deleted: true } });
+});
+
+adminEndpoint.patch("/members/:id", async (c) => {
+	const userId = c.req.param("id");
+	const body = await c.req.json<{ name?: string }>();
+	const name = body.name?.trim();
+
+	if (!name) {
+		return c.json({ error: "Name is required" }, 400);
+	}
+
+	if (name.length > 30) {
+		return c.json({ error: "Name max 30 characters" }, 400);
+	}
+
+	const updated = await updateMemberName(userId, name);
+	return c.json({ data: { id: updated.id, name: updated.name } });
 });
 
 adminEndpoint.get("/maintenance", async (c) => {

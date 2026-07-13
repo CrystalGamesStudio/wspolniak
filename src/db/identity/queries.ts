@@ -44,6 +44,13 @@ export async function softDeleteMember(userId: string) {
 	await getDb().update(users).set({ deletedAt: new Date() }).where(eq(users.id, userId));
 }
 
+export async function updateMemberName(userId: string, name: string): Promise<User> {
+	const rows = await getDb().update(users).set({ name }).where(eq(users.id, userId)).returning();
+	const row = rows[0];
+	if (!row) throw new Error("updateMemberName: update returned no rows");
+	return row;
+}
+
 export async function findActiveUserById(id: string): Promise<User | null> {
 	const rows = await getDb()
 		.select()

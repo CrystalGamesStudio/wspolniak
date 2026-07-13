@@ -12,6 +12,7 @@ vi.mock("@/db/identity/queries", () => ({
 	listActiveMembers: vi.fn(),
 	regenerateMemberToken: vi.fn(),
 	softDeleteMember: vi.fn(),
+	updateMemberName: vi.fn(),
 }));
 
 vi.mock("@/db/instance/queries", () => ({
@@ -29,6 +30,7 @@ import {
 	listActiveMembers,
 	regenerateMemberToken,
 	softDeleteMember,
+	updateMemberName,
 } from "@/db/identity/queries";
 import { verifySessionCookie } from "@/db/identity/session";
 import { getMaintenanceConfig, updateMaintenance } from "@/db/instance/queries";
@@ -41,6 +43,7 @@ const mockCreateMember = vi.mocked(createMember);
 const mockListActiveMembers = vi.mocked(listActiveMembers);
 const mockRegenerateMemberToken = vi.mocked(regenerateMemberToken);
 const mockSoftDeleteMember = vi.mocked(softDeleteMember);
+const mockUpdateMemberName = vi.mocked(updateMemberName);
 const mockGetMaintenanceConfig = vi.mocked(getMaintenanceConfig);
 const mockUpdateMaintenance = vi.mocked(updateMaintenance);
 const mockGetStatsSummary = vi.mocked(getStatsSummary);
@@ -193,6 +196,173 @@ describe("DELETE /api/admin/members/:id", () => {
 		const body = (await res.json()) as { data: { deleted: boolean } };
 		expect(body.data.deleted).toBe(true);
 		expect(mockSoftDeleteMember).toHaveBeenCalledWith("m1");
+	});
+});
+
+describe("PATCH /api/admin/members/:id", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		mockVerify.mockResolvedValue({ userId: "u1", name: "Tomek", role: "admin" });
+		mockFindUser.mockResolvedValue({
+			id: "u1",
+			name: "Tomek",
+			role: "admin",
+			tokenHash: "hash",
+			deletedAt: null,
+			createdAt: new Date(),
+		});
+	});
+
+	it("renames a member and returns the new name", async () => {
+		mockUpdateMemberName.mockResolvedValue({
+			id: "m1",
+			name: "Kasia-Nowa",
+			role: "member",
+			tokenHash: "hash",
+			deletedAt: null,
+			createdAt: new Date(),
+		});
+
+		const api = createApi();
+		const res = await api.request(
+			"/api/admin/members/m1",
+			{
+				method: "PATCH",
+				headers: { ...adminHeaders(), "Content-Type": "application/json" },
+				body: JSON.stringify({ name: "Kasia-Nowa" }),
+			},
+			{ SESSION_SECRET: "secret" },
+		);
+
+		expect(res.status).toBe(200);
+		const body = (await res.json()) as { data: { id: string; name: string } };
+		expect(body.data).toEqual({ id: "m1", name: "Kasia-Nowa" });
+		expect(mockUpdateMemberName).toHaveBeenCalledWith("m1", "Kasia-Nowa");
+	});
+
+	it("returns 400 when name is empty", async () => {
+		const api = createApi();
+		const res = await api.request(
+			"/api/admin/members/m1",
+			{
+				method: "PATCH",
+				headers: { ...adminHeaders(), "Content-Type": "application/json" },
+				body: JSON.stringify({ name: "" }),
+			},
+			{ SESSION_SECRET: "secret" },
+		);
+
+		expect(res.status).toBe(400);
+		expect(mockUpdateMemberName).not.toHaveBeenCalled();
+	});
+
+	it("returns 400 when name is missing", async () => {
+		const api = createApi();
+		const res = await api.request(
+			"/api/admin/members/m1",
+			{
+				method: "PATCH",
+				headers: { ...adminHeaders(), "Content-Type": "application/json" },
+				body: JSON.stringify({}),
+			},
+			{ SESSION_SECRET: "secret" },
+		);
+
+		expect(res.status).toBe(400);
+		expect(mockUpdateMemberName).not.toHaveBeenCalled();
+	});
+
+	it("returns 400 when name is longer than 30 characters", async () => {
+		const api = createApi();
+		const res = await api.request(
+			"/api/admin/members/m1",
+			{
+				method: "PATCH",
+				headers: { ...adminHeaders(), "Content-Type": "application/json" },
+				body: JSON.stringify({ name: "a".repeat(31) }),
+			},
+			{ SESSION_SECRET: "secret" },
+		);
+
+		expect(res.status).toBe(400);
+		expect(mockUpdateMemberName).not.toHaveBeenCalled();
+	});
+
+	it("accepts a name of exactly 30 characters", async () => {
+		const exact = "a".repeat(30);
+		mockUpdateMemberName.mockResolvedValue({
+			id: "m1",
+			name: exact,
+			role: "member",
+			tokenHash: "hash",
+			deletedAt: null,
+			createdAt: new Date(),
+		});
+
+		const api = createApi();
+		const res = await api.request(
+			"/api/admin/members/m1",
+			{
+				method: "PATCH",
+				headers: { ...adminHeaders(), "Content-Type": "application/json" },
+				body: JSON.stringify({ name: exact }),
+			},
+			{ SESSION_SECRET: "secret" },
+		);
+
+		expect(res.status).toBe(200);
+		expect(mockUpdateMemberName).toHaveBeenCalledWith("m1", exact);
+	});
+
+	it("trims surrounding whitespace from the name", async () => {
+		mockUpdateMemberName.mockResolvedValue({
+			id: "m1",
+			name: "Kasia",
+			role: "member",
+			tokenHash: "hash",
+			deletedAt: null,
+			createdAt: new Date(),
+		});
+
+		const api = createApi();
+		const res = await api.request(
+			"/api/admin/members/m1",
+			{
+				method: "PATCH",
+				headers: { ...adminHeaders(), "Content-Type": "application/json" },
+				body: JSON.stringify({ name: "  Kasia  " }),
+			},
+			{ SESSION_SECRET: "secret" },
+		);
+
+		expect(res.status).toBe(200);
+		expect(mockUpdateMemberName).toHaveBeenCalledWith("m1", "Kasia");
+	});
+
+	it("returns 403 for a non-admin member", async () => {
+		mockVerify.mockResolvedValue({ userId: "u2", name: "Kasia", role: "member" });
+		mockFindUser.mockResolvedValue({
+			id: "u2",
+			name: "Kasia",
+			role: "member",
+			tokenHash: "hash",
+			deletedAt: null,
+			createdAt: new Date(),
+		});
+
+		const api = createApi();
+		const res = await api.request(
+			"/api/admin/members/m1",
+			{
+				method: "PATCH",
+				headers: { ...adminHeaders(), "Content-Type": "application/json" },
+				body: JSON.stringify({ name: "Kasia" }),
+			},
+			{ SESSION_SECRET: "secret" },
+		);
+
+		expect(res.status).toBe(403);
+		expect(mockUpdateMemberName).not.toHaveBeenCalled();
 	});
 });
 

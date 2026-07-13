@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { AlertTriangle, ArrowLeft, Check, Copy, Link, Plus, Trash2 } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Check, Copy, Link, Pencil, Plus, Trash2, X } from "lucide-react";
 import { useState } from "react";
 import { MaintenanceDialog } from "@/components/admin/maintenance-dialog";
+import { feedQueryKey } from "@/components/app/feed-query";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -88,6 +89,24 @@ function AdminPage() {
 		},
 		onSuccess: (data) => {
 			setLastMagicLink({ name: data.name, link: data.link });
+		},
+	});
+
+	const renameMutation = useMutation({
+		mutationFn: async ({ id, name }: { id: string; name: string }) => {
+			const res = await fetch(`/api/admin/members/${id}`, {
+				method: "PATCH",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ name }),
+			});
+			if (!res.ok) {
+				const err = (await res.json()) as { error: string };
+				throw new Error(err.error);
+			}
+		},
+		onSuccess: async () => {
+			await queryClient.invalidateQueries({ queryKey: ["admin", "members"] });
+			await queryClient.invalidateQueries({ queryKey: feedQueryKey });
 		},
 	});
 
@@ -264,6 +283,7 @@ function AdminPage() {
 							isDeleting={deleteMutation.isPending}
 							onRegenerate={() => regenerateMutation.mutate({ id: member.id, name: member.name })}
 							onDelete={() => deleteMutation.mutate(member.id)}
+							onRename={(id, name) => renameMutation.mutateAsync({ id, name })}
 						/>
 					))}
 				</div>
@@ -278,43 +298,119 @@ interface MemberRowProps {
 	isDeleting: boolean;
 	onRegenerate: () => void;
 	onDelete: () => void;
+	onRename: (id: string, name: string) => Promise<void>;
 }
 
-function MemberRow({ member, isRegenerating, isDeleting, onRegenerate, onDelete }: MemberRowProps) {
+function MemberRow({
+	member,
+	isRegenerating,
+	isDeleting,
+	onRegenerate,
+	onDelete,
+	onRename,
+}: MemberRowProps) {
+	const [editing, setEditing] = useState(false);
+	const [draft, setDraft] = useState(member.name);
+	const [error, setError] = useState<string | null>(null);
+	const [saving, setSaving] = useState(false);
+
+	function startEdit() {
+		setDraft(member.name);
+		setError(null);
+		setEditing(true);
+	}
+
+	function cancelEdit() {
+		setEditing(false);
+		setError(null);
+	}
+
+	async function handleSave() {
+		const trimmed = draft.trim();
+		if (!trimmed) {
+			setError("Imię nie może być puste");
+			return;
+		}
+		if (trimmed === member.name) {
+			cancelEdit();
+			return;
+		}
+		setSaving(true);
+		setError(null);
+		try {
+			await onRename(member.id, trimmed);
+			setEditing(false);
+		} catch (e) {
+			setError(e instanceof Error ? e.message : "Nie udało się zmienić imienia");
+		} finally {
+			setSaving(false);
+		}
+	}
+
 	return (
 		<div className="rounded-lg border border-border bg-card p-3">
-			<div className="flex items-center justify-between">
-				<div className="flex items-center gap-1">
-					<span className="font-medium text-foreground">{member.name}</span>
-					<span className="rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
-						{member.role}
-					</span>
+			{editing ? (
+				<div className="space-y-2">
+					<div className="flex gap-2">
+						<Input
+							value={draft}
+							onChange={(e) => setDraft(e.target.value)}
+							onKeyDown={(e) => {
+								if (e.key === "Enter") handleSave();
+								if (e.key === "Escape") cancelEdit();
+							}}
+							placeholder="Nowe imię..."
+							className="flex-1"
+							autoFocus
+							maxLength={30}
+							disabled={saving}
+						/>
+						<Button size="sm" onClick={handleSave} disabled={saving} title="Zapisz">
+							{saving ? <LoaderIcon loading={saving} /> : <Check className="h-4 w-4" />}
+						</Button>
+						<Button size="sm" variant="ghost" onClick={cancelEdit} disabled={saving} title="Anuluj">
+							<X className="h-4 w-4" />
+						</Button>
+					</div>
+					{error && <Alert variant="destructive">{error}</Alert>}
 				</div>
-				<div className="flex gap-1">
-					{member.role !== "admin" && (
-						<>
-							<Button
-								size="sm"
-								variant="ghost"
-								onClick={onRegenerate}
-								disabled={isRegenerating}
-								title="Nowy link logowania"
-							>
-								<Link className="h-4 w-4" />
-							</Button>
-							<Button
-								size="sm"
-								variant="ghost"
-								onClick={onDelete}
-								disabled={isDeleting}
-								title="Usuń członka"
-							>
-								<Trash2 className="h-4 w-4 text-destructive" />
-							</Button>
-						</>
-					)}
+			) : (
+				<div className="flex items-center justify-between">
+					<div className="flex items-center gap-1">
+						<span className="font-medium text-foreground">{member.name}</span>
+						<span className="rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
+							{member.role}
+						</span>
+					</div>
+					<div className="flex gap-1">
+						<Button size="sm" variant="ghost" onClick={startEdit} title="Zmień imię">
+							<Pencil className="h-4 w-4" />
+						</Button>
+						{member.role !== "admin" && (
+							<>
+								<Button
+									size="sm"
+									variant="ghost"
+									onClick={onRegenerate}
+									disabled={isRegenerating}
+									title="Nowy link logowania"
+								>
+									<Link className="h-4 w-4" />
+								</Button>
+								<Button
+									size="sm"
+									variant="ghost"
+									onClick={onDelete}
+									disabled={isDeleting}
+									title="Usuń członka"
+								>
+									<Trash2 className="h-4 w-4 text-destructive" />
+								</Button>
+							</>
+						)}
+					</div>
 				</div>
-			</div>
+			)}
 		</div>
 	);
 }

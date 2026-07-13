@@ -7,6 +7,7 @@ import {
 	listMembersForMentions,
 	regenerateMemberToken,
 	softDeleteMember,
+	updateMemberName,
 } from "./queries";
 import { users } from "./table";
 
@@ -240,5 +241,31 @@ describe("listMembersForMentions", () => {
 		const result = await listMembersForMentions("");
 
 		expect(result).toHaveLength(2);
+	});
+});
+
+describe("updateMemberName", () => {
+	it("updates the user's name and returns the updated row", async () => {
+		const updated = {
+			id: "u2",
+			name: "Kasia-Nowa",
+			role: "member",
+			tokenHash: "h2",
+			deletedAt: null,
+			createdAt: new Date(),
+		};
+		const mockReturning = vi.fn().mockResolvedValue([updated]);
+		const mockWhere = vi.fn().mockReturnValue({ returning: mockReturning });
+		const mockSet = vi.fn().mockReturnValue({ where: mockWhere });
+		const mockUpdate = vi.fn().mockReturnValue({ set: mockSet });
+		mockGetDb.mockReturnValue({ update: mockUpdate } as never);
+
+		const result = await updateMemberName("u2", "Kasia-Nowa");
+
+		expect(mockUpdate).toHaveBeenCalledWith(users);
+		expect(mockSet).toHaveBeenCalledWith(expect.objectContaining({ name: "Kasia-Nowa" }));
+		expect(mockWhere).toHaveBeenCalled();
+		expect(result).toEqual(updated);
+		expect(result.name).toBe("Kasia-Nowa");
 	});
 });
