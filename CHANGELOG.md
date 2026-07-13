@@ -1,3 +1,10 @@
+# [1.56.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.55.0...v1.56.0) (2026-07-13)
+
+
+### Features
+
+* **admin:** zmiana imienia członka [[#94](https://github.com/CrystalGamesStudio/wspolniak/issues/94)] ([0f41517](https://github.com/CrystalGamesStudio/wspolniak/commit/0f41517474fd0ed46e0518e1de9f123a433e7954))
+
 # [1.55.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.54.0...v1.55.0) (2026-07-13)
 
 
