@@ -11,13 +11,19 @@ vi.mock("@/db/identity/queries", () => ({
 	listMembersForMentions: vi.fn(),
 }));
 
+vi.mock("@/db/stats", () => ({
+	getLeaderboard: vi.fn(),
+}));
+
 import { findActiveUserById, listMembersForMentions } from "@/db/identity/queries";
 import { verifySessionCookie } from "@/db/identity/session";
+import { getLeaderboard } from "@/db/stats";
 import appEndpoint from "./app";
 
 const mockVerify = vi.mocked(verifySessionCookie);
 const mockFindUser = vi.mocked(findActiveUserById);
 const mockListMembers = vi.mocked(listMembersForMentions);
+const mockGetLeaderboard = vi.mocked(getLeaderboard);
 
 function createApi() {
 	const api = new Hono<{ Bindings: { SESSION_SECRET: string } }>().basePath("/api");
@@ -104,6 +110,54 @@ describe("GET /api/app/users", () => {
 	it("returns 401 without session cookie", async () => {
 		const api = createApi();
 		const res = await api.request("/api/app/users", {}, { SESSION_SECRET: "secret" });
+
+		expect(res.status).toBe(401);
+	});
+});
+
+describe("GET /api/app/stats/leaderboard", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		mockVerify.mockResolvedValue({ userId: "u1", name: "Tomek", role: "member" });
+		mockFindUser.mockResolvedValue({
+			id: "u1",
+			name: "Tomek",
+			role: "member",
+			tokenHash: "hash",
+			deletedAt: null,
+			createdAt: new Date(),
+		});
+	});
+
+	it("returns all six category leaderboards for a logged-in member", async () => {
+		mockGetLeaderboard.mockResolvedValue([{ name: "Tomek", count: 9 }]);
+
+		const api = createApi();
+		const res = await api.request(
+			"/api/app/stats/leaderboard?limit=3",
+			{ headers: { Cookie: "session=valid-jwt" } },
+			{ SESSION_SECRET: "secret" },
+		);
+
+		expect(res.status).toBe(200);
+		const body = (await res.json()) as {
+			data: Record<string, Array<{ name: string; count: number }>>;
+		};
+		expect(Object.keys(body.data).sort()).toEqual([
+			"comments",
+			"mentions-made",
+			"mentions-received",
+			"photos",
+			"posts",
+			"reactions",
+		]);
+		expect(body.data.posts).toEqual([{ name: "Tomek", count: 9 }]);
+		expect(mockGetLeaderboard).toHaveBeenCalledWith("posts", 3);
+	});
+
+	it("returns 401 without session cookie", async () => {
+		const api = createApi();
+		const res = await api.request("/api/app/stats/leaderboard", {}, { SESSION_SECRET: "secret" });
 
 		expect(res.status).toBe(401);
 	});

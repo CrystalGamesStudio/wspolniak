@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { gte, sql } from "drizzle-orm";
 import { comments } from "@/db/comments/table";
+import { users } from "@/db/identity/table";
 import { mentions } from "@/db/mentions/table";
 import { postReactions } from "@/db/post-reactions/table";
 import { postImages, posts } from "@/db/posts/table";
@@ -123,4 +124,89 @@ export async function getStatsSummary(now: Date): Promise<StatsSummary> {
 		windowStart: windowStart.toISOString(),
 		windowEnd: now.toISOString(),
 	};
+}
+
+export type LeaderboardCategory =
+	| "posts"
+	| "comments"
+	| "photos"
+	| "reactions"
+	| "mentions-received"
+	| "mentions-made";
+
+export interface LeaderboardEntry {
+	name: string;
+	count: number;
+}
+
+// Publiczny ranking "kto dał najwięcej <czegoś>" dla wszystkich zalogowanych.
+// Sort DESC + limit robimy w JS (stabilny tie-break po imieniu; tabele w
+// rodzinnie-apce są malutkie, więc pobranie wszystkich zgrupowanych wierszy
+// jest tanie). SQL per kategoria: GROUP BY autor/odbiorca + JOIN users (imię
+// na żywo) + wykluczenie soft-deleted użytkowników. mentions-made rozwiązuje
+// brak kolumny autora w `mentions` jednym UNION autorów przez post i komentarz.
+export async function getLeaderboard(
+	category: LeaderboardCategory,
+	limit: number,
+): Promise<LeaderboardEntry[]> {
+	const result = await getDb().execute(leaderboardSql(category));
+	const rows = (result.rows ?? []) as unknown as LeaderboardEntry[];
+	return [...rows]
+		.sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
+		.slice(0, limit);
+}
+
+function leaderboardSql(category: LeaderboardCategory) {
+	switch (category) {
+		case "posts":
+			return sql`select u.name as name, count(*)::int as count
+				from ${posts} p join ${users} u on u.id = p.author_id
+				where u.deleted_at is null
+				group by p.author_id, u.name`;
+		case "comments":
+			return sql`select u.name as name, count(*)::int as count
+				from ${comments} c join ${users} u on u.id = c.author_id
+				where u.deleted_at is null
+				group by c.author_id, u.name`;
+		case "photos":
+			// Autor zdjęcia = autor posta (post_images nie ma własnego autora).
+			return sql`select u.name as name, count(*)::int as count
+				from ${postImages} pi
+				join ${posts} p on p.id = pi.post_id
+				join ${users} u on u.id = p.author_id
+				where u.deleted_at is null
+				group by p.author_id, u.name`;
+		case "reactions":
+			// Kto rozdał najwięcej reakcji (user_id na reakcji = dawca).
+			return sql`select u.name as name, count(*)::int as count
+				from ${postReactions} r join ${users} u on u.id = r.user_id
+				where u.deleted_at is null
+				group by r.user_id, u.name`;
+		case "mentions-received":
+			// Kto został wspomniany najczęściej (mentions.user_id = odbiorca).
+			return sql`select u.name as name, count(*)::int as count
+				from ${mentions} m join ${users} u on u.id = m.user_id
+				where u.deleted_at is null
+				group by m.user_id, u.name`;
+		case "mentions-made": {
+			// Tabela mentions nie ma kolumny autora → wyprowadzamy go przez post
+			// (mention w opisie, comment_id IS NULL) lub komentarz (comment_id IS
+			// NOT NULL). UNION ALL liczy każdy mention osobno (bez deduplikacji).
+			return sql`select u.name as name, count(*)::int as count
+				from (
+					select p.author_id as author_id
+					from ${mentions} m join ${posts} p on p.id = m.post_id
+					where m.comment_id is null
+					union all
+					select c.author_id as author_id
+					from ${mentions} m join ${comments} c on c.id = m.comment_id
+					where m.comment_id is not null
+				) as authors
+				join ${users} u on u.id = authors.author_id
+				where u.deleted_at is null
+				group by authors.author_id, u.name`;
+		}
+		default:
+			throw new Error(`Unsupported leaderboard category: ${category}`);
+	}
 }

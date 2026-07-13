@@ -15,8 +15,8 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app/index'
 import { Route as SharedPostIdRouteImport } from './routes/shared-post.$id'
 import { Route as AuthErrorRouteImport } from './routes/auth/error'
+import { Route as AppStatsRouteImport } from './routes/app/stats'
 import { Route as AppNewRouteImport } from './routes/app/new'
-import { Route as AppInfoRouteImport } from './routes/app/info'
 import { Route as AppCalendarRouteImport } from './routes/app/calendar'
 import { Route as AppAdminRouteImport } from './routes/app/admin'
 import { Route as AppPostIdRouteImport } from './routes/app/post.$id'
@@ -52,14 +52,14 @@ const AuthErrorRoute = AuthErrorRouteImport.update({
   path: '/auth/error',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppStatsRoute = AppStatsRouteImport.update({
+  id: '/stats',
+  path: '/stats',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppNewRoute = AppNewRouteImport.update({
   id: '/new',
   path: '/new',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppInfoRoute = AppInfoRouteImport.update({
-  id: '/info',
-  path: '/info',
   getParentRoute: () => AppRoute,
 } as any)
 const AppCalendarRoute = AppCalendarRouteImport.update({
@@ -89,8 +89,8 @@ export interface FileRoutesByFullPath {
   '/setup': typeof SetupRoute
   '/app/admin': typeof AppAdminRoute
   '/app/calendar': typeof AppCalendarRoute
-  '/app/info': typeof AppInfoRoute
   '/app/new': typeof AppNewRoute
+  '/app/stats': typeof AppStatsRoute
   '/auth/error': typeof AuthErrorRoute
   '/shared-post/$id': typeof SharedPostIdRoute
   '/app/': typeof AppIndexRoute
@@ -102,8 +102,8 @@ export interface FileRoutesByTo {
   '/setup': typeof SetupRoute
   '/app/admin': typeof AppAdminRoute
   '/app/calendar': typeof AppCalendarRoute
-  '/app/info': typeof AppInfoRoute
   '/app/new': typeof AppNewRoute
+  '/app/stats': typeof AppStatsRoute
   '/auth/error': typeof AuthErrorRoute
   '/shared-post/$id': typeof SharedPostIdRoute
   '/app': typeof AppIndexRoute
@@ -117,8 +117,8 @@ export interface FileRoutesById {
   '/setup': typeof SetupRoute
   '/app/admin': typeof AppAdminRoute
   '/app/calendar': typeof AppCalendarRoute
-  '/app/info': typeof AppInfoRoute
   '/app/new': typeof AppNewRoute
+  '/app/stats': typeof AppStatsRoute
   '/auth/error': typeof AuthErrorRoute
   '/shared-post/$id': typeof SharedPostIdRoute
   '/app/': typeof AppIndexRoute
@@ -133,8 +133,8 @@ export interface FileRouteTypes {
     | '/setup'
     | '/app/admin'
     | '/app/calendar'
-    | '/app/info'
     | '/app/new'
+    | '/app/stats'
     | '/auth/error'
     | '/shared-post/$id'
     | '/app/'
@@ -146,8 +146,8 @@ export interface FileRouteTypes {
     | '/setup'
     | '/app/admin'
     | '/app/calendar'
-    | '/app/info'
     | '/app/new'
+    | '/app/stats'
     | '/auth/error'
     | '/shared-post/$id'
     | '/app'
@@ -160,8 +160,8 @@ export interface FileRouteTypes {
     | '/setup'
     | '/app/admin'
     | '/app/calendar'
-    | '/app/info'
     | '/app/new'
+    | '/app/stats'
     | '/auth/error'
     | '/shared-post/$id'
     | '/app/'
@@ -221,18 +221,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthErrorRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app/stats': {
+      id: '/app/stats'
+      path: '/stats'
+      fullPath: '/app/stats'
+      preLoaderRoute: typeof AppStatsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/new': {
       id: '/app/new'
       path: '/new'
       fullPath: '/app/new'
       preLoaderRoute: typeof AppNewRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/info': {
-      id: '/app/info'
-      path: '/info'
-      fullPath: '/app/info'
-      preLoaderRoute: typeof AppInfoRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/calendar': {
@@ -269,8 +269,8 @@ declare module '@tanstack/react-router' {
 interface AppRouteChildren {
   AppAdminRoute: typeof AppAdminRoute
   AppCalendarRoute: typeof AppCalendarRoute
-  AppInfoRoute: typeof AppInfoRoute
   AppNewRoute: typeof AppNewRoute
+  AppStatsRoute: typeof AppStatsRoute
   AppIndexRoute: typeof AppIndexRoute
   AppPostIdRoute: typeof AppPostIdRoute
   AppPostIdEditRoute: typeof AppPostIdEditRoute
@@ -279,8 +279,8 @@ interface AppRouteChildren {
 const AppRouteChildren: AppRouteChildren = {
   AppAdminRoute: AppAdminRoute,
   AppCalendarRoute: AppCalendarRoute,
-  AppInfoRoute: AppInfoRoute,
   AppNewRoute: AppNewRoute,
+  AppStatsRoute: AppStatsRoute,
   AppIndexRoute: AppIndexRoute,
   AppPostIdRoute: AppPostIdRoute,
   AppPostIdEditRoute: AppPostIdEditRoute,

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import {
 	getDailyActiveUsers,
+	getLeaderboard,
 	getPhotosLast7Days,
 	getPushDeliveryRateLast7Days,
 	getStatsSummary,
@@ -147,5 +148,71 @@ describe("getStatsSummary", () => {
 		expect(summary.totalMentions).toBe(95);
 		expect(summary.windowEnd).toBe("2026-07-07T12:00:00.000Z");
 		expect(summary.windowStart).toBe("2026-06-30T12:00:00.000Z");
+	});
+});
+
+function mockExecuteRows(rows: Array<{ name: string; count: number }>) {
+	mockGetDb.mockReturnValue({
+		execute: vi.fn().mockResolvedValue({ rows }),
+	} as never);
+}
+
+describe("getLeaderboard", () => {
+	beforeEach(() => vi.clearAllMocks());
+
+	it("returns leaderboard entries with member name and count", async () => {
+		mockExecuteRows([
+			{ name: "Ania", count: 5 },
+			{ name: "Tomek", count: 3 },
+		]);
+		expect(await getLeaderboard("posts", 10)).toEqual([
+			{ name: "Ania", count: 5 },
+			{ name: "Tomek", count: 3 },
+		]);
+	});
+
+	it("sorts entries by count descending", async () => {
+		mockExecuteRows([
+			{ name: "Tomek", count: 3 },
+			{ name: "Ania", count: 5 },
+			{ name: "Ewa", count: 4 },
+		]);
+		const result = await getLeaderboard("posts", 10);
+		expect(result.map((e) => e.name)).toEqual(["Ania", "Ewa", "Tomek"]);
+	});
+
+	it("limits to the top N entries", async () => {
+		mockExecuteRows([
+			{ name: "A", count: 1 },
+			{ name: "B", count: 2 },
+			{ name: "C", count: 3 },
+			{ name: "D", count: 4 },
+			{ name: "E", count: 5 },
+		]);
+		const result = await getLeaderboard("posts", 3);
+		expect(result).toHaveLength(3);
+		expect(result.map((e) => e.name)).toEqual(["E", "D", "C"]);
+	});
+
+	it("breaks count ties by name ascending for a stable order", async () => {
+		mockExecuteRows([
+			{ name: "Zosia", count: 5 },
+			{ name: "Adam", count: 5 },
+			{ name: "Marysia", count: 5 },
+		]);
+		const result = await getLeaderboard("posts", 10);
+		expect(result.map((e) => e.name)).toEqual(["Adam", "Marysia", "Zosia"]);
+	});
+
+	it.each([
+		"posts",
+		"comments",
+		"photos",
+		"reactions",
+		"mentions-received",
+		"mentions-made",
+	] as const)("routes the %s category to its own query", async (category) => {
+		mockExecuteRows([{ name: "X", count: 1 }]);
+		expect(await getLeaderboard(category, 3)).toEqual([{ name: "X", count: 1 }]);
 	});
 });
