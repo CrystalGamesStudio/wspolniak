@@ -44,4 +44,8 @@ jobs:
       - name: Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GIT_AUTHOR_NAME: MrCrypto-star
+          GIT_AUTHOR_EMAIL: 188030595+MrCrypto-star@users.noreply.github.com
+          GIT_COMMITTER_NAME: MrCrypto-star
+          GIT_COMMITTER_EMAIL: 188030595+MrCrypto-star@users.noreply.github.com
         run: npx semantic-release
