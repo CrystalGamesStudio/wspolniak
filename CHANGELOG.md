@@ -1,3 +1,10 @@
+# [1.61.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.60.0...v1.61.0) (2026-07-14)
+
+
+### Features
+
+* **calendar:** edycja i usuwanie wydarzeń (F2) [[#83](https://github.com/CrystalGamesStudio/wspolniak/issues/83)] ([673d1f9](https://github.com/CrystalGamesStudio/wspolniak/commit/673d1f9ee05fe676455c75cd731f0e6ac3e4e1ec))
+
 # [1.60.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.57.1...v1.60.0) (2026-07-14)
 
 
