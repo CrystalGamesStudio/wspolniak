@@ -123,7 +123,7 @@ describe("MentionInput", () => {
 		expect(screen.queryByText("Tomek")).toBeNull();
 	});
 
-	it("scrolls the highlighted option into view when arrowing through the dropdown", async () => {
+	it("keeps the highlighted option visible by scrolling the dropdown container, not the page", async () => {
 		vi.stubGlobal(
 			"fetch",
 			mockFetchUsers(
@@ -136,20 +136,35 @@ describe("MentionInput", () => {
 		await user.type(screen.getByRole("textbox"), "@");
 		await screen.findByText("User2");
 
-		// jsdom nie implementuje scrollowania — mockujemy metodę na instancjach <li>
-		// (DOM API = granica systemu), żeby zweryfikować że scrollIntoView jest podłączony
-		// do aktywnego wiersza. Aktywny <li> zmienia się z 0 na 1 po ArrowDown.
-		const spyByLi = new Map<Element, ReturnType<typeof vi.fn>>();
-		for (const li of document.querySelectorAll("li")) {
+		const list = document.querySelector('ul[aria-label="Wspomnij osobę"]') as HTMLUListElement;
+		const items = Array.from(document.querySelectorAll("li"));
+
+		// jsdom nie implementuje geometrii — mockujemy getBoundingClientRect (DOM = granica
+		// systemu, jak fetch). Widoczny obszar listy: 0..100px; każdy wiersz: 30px wysokości.
+		const rect = (top: number, bottom: number) =>
+			({ top, bottom, left: 0, right: 0, width: 0, height: bottom - top, x: 0, y: top }) as DOMRect;
+		vi.spyOn(list, "getBoundingClientRect").mockReturnValue(rect(0, 100));
+		for (const [i, li] of items.entries()) {
+			vi.spyOn(li, "getBoundingClientRect").mockReturnValue(rect(i * 30, i * 30 + 30));
+		}
+
+		// scrollIntoView przewija WSZYSTKICH przodków (w tym stronę/textarea) — to bug #96.
+		// Fix: aktywny wiersz nigdy nie woła tej metody; przewija się SAM kontener listy.
+		const scrollIntoViewSpies = new Map<Element, ReturnType<typeof vi.fn>>();
+		for (const li of items) {
 			const spy = vi.fn();
-			spyByLi.set(li, spy);
+			scrollIntoViewSpies.set(li, spy);
 			Object.assign(li, { scrollIntoView: spy });
 		}
 
-		await user.type(screen.getByRole("textbox"), "{ArrowDown}");
+		// Aktywny wiersz: 0 → 4 (top=120, bottom=150 > 100), czyli poza widokiem listy.
+		await user.type(screen.getByRole("textbox"), "{ArrowDown}{ArrowDown}{ArrowDown}{ArrowDown}");
 
-		const activeLi = document.querySelector('li[data-active="true"]');
-		expect(activeLi).not.toBeNull();
-		expect(spyByLi.get(activeLi as Element)).toHaveBeenCalled();
+		// Lista przewinęła się sama, żeby aktywny wiersz był widoczny.
+		expect(list.scrollTop).toBeGreaterThan(0);
+		// Strona się nie przesunęła — żaden <li> nie woła scrollIntoView.
+		for (const spy of scrollIntoViewSpies.values()) {
+			expect(spy).not.toHaveBeenCalled();
+		}
 	});
 });

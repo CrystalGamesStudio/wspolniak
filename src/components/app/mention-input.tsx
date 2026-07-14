@@ -47,6 +47,7 @@ export function MentionInput({
 	className,
 }: MentionInputProps) {
 	const textareaRef = useRef<HTMLTextAreaElement>(null);
+	const listRef = useRef<HTMLUListElement>(null);
 	const activeItemRef = useRef<HTMLLIElement>(null);
 	const [detection, setDetection] = useState<MentionDetection | null>(null);
 	const [users, setUsers] = useState<MemberOption[]>([]);
@@ -148,12 +149,21 @@ export function MentionInput({
 
 	const showDropdown = detection !== null && filteredUsers.length > 0 && caretCoords !== null;
 
-	// Utrzymuj aktywny (zaznaczony klawiaturą) wiersz dropdownu w widoku — bez tego
-	// strzałki przewijają selekcję poza `max-h-[200px]` okno listy. Reagujemy na zmianę
-	// zaznaczenia i widoczności listy; scroll idzie przez ref, nie przez closure.
+	// Utrzymuj aktywny (zaznaczony klawiaturą) wiersz dropdownu w widoku. Przewijamy SAM
+	// kontener listy (scrollTop), NIE scrollIntoView — to przewiera też stronę/textarea,
+	// co powoduje "nienaturalne" skoki przy wpisaniu @ i strzałkach (bug #96).
 	// biome-ignore lint/correctness/useExhaustiveDependencies: celowe deps — czytamy ref.current, nie wartości z closure
 	useEffect(() => {
-		activeItemRef.current?.scrollIntoView({ block: "nearest" });
+		const list = listRef.current;
+		const item = activeItemRef.current;
+		if (!list || !item) return;
+		const listRect = list.getBoundingClientRect();
+		const itemRect = item.getBoundingClientRect();
+		if (itemRect.bottom > listRect.bottom) {
+			list.scrollTop += itemRect.bottom - listRect.bottom;
+		} else if (itemRect.top < listRect.top) {
+			list.scrollTop -= listRect.top - itemRect.top;
+		}
 	}, [activeIndex, showDropdown]);
 
 	return (
@@ -171,6 +181,7 @@ export function MentionInput({
 			/>
 			{showDropdown && caretCoords && (
 				<ul
+					ref={listRef}
 					aria-label="Wspomnij osobę"
 					style={{
 						top: `${caretCoords.top + caretCoords.height}px`,
