@@ -67,6 +67,19 @@ export async function findUserByTokenHash(tokenHash: string): Promise<User | nul
 	return rows[0] ?? null;
 }
 
+/**
+ * Jedyny aktywny admin (role='admin', niezablokowany). Używane przez cron
+ * kalendarza jako autor postów "D-0". Brak admina → null (bieg pomijany).
+ */
+export async function getActiveAdmin(): Promise<User | null> {
+	const rows = await getDb()
+		.select()
+		.from(users)
+		.where(and(eq(users.role, "admin"), isNull(users.deletedAt)))
+		.limit(1);
+	return rows[0] ?? null;
+}
+
 export interface MemberOption {
 	id: string;
 	name: string;

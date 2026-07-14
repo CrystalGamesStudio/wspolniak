@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import type { InferSelectModel } from "drizzle-orm";
-import type { calendarEvents } from "./table";
+import type { calendarEvents, calendarReminderLog } from "./table";
 
 vi.mock("@/db/setup", () => ({
 	getDb: vi.fn(),
@@ -11,6 +11,7 @@ import { getDb } from "@/db/setup";
 const mockGetDb = vi.mocked(getDb);
 
 type EventRow = InferSelectModel<typeof calendarEvents>;
+type ReminderLogRow = InferSelectModel<typeof calendarReminderLog>;
 const now = new Date();
 
 function mockEvent(overrides: Partial<EventRow> = {}): EventRow {
@@ -26,12 +27,32 @@ function mockEvent(overrides: Partial<EventRow> = {}): EventRow {
 	};
 }
 
+function mockReminderLog(overrides: Partial<ReminderLogRow> = {}): ReminderLogRow {
+	return {
+		id: "rem-1",
+		eventId: "evt-1",
+		type: "on_day",
+		firedFor: now,
+		createdAt: now,
+		...overrides,
+	};
+}
+
 function mockInsertChain(returningRows: EventRow[]) {
 	const mockReturning = vi.fn().mockResolvedValue(returningRows);
 	const mockValues = vi.fn().mockReturnValue({ returning: mockReturning });
 	const mockInsert = vi.fn().mockReturnValue({ values: mockValues });
 	mockGetDb.mockReturnValue({ insert: mockInsert } as never);
 	return { mockInsert, mockValues };
+}
+
+function mockInsertOnConflictChain(returningRows: ReminderLogRow[]) {
+	const mockReturning = vi.fn().mockResolvedValue(returningRows);
+	const mockOnConflict = vi.fn().mockReturnValue({ returning: mockReturning });
+	const mockValues = vi.fn().mockReturnValue({ onConflictDoNothing: mockOnConflict });
+	const mockInsert = vi.fn().mockReturnValue({ values: mockValues });
+	mockGetDb.mockReturnValue({ insert: mockInsert } as never);
+	return { mockInsert, mockValues, mockOnConflict };
 }
 
 function mockSelectChain(rows: unknown[]) {
@@ -190,6 +211,38 @@ describe("deleteCalendarEvent", () => {
 		const { deleteCalendarEvent } = await import("./queries");
 
 		const result = await deleteCalendarEvent("missing");
+
+		expect(result).toBeNull();
+	});
+});
+
+describe("claimReminder", () => {
+	beforeEach(() => vi.clearAllMocks());
+
+	it("claims the reminder and returns the row on first insert", async () => {
+		const firedFor = new Date("2026-07-14T00:00:00Z");
+		const { mockValues } = mockInsertOnConflictChain([mockReminderLog({ firedFor })]);
+		const { claimReminder } = await import("./queries");
+
+		const result = await claimReminder("evt-1", "on_day", firedFor);
+
+		expect(mockValues).toHaveBeenCalledWith(
+			expect.objectContaining({
+				eventId: "evt-1",
+				type: "on_day",
+				firedFor,
+				id: expect.any(String),
+			}),
+		);
+		expect(result).not.toBeNull();
+		expect(result?.eventId).toBe("evt-1");
+	});
+
+	it("returns null when the reminder was already claimed today (conflict)", async () => {
+		mockInsertOnConflictChain([]);
+		const { claimReminder } = await import("./queries");
+
+		const result = await claimReminder("evt-1", "on_day", new Date("2026-07-14T00:00:00Z"));
 
 		expect(result).toBeNull();
 	});

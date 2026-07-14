@@ -269,3 +269,39 @@ describe("updateMemberName", () => {
 		expect(result.name).toBe("Kasia-Nowa");
 	});
 });
+
+describe("getActiveAdmin", () => {
+	function mockSelectLimitChain(rows: unknown[]) {
+		const mockLimit = vi.fn().mockResolvedValue(rows);
+		const mockWhere = vi.fn().mockReturnValue({ limit: mockLimit });
+		const mockFrom = vi.fn().mockReturnValue({ where: mockWhere });
+		const mockSelect = vi.fn().mockReturnValue({ from: mockFrom });
+		mockGetDb.mockReturnValue({ select: mockSelect } as never);
+	}
+
+	it("returns the single active admin (role=admin, not deleted)", async () => {
+		const admin = {
+			id: "admin-1",
+			name: "Tomek",
+			role: "admin",
+			tokenHash: "h",
+			deletedAt: null,
+			createdAt: new Date(),
+		};
+		mockSelectLimitChain([admin]);
+		const { getActiveAdmin } = await import("./queries");
+
+		const result = await getActiveAdmin();
+
+		expect(result).toEqual(admin);
+	});
+
+	it("returns null when no active admin exists", async () => {
+		mockSelectLimitChain([]);
+		const { getActiveAdmin } = await import("./queries");
+
+		const result = await getActiveAdmin();
+
+		expect(result).toBeNull();
+	});
+});

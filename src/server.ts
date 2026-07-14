@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // DO NOT DELETE THIS FILE!!!
-// Custom CF Workers entry: routes /api/* to Hono, /app/u/* to auth, rest to TanStack Start
+// Custom CF Workers entry: routes /api/* to Hono, /app/u/* to auth, rest to TanStack Start.
+// `scheduled` handler odpala cron kalendarza (D-0 posty od admina).
 import handler from "@tanstack/react-start/server-entry";
+import { runCalendarJob } from "@/calendar/job";
 import { initDatabase } from "@/db";
 import { apiHono } from "@/hono/api";
 import authRoute from "@/hono/api/auth";
@@ -31,5 +33,13 @@ export default {
 		return handler.fetch(request, {
 			context: { fromFetch: true },
 		});
+	},
+	async scheduled(_controller: ScheduledController, env: Env, _ctx: ExecutionContext) {
+		initDatabase({
+			host: env.DATABASE_HOST,
+			username: env.DATABASE_USERNAME,
+			password: env.DATABASE_PASSWORD,
+		});
+		await runCalendarJob();
 	},
 };
