@@ -1,3 +1,10 @@
+## [1.57.1](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.57.0...v1.57.1) (2026-07-14)
+
+
+### Bug Fixes
+
+* **mentions:** okienko mentionów przewija tylko dropdown, nie stronę [[#96](https://github.com/CrystalGamesStudio/wspolniak/issues/96)] ([070aea2](https://github.com/CrystalGamesStudio/wspolniak/commit/070aea23dd856e79f86e7d3fd057bd4c7d7f09b1))
+
 # [1.57.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.56.0...v1.57.0) (2026-07-14)
 
 
