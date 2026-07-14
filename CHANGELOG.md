@@ -1,3 +1,10 @@
+# [1.60.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.57.1...v1.60.0) (2026-07-14)
+
+
+### Bug Fixes
+
+* **mentions:** okienko mentionów przewija tylko dropdown, nie stronę [[#96](https://github.com/CrystalGamesStudio/wspolniak/issues/96)] ([070aea2](https://github.com/CrystalGamesStudio/wspolniak/commit/070aea23dd856e79f86e7d3fd057bd4c7d7f09b1))
+
 ## [1.57.1](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.57.0...v1.57.1) (2026-07-14)
 
 
@@ -77,7 +84,7 @@
 
 ## Project Metrics
 
-- Current application codebase size: **23,712 lines of code** as measured on 2026-07-14.
+- Current application codebase size: **23,772 lines of code** as measured on 2026-07-14.
 - Scope: `src/` and `scripts/` source files, excluding generated files, SQL migrations, build artifacts, and dependencies.
 - This metric must be recalculated and kept current whenever the codebase changes in a way that materially affects line count.
 
