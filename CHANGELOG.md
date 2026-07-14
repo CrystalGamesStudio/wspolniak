@@ -1,3 +1,10 @@
+# [1.57.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.56.0...v1.57.0) (2026-07-14)
+
+
+### Features
+
+* **publishing:** kompresja w Web Workerze + batch upload URLs [[#95](https://github.com/CrystalGamesStudio/wspolniak/issues/95)] ([08daf3f](https://github.com/CrystalGamesStudio/wspolniak/commit/08daf3fd018c70c70a9eea60684092a4c1861f44))
+
 # [1.56.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.55.0...v1.56.0) (2026-07-13)
 
 
