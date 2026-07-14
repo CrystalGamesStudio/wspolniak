@@ -38,6 +38,19 @@ export async function createDirectUploadUrl(
 	};
 }
 
+/**
+ * Pobiera `count` par `{cfImageId, uploadURL}` w jednym wywołaniu (równolegle).
+ * Zastępuje N sekwencyjnych round-tripów przy publikacji batcha zdjęć (issue #95).
+ * `count <= 0` → `[]` (nie woła CF API). Błąd dowolnej pary → odrzuca całość.
+ */
+export async function createDirectUploadUrlBatch(
+	config: DirectUploadConfig,
+	count: number,
+): Promise<DirectUploadResult[]> {
+	if (count <= 0) return [];
+	return Promise.all(Array.from({ length: count }, () => createDirectUploadUrl(config)));
+}
+
 interface ImageUrlConfig {
 	accountHash: string;
 	cfImageId: string;

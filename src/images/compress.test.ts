@@ -1,128 +1,155 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-import { compressImage } from "./compress";
+import { computeDimensions } from "./compress";
 
-function setupMocks(opts: { naturalWidth: number; naturalHeight: number; blob?: Blob }) {
-	const ctx = { drawImage: vi.fn() };
-	const toBlob = vi.fn((cb: (b: Blob) => void) => {
-		const blob = opts.blob ?? new Blob(["compressed"], { type: "image/webp" });
-		cb(blob);
+describe("computeDimensions", () => {
+	it("resizes proportionally when wider than maxWidth", () => {
+		expect(computeDimensions(2400, 1600, 1200)).toEqual({ width: 1200, height: 800 });
 	});
 
-	const mockCanvas = {
-		width: 0,
-		height: 0,
-		getContext: vi.fn(() => ctx),
-		toBlob,
-	};
-
-	const origCreateElement = document.createElement.bind(document);
-	vi.spyOn(document, "createElement").mockImplementation((tag: string) => {
-		if (tag === "canvas") return mockCanvas as unknown as HTMLElement;
-		return origCreateElement(tag);
+	it("does not upscale when narrower than maxWidth", () => {
+		expect(computeDimensions(800, 600, 1200)).toEqual({ width: 800, height: 600 });
 	});
 
-	vi.stubGlobal(
-		"Image",
-		class MockImage {
-			naturalWidth = opts.naturalWidth;
-			naturalHeight = opts.naturalHeight;
-			onload: (() => void) | null = null;
-			onerror: ((e: Error) => void) | null = null;
-			_src = "";
-			get src() {
-				return this._src;
-			}
-			set src(v: string) {
-				this._src = v;
-				if (this.onload) this.onload();
-			}
-		},
-	);
-
-	vi.stubGlobal("URL", {
-		createObjectURL: vi.fn(() => "blob:mock"),
-		revokeObjectURL: vi.fn(),
+	it("leaves dimensions unchanged at exactly maxWidth", () => {
+		expect(computeDimensions(1200, 1600, 1200)).toEqual({ width: 1200, height: 1600 });
 	});
 
-	return { mockCanvas, ctx, toBlob };
-}
+	it("keeps aspect ratio for non-trivial ratio", () => {
+		// 3000 × 2000 → maxWidth 900 ⇒ 900 × 600
+		expect(computeDimensions(3000, 2000, 900)).toEqual({ width: 900, height: 600 });
+	});
+});
 
-describe("compressImage", () => {
+type SentRequest = { id: number; file: File; maxWidth: number; quality: number };
+
+/**
+ * `compressImage` deleguje kompresję do Web Workera (granica systemu — mockujemy
+ * globalny `Worker`). Każdy test dostaje świeży moduł (`vi.resetModules`), bo klient
+ * trzyma singleton workera w stanie modułu.
+ */
+describe("compressImage (worker delegation)", () => {
+	function mountFakeWorker() {
+		const messageListeners: Array<(e: MessageEvent) => void> = [];
+		const fakeWorker = {
+			addEventListener: vi.fn((type: string, cb: (e: MessageEvent) => void) => {
+				if (type === "message") messageListeners.push(cb);
+			}),
+			removeEventListener: vi.fn((type: string, cb: (e: MessageEvent) => void) => {
+				if (type === "message") {
+					const i = messageListeners.indexOf(cb);
+					if (i >= 0) messageListeners.splice(i, 1);
+				}
+			}),
+			postMessage: vi.fn(),
+		};
+		// musi być zwykła funkcja (nie arrow) — compress.ts woła `new Worker(...)`.
+		const WorkerCtor = vi.fn(function (this: unknown) {
+			return fakeWorker;
+		});
+		vi.stubGlobal("Worker", WorkerCtor);
+
+		const dispatch = (data: unknown) => {
+			const event = new MessageEvent("message", { data });
+			for (const cb of [...messageListeners]) cb(event);
+		};
+
+		return { fakeWorker, WorkerCtor, dispatch };
+	}
+
+	function sentRequestAt(
+		fakeWorker: { postMessage: ReturnType<typeof vi.fn> },
+		i: number,
+	): SentRequest {
+		return fakeWorker.postMessage.mock.calls[i]?.[0] as SentRequest;
+	}
+
 	afterEach(() => {
-		vi.restoreAllMocks();
+		vi.unstubAllGlobals();
+		vi.resetModules();
 	});
 
-	it("resizes image wider than maxWidth proportionally", async () => {
-		const { mockCanvas } = setupMocks({
-			naturalWidth: 2400,
-			naturalHeight: 1600,
-		});
+	it("posts {id,file,maxWidth,quality} to a worker and resolves the returned File", async () => {
+		vi.resetModules();
+		const { compressImage } = await import("./compress");
+		const { fakeWorker, dispatch } = mountFakeWorker();
 
-		await compressImage(new File(["data"], "photo.jpg", { type: "image/jpeg" }), {
-			maxWidth: 1200,
-		});
+		const file = new File(["x"], "a.jpg", { type: "image/jpeg" });
+		const resultFile = new File(["y"], "a.webp", { type: "image/webp" });
 
-		expect(mockCanvas.width).toBe(1200);
-		expect(mockCanvas.height).toBe(800);
+		const promise = compressImage(file, { maxWidth: 800, quality: 0.5 });
+
+		expect(fakeWorker.postMessage).toHaveBeenCalledWith(
+			expect.objectContaining({ file, maxWidth: 800, quality: 0.5 }),
+		);
+
+		const sent = sentRequestAt(fakeWorker, 0);
+		dispatch({ id: sent.id, file: resultFile });
+
+		await expect(promise).resolves.toBe(resultFile);
+		expect(fakeWorker.removeEventListener).toHaveBeenCalled();
 	});
 
-	it("does not upscale image smaller than maxWidth", async () => {
-		const { mockCanvas } = setupMocks({
-			naturalWidth: 800,
-			naturalHeight: 600,
-		});
+	it("rejects when the worker reports an error", async () => {
+		vi.resetModules();
+		const { compressImage } = await import("./compress");
+		const { fakeWorker, dispatch } = mountFakeWorker();
 
-		await compressImage(new File(["data"], "photo.jpg", { type: "image/jpeg" }));
+		const promise = compressImage(new File(["x"], "a.jpg", { type: "image/jpeg" }));
+		const sent = sentRequestAt(fakeWorker, 0);
+		dispatch({ id: sent.id, error: "decode failed" });
 
-		expect(mockCanvas.width).toBe(800);
-		expect(mockCanvas.height).toBe(600);
+		await expect(promise).rejects.toThrow("decode failed");
 	});
 
-	it("exports canvas as WebP with configured quality", async () => {
-		const { toBlob } = setupMocks({
-			naturalWidth: 800,
-			naturalHeight: 600,
+	it("reuses one worker instance across multiple compressions", async () => {
+		vi.resetModules();
+		const { compressImage } = await import("./compress");
+		const { fakeWorker, WorkerCtor, dispatch } = mountFakeWorker();
+
+		const p1 = compressImage(new File(["a"], "1.jpg", { type: "image/jpeg" }));
+		const p2 = compressImage(new File(["b"], "2.jpg", { type: "image/jpeg" }));
+
+		dispatch({
+			id: sentRequestAt(fakeWorker, 0).id,
+			file: new File(["a"], "1.webp", { type: "image/webp" }),
+		});
+		dispatch({
+			id: sentRequestAt(fakeWorker, 1).id,
+			file: new File(["b"], "2.webp", { type: "image/webp" }),
 		});
 
-		await compressImage(new File(["data"], "photo.jpg", { type: "image/jpeg" }), {
-			maxWidth: 1200,
-			quality: 0.8,
-		});
-
-		expect(toBlob).toHaveBeenCalledWith(expect.any(Function), "image/webp", 0.8);
+		await Promise.all([p1, p2]);
+		expect(WorkerCtor).toHaveBeenCalledTimes(1);
 	});
 
-	it("returns File with webp extension and type", async () => {
-		setupMocks({
-			naturalWidth: 800,
-			naturalHeight: 600,
-		});
+	it("ignores worker messages with a non-matching id", async () => {
+		vi.resetModules();
+		const { compressImage } = await import("./compress");
+		const { fakeWorker, dispatch } = mountFakeWorker();
 
-		const result = await compressImage(new File(["data"], "photo.jpg", { type: "image/jpeg" }));
+		const promise = compressImage(new File(["x"], "a.jpg", { type: "image/jpeg" }));
+		const sent = sentRequestAt(fakeWorker, 0);
 
-		expect(result.name).toBe("photo.webp");
-		expect(result.type).toBe("image/webp");
+		// stranger message z złym id → ignorowany (promise jeszcze nieresolwowany)
+		dispatch({ id: sent.id + 999, file: new File(["z"], "x.webp", { type: "image/webp" }) });
+
+		const resultFile = new File(["y"], "a.webp", { type: "image/webp" });
+		dispatch({ id: sent.id, file: resultFile });
+
+		await expect(promise).resolves.toBe(resultFile);
 	});
 
-	it("replaces original extension with webp", async () => {
-		setupMocks({
-			naturalWidth: 800,
-			naturalHeight: 600,
-		});
+	it("sends sensible defaults when options are omitted", async () => {
+		vi.resetModules();
+		const { compressImage } = await import("./compress");
+		const { fakeWorker, dispatch } = mountFakeWorker();
 
-		const result = await compressImage(new File(["data"], "IMG_1234.HEIC", { type: "image/heic" }));
+		const promise = compressImage(new File(["x"], "a.jpg", { type: "image/jpeg" }));
+		const sent = sentRequestAt(fakeWorker, 0);
+		expect(sent.maxWidth).toBe(1200);
+		expect(sent.quality).toBe(0.7);
 
-		expect(result.name).toBe("IMG_1234.webp");
-	});
-
-	it("cleans up object URL after processing", async () => {
-		setupMocks({
-			naturalWidth: 800,
-			naturalHeight: 600,
-		});
-
-		await compressImage(new File(["data"], "photo.jpg", { type: "image/jpeg" }));
-
-		expect(URL.revokeObjectURL).toHaveBeenCalledWith("blob:mock");
+		dispatch({ id: sent.id, file: new File(["y"], "a.webp", { type: "image/webp" }) });
+		await promise;
 	});
 });

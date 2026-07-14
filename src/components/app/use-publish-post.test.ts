@@ -1,7 +1,17 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { QueryClient } from "@tanstack/react-query";
 import { feedQueryKey } from "@/components/app/feed-query";
-import { PUBLISH_BAR_DURATION_MS, type PublishPostInput, runPublishFlow } from "./use-publish-post";
+import { compressImage } from "@/images/compress";
+import {
+	createPost,
+	PUBLISH_BAR_DURATION_MS,
+	type PublishPostInput,
+	runPublishFlow,
+} from "./use-publish-post";
+
+vi.mock("@/images/compress", () => ({
+	compressImage: vi.fn(),
+}));
 
 function makeQueryClient() {
 	return new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -84,5 +94,77 @@ describe("runPublishFlow", () => {
 
 		expect(refetchSpy).not.toHaveBeenCalled();
 		expect(navigate).not.toHaveBeenCalled();
+	});
+});
+
+describe("createPost", () => {
+	afterEach(() => {
+		vi.unstubAllGlobals();
+		vi.clearAllMocks();
+	});
+
+	function stubFetch(pairsFor: (count: number) => { cfImageId: string; uploadURL: string }[]) {
+		const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
+			if (url.endsWith("/api/app/images/upload-urls")) {
+				const body = JSON.parse(String(init?.body)) as { count: number };
+				return { ok: true, status: 200, json: async () => ({ data: pairsFor(body.count) }) };
+			}
+			if (url.startsWith("https://upload/")) {
+				return { ok: true, status: 200, json: async () => ({}) };
+			}
+			if (url.endsWith("/api/app/posts")) {
+				return { ok: true, status: 200, json: async () => ({ id: "post-1" }) };
+			}
+			throw new Error(`unexpected fetch: ${url}`);
+		});
+		vi.stubGlobal("fetch", fetchMock);
+		return fetchMock;
+	}
+
+	it("wydaje DOKŁADNIE JEDEN batch upload-URL request dla N plików (bez single /upload-url)", async () => {
+		vi.mocked(compressImage).mockImplementation(async (file) => file); // passthrough
+		const fetchMock = stubFetch((count) =>
+			Array.from({ length: count }, (_, i) => ({
+				cfImageId: `cf-${i + 1}`,
+				uploadURL: `https://upload/cf-${i + 1}`,
+			})),
+		);
+
+		const files = [
+			new File(["a"], "1.jpg", { type: "image/jpeg" }),
+			new File(["b"], "2.jpg", { type: "image/jpeg" }),
+		];
+
+		await createPost({ description: "hi", files, mentions: [] });
+
+		const calls = fetchMock.mock.calls.map(([u]) => String(u));
+
+		// single endpoint nigdy niewołany
+		expect(calls.filter((u) => u.endsWith("/api/app/images/upload-url"))).toHaveLength(0);
+		// dokładnie jeden batch
+		const batchCalls = fetchMock.mock.calls.filter(([u]) =>
+			String(u).endsWith("/api/app/images/upload-urls"),
+		);
+		expect(batchCalls).toHaveLength(1);
+		expect(JSON.parse(String(batchCalls[0]?.[1]?.body))).toEqual({ count: 2 });
+
+		// N uploadów do CF
+		expect(calls.filter((u) => u.startsWith("https://upload/"))).toHaveLength(2);
+
+		// POST /posts z cfImageId w kolejności plików
+		const postsCalls = fetchMock.mock.calls.filter(([u]) => String(u).endsWith("/api/app/posts"));
+		expect(postsCalls).toHaveLength(1);
+		const postsBody = JSON.parse(String(postsCalls[0]?.[1]?.body)) as { cfImageIds: string[] };
+		expect(postsBody.cfImageIds).toEqual(["cf-1", "cf-2"]);
+	});
+
+	it("pomija upload-urls całkowicie, gdy nie ma plików (samo POST /posts)", async () => {
+		const fetchMock = stubFetch(() => []);
+
+		await createPost({ description: "brak zdjęć", files: [], mentions: [] });
+
+		const calls = fetchMock.mock.calls.map(([u]) => String(u));
+		expect(calls.filter((u) => u.endsWith("/api/app/images/upload-urls"))).toHaveLength(0);
+		expect(calls.filter((u) => u.endsWith("/api/app/posts"))).toHaveLength(1);
 	});
 });

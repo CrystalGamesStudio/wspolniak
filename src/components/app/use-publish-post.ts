@@ -51,23 +51,47 @@ export async function runPublishFlow(options: RunPublishFlowOptions): Promise<vo
 	await options.navigate({ to: "/app" });
 }
 
-async function uploadFile(file: File): Promise<string> {
-	const urlRes = await fetch("/api/app/images/upload-url", { method: "POST" });
-	if (!urlRes.ok) throw new Error("Nie udało się uzyskać URL do uploadu");
-	const { data } = (await urlRes.json()) as { data: { cfImageId: string; uploadURL: string } };
-
-	const compressed = await compressImage(file);
+async function uploadCompressed(uploadURL: string, file: File): Promise<void> {
 	const form = new FormData();
-	form.append("file", compressed);
-	const uploadRes = await fetch(data.uploadURL, { method: "POST", body: form });
+	form.append("file", file);
+	const uploadRes = await fetch(uploadURL, { method: "POST", body: form });
 	if (!uploadRes.ok) throw new Error(`Upload nie powiódł się dla: ${file.name}`);
-
-	return data.cfImageId;
 }
 
-/** Realna funkcja create (granica sieci): kompresuje, uploaduje zdjęcia i tworzy post. */
+/**
+ * Realna funkcja create (granica sieci): kompresuje + uploaduje zdjęcia i tworzy post.
+ *
+ * Optymalizacja batch (issue #95): jeden `POST /upload-urls` zwraca N par
+ * `{cfImageId, uploadURL}` zamiast N sekwencyjnych round-tripów; kompresja i upload
+ * wszystkich plików lecą równolegle (kompresja po głównym wątku przez workera w Slice 4).
+ * `cfImageId` zachowują kolejność plików.
+ */
 export async function createPost(input: PublishPostInput): Promise<unknown> {
-	const cfImageIds = await Promise.all(input.files.map(uploadFile));
+	const cfImageIds: string[] = [];
+
+	if (input.files.length > 0) {
+		const batchRes = await fetch("/api/app/images/upload-urls", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ count: input.files.length }),
+		});
+		if (!batchRes.ok) throw new Error("Nie udało się uzyskać URL-i do uploadu");
+		const { data: pairs } = (await batchRes.json()) as {
+			data: { cfImageId: string; uploadURL: string }[];
+		};
+
+		cfImageIds.push(
+			...(await Promise.all(
+				input.files.map(async (file, index) => {
+					const pair = pairs[index];
+					if (!pair) throw new Error("Brak pary upload dla pliku");
+					const compressed = await compressImage(file);
+					await uploadCompressed(pair.uploadURL, compressed);
+					return pair.cfImageId;
+				}),
+			)),
+		);
+	}
 
 	const res = await fetch("/api/app/posts", {
 		method: "POST",
