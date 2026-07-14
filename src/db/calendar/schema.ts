@@ -13,3 +13,7 @@ export const createCalendarEventSchema = z.object({
 });
 
 export type CreateCalendarEventRequest = z.infer<typeof createCalendarEventSchema>;
+
+export const updateCalendarEventSchema = createCalendarEventSchema.partial();
+
+export type UpdateCalendarEventRequest = z.infer<typeof updateCalendarEventSchema>;

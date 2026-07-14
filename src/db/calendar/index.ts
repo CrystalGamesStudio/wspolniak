@@ -2,8 +2,15 @@
 export type { CalendarEvent } from "./queries";
 export {
 	createCalendarEvent,
+	deleteCalendarEvent,
 	findEventsByDayMonth,
 	listCalendarEvents,
+	updateCalendarEvent,
 } from "./queries";
-export { type CreateCalendarEventRequest, createCalendarEventSchema } from "./schema";
+export {
+	type CreateCalendarEventRequest,
+	createCalendarEventSchema,
+	type UpdateCalendarEventRequest,
+	updateCalendarEventSchema,
+} from "./schema";
 export { calendarEvents, calendarReminderLog } from "./table";

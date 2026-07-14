@@ -45,6 +45,33 @@ function mockSelectChain(rows: unknown[]) {
 	return { mockSelect, mockFrom, mockWhere };
 }
 
+function mockUpdateChain(returningRows: EventRow[]) {
+	const mockReturning = vi.fn().mockResolvedValue(returningRows);
+	const mockWhere = vi.fn().mockReturnValue({ returning: mockReturning });
+	const mockSet = vi.fn().mockReturnValue({ where: mockWhere });
+	const mockUpdate = vi.fn().mockReturnValue({ set: mockSet });
+	mockGetDb.mockReturnValue({ update: mockUpdate } as never);
+	return { mockUpdate, mockSet, mockWhere };
+}
+
+function mockDeleteChain(returningRows: EventRow[]) {
+	// deleteCalendarEvent runs two deletes: reminder_log first (no .returning()),
+	// then the event (with .returning()). Both terminate as thenables.
+	const reminderLogWhere = vi.fn().mockResolvedValue(undefined);
+	const eventReturning = vi.fn().mockResolvedValue(returningRows);
+	const eventWhere = vi.fn().mockReturnValue({ returning: eventReturning });
+	const mockDelete = vi.fn((_table: unknown) => {
+		// Distinguish the two tables by the same table object identity the query passes.
+		// The query calls delete(calendarReminderLog) then delete(calendarEvents).
+		// We route by call order: first call → reminder_log, second → event.
+		const calls = mockDelete.mock.calls.length;
+		if (calls === 1) return { where: reminderLogWhere };
+		return { where: eventWhere };
+	});
+	mockGetDb.mockReturnValue({ delete: mockDelete } as never);
+	return { mockDelete, reminderLogWhere, eventWhere };
+}
+
 describe("createCalendarEvent", () => {
 	beforeEach(() => vi.clearAllMocks());
 
@@ -116,5 +143,54 @@ describe("findEventsByDayMonth", () => {
 		const result = await findEventsByDayMonth(29, 2);
 
 		expect(result).toEqual([]);
+	});
+});
+
+describe("updateCalendarEvent", () => {
+	beforeEach(() => vi.clearAllMocks());
+
+	it("updates the fields and returns the updated row", async () => {
+		const { mockSet } = mockUpdateChain([mockEvent({ id: "evt-1", title: "Nowy" })]);
+		const { updateCalendarEvent } = await import("./queries");
+
+		const result = await updateCalendarEvent("evt-1", { title: "Nowy" });
+
+		expect(mockSet).toHaveBeenCalledWith(
+			expect.objectContaining({ title: "Nowy", updatedAt: expect.any(Date) }),
+		);
+		expect(result?.id).toBe("evt-1");
+		expect(result?.title).toBe("Nowy");
+	});
+
+	it("returns null when no event matches the id", async () => {
+		mockUpdateChain([]);
+		const { updateCalendarEvent } = await import("./queries");
+
+		const result = await updateCalendarEvent("missing", { title: "X" });
+
+		expect(result).toBeNull();
+	});
+});
+
+describe("deleteCalendarEvent", () => {
+	beforeEach(() => vi.clearAllMocks());
+
+	it("deletes the reminder_log rows and the event (cascade)", async () => {
+		const { mockDelete } = mockDeleteChain([mockEvent({ id: "evt-1" })]);
+		const { deleteCalendarEvent } = await import("./queries");
+
+		const result = await deleteCalendarEvent("evt-1");
+
+		expect(mockDelete).toHaveBeenCalledTimes(2);
+		expect(result?.id).toBe("evt-1");
+	});
+
+	it("returns null when no event matches the id", async () => {
+		mockDeleteChain([]);
+		const { deleteCalendarEvent } = await import("./queries");
+
+		const result = await deleteCalendarEvent("missing");
+
+		expect(result).toBeNull();
 	});
 });

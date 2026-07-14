@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-import { createCalendarEventSchema } from "./schema";
+import { createCalendarEventSchema, updateCalendarEventSchema } from "./schema";
 
 describe("createCalendarEventSchema", () => {
 	describe("valid inputs", () => {
@@ -121,5 +121,45 @@ describe("createCalendarEventSchema", () => {
 				true,
 			);
 		});
+	});
+});
+
+describe("updateCalendarEventSchema", () => {
+	it("accepts a partial update with only the title", () => {
+		const result = updateCalendarEventSchema.safeParse({ title: "Nowy tytuł" });
+		expect(result.success).toBe(true);
+	});
+
+	it("accepts a partial update with only day and month", () => {
+		const result = updateCalendarEventSchema.safeParse({ day: 1, month: 12 });
+		expect(result.success).toBe(true);
+	});
+
+	it("accepts an empty object (no-op update)", () => {
+		expect(updateCalendarEventSchema.safeParse({}).success).toBe(true);
+	});
+
+	it("rejects day out of range when present", () => {
+		expect(updateCalendarEventSchema.safeParse({ day: 32 }).success).toBe(false);
+	});
+
+	it("rejects month out of range when present", () => {
+		expect(updateCalendarEventSchema.safeParse({ month: 13 }).success).toBe(false);
+	});
+
+	it("trims the title when present", () => {
+		const result = updateCalendarEventSchema.safeParse({ title: "  Nowy  " });
+		expect(result.success).toBe(true);
+		if (result.success) {
+			expect(result.data.title).toBe("Nowy");
+		}
+	});
+
+	it("normalizes an empty description to null", () => {
+		const result = updateCalendarEventSchema.safeParse({ description: "   " });
+		expect(result.success).toBe(true);
+		if (result.success) {
+			expect(result.data.description).toBeNull();
+		}
 	});
 });
