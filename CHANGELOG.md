@@ -1,3 +1,10 @@
+# [1.62.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.61.0...v1.62.0) (2026-07-14)
+
+
+### Features
+
+* **calendar:** cron D-0 — post "Dzisiaj" od admina (F3) [[#84](https://github.com/CrystalGamesStudio/wspolniak/issues/84)] ([b8e347b](https://github.com/CrystalGamesStudio/wspolniak/commit/b8e347bb073690ea9efa0da49629ed96afb0d1cc))
+
 # [1.61.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.60.0...v1.61.0) (2026-07-14)
 
 
