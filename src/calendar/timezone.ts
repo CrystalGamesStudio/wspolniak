@@ -44,3 +44,18 @@ export function polandFiredFor(now: Date): Date {
 	const { year, month, day } = polandCalendarDate(now);
 	return new Date(Date.UTC(year, month - 1, day));
 }
+
+const MS_PER_DAY = 86_400_000;
+
+/**
+ * Przesuwa datę kalendarzową (PL) o `days` dni do przodu, z poprawnym przejściem
+ * miesiąca i roku. Czysta funkcja — brak `now`/`Date.now()`, w pełni deterministyczna.
+ *
+ * Arytmetyka odbywa się wokół południa UTC (12:00): dodawanie całych dni nigdy
+ * nie wpada w godzinę zmiany czasu (DST), więc dzień kalendarzowy pozostaje stabilny
+ * niezależnie od pory roku.
+ */
+export function addDaysPoland(from: CalendarDate, days: number): CalendarDate {
+	const ms = Date.UTC(from.year, from.month - 1, from.day, 12) + days * MS_PER_DAY;
+	return polandCalendarDate(new Date(ms));
+}

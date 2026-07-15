@@ -8,8 +8,8 @@ import { calendarEvents, calendarReminderLog } from "./table";
 export type CalendarEvent = InferSelectModel<typeof calendarEvents>;
 export type CalendarReminderLog = InferSelectModel<typeof calendarReminderLog>;
 
-/** Typ przypomnienia. F3 obsługuje tylko "on_day"; "week_before" dojdzie w F4. */
-export type ReminderType = "on_day";
+/** Typ przypomnienia. "on_day" = D-0 (Dzisiaj), "week_before" = D-7 (Za tydzień). */
+export type ReminderType = "on_day" | "week_before";
 
 export async function createCalendarEvent(
 	input: CreateCalendarEventRequest,

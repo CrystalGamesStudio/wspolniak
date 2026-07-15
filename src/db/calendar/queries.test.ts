@@ -246,4 +246,33 @@ describe("claimReminder", () => {
 
 		expect(result).toBeNull();
 	});
+
+	it("claims a week_before reminder and returns the row on first insert", async () => {
+		const firedFor = new Date("2026-07-14T00:00:00Z");
+		const { mockValues } = mockInsertOnConflictChain([
+			mockReminderLog({ type: "week_before", firedFor }),
+		]);
+		const { claimReminder } = await import("./queries");
+
+		const result = await claimReminder("evt-1", "week_before", firedFor);
+
+		expect(mockValues).toHaveBeenCalledWith(
+			expect.objectContaining({
+				eventId: "evt-1",
+				type: "week_before",
+				firedFor,
+				id: expect.any(String),
+			}),
+		);
+		expect(result?.type).toBe("week_before");
+	});
+
+	it("returns null when a week_before reminder was already claimed today (conflict)", async () => {
+		mockInsertOnConflictChain([]);
+		const { claimReminder } = await import("./queries");
+
+		const result = await claimReminder("evt-1", "week_before", new Date("2026-07-14T00:00:00Z"));
+
+		expect(result).toBeNull();
+	});
 });
