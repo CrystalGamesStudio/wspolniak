@@ -1,3 +1,10 @@
+# [1.63.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.62.0...v1.63.0) (2026-07-15)
+
+
+### Features
+
+* **calendar:** koszyk D-7 "Za tydzień" + przełom roku (F4) [[#85](https://github.com/CrystalGamesStudio/wspolniak/issues/85)] ([5ebaea7](https://github.com/CrystalGamesStudio/wspolniak/commit/5ebaea7ae3d847886cdb1040c549d8552c2427be))
+
 # [1.62.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.61.0...v1.62.0) (2026-07-14)
 
 
