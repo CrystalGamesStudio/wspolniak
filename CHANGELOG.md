@@ -1,3 +1,10 @@
+# [1.64.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.63.0...v1.64.0) (2026-07-15)
+
+
+### Features
+
+* **calendar:** powiadomienia PUSH dla postów kalendarza (F5) [[#86](https://github.com/CrystalGamesStudio/wspolniak/issues/86)] ([5c61d45](https://github.com/CrystalGamesStudio/wspolniak/commit/5c61d453684074d2660d2e948db5f9fbd6ab8d06))
+
 # [1.63.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.62.0...v1.63.0) (2026-07-15)
 
 
