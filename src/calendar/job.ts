@@ -3,6 +3,8 @@
 // runCalendarJob; cała logika "znajdź wydarzenia na dziś/za tydzień → post od admina"
 // żyje tutaj. Czysty kompozytor tekstu jest eksportowany osobno (testowalny).
 
+import { notifyNewPost } from "@/core/notify";
+import { buildPushDeps } from "@/core/push-deps";
 import {
 	type CalendarEvent,
 	claimReminder,
@@ -34,9 +36,28 @@ export function composeWeekBeforeText(event: CalendarEventText): string {
 }
 
 /**
+ * Po utworzeniu posta kalendarza planuje push do rodziny w tle (waitUntil) — nie
+ * blokuje zakończenia biegu crona. Admin (autor) nie dostaje powiadomienia, bo
+ * getActiveSubscriptions(authorId) go wyklucza. Gdy VAPID nieskonfigurowany
+ * (buildPushDeps → null), push jest pomijany, ale post istnieje.
+ */
+function schedulePostPush(
+	env: Env,
+	ctx: ExecutionContext,
+	authorId: string,
+	authorName: string,
+	postId: string,
+): void {
+	const pushDeps = buildPushDeps(env, postId, "post");
+	if (!pushDeps) return;
+	ctx.waitUntil(notifyNewPost(pushDeps, authorId, authorName, postId));
+}
+
+/**
  * Przetwarza jeden koszyk przypomnień: dla każdego wydarzenia atomowo zgłasza
- * roszczenie (claimReminder) i — gdy się uda — tworzy post od admina. Błędy per
- * wydarzenie izolowane (awaria jednego nie przerywa pozostałych — cron dowiezie resztę).
+ * roszczenie (claimReminder) i — gdy się uda — tworzy post od admina, a po jego
+ * utworzeniu odpala (jeśli podano) powiadomienie push. Błędy per wydarzenie izolowane
+ * (awaria jednego nie przerywa pozostałych — cron dowiezie resztę).
  */
 async function processBasket(
 	events: CalendarEvent[],
@@ -44,34 +65,55 @@ async function processBasket(
 	compose: (event: CalendarEventText) => string,
 	adminId: string,
 	firedFor: Date,
+	notify?: (postId: string) => void,
 ): Promise<void> {
 	for (const evt of events) {
 		try {
 			const claimedRow = await claimReminder(evt.id, type, firedFor);
 			if (!claimedRow) continue;
-			await createPost({ authorId: adminId, description: compose(evt) });
-		} catch (_err) {}
+			const { post } = await createPost({ authorId: adminId, description: compose(evt) });
+			notify?.(post.id);
+		} catch {}
 	}
 }
 
 /**
  * Bieg crona kalendarza. Dla bieżącej daty w strefie Europe/Warsaw przetwarza dwa
  * koszyki: D-0 ("Dzisiaj") oraz D-7 ("Za tydzień" — dziś + 7 dni, z przełomem roku).
- * Brak aktywnego admina → pominięcie bez awarii. Push przychodzi w F5.
+ * Brak aktywnego admina → pominięcie bez awarii. Gdy przekazano env+ctx, po utworzeniu
+ * każdego posta odpalany jest push do rodziny w tle (waitUntil).
  *
  * @param now chwila UTC; wstrzykiwana dla testów (domyślnie teraz).
+ * @param env powiązania Workera (VAPID itd.); bez env push jest pomijany.
+ * @param ctx kontekst wykonania; `waitUntil` utrzymuje push po powrocie crona.
  */
-export async function runCalendarJob(now: Date = new Date()): Promise<void> {
+export async function runCalendarJob(
+	now: Date = new Date(),
+	env?: Env,
+	ctx?: ExecutionContext,
+): Promise<void> {
 	const date = polandCalendarDate(now);
 	const firedFor = polandFiredFor(now);
 
 	const adminUser = await getActiveAdmin();
 	if (!adminUser) return;
 
+	const notify =
+		env && ctx
+			? (postId: string) => schedulePostPush(env, ctx, adminUser.id, adminUser.name, postId)
+			: undefined;
+
 	const todayEvents = await findEventsByDayMonth(date.day, date.month);
-	await processBasket(todayEvents, "on_day", composeOnDayText, adminUser.id, firedFor);
+	await processBasket(todayEvents, "on_day", composeOnDayText, adminUser.id, firedFor, notify);
 
 	const weekAhead = addDaysPoland(date, 7);
 	const weekEvents = await findEventsByDayMonth(weekAhead.day, weekAhead.month);
-	await processBasket(weekEvents, "week_before", composeWeekBeforeText, adminUser.id, firedFor);
+	await processBasket(
+		weekEvents,
+		"week_before",
+		composeWeekBeforeText,
+		adminUser.id,
+		firedFor,
+		notify,
+	);
 }

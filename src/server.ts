@@ -34,12 +34,12 @@ export default {
 			context: { fromFetch: true },
 		});
 	},
-	async scheduled(_controller: ScheduledController, env: Env, _ctx: ExecutionContext) {
+	async scheduled(_controller: ScheduledController, env: Env, ctx: ExecutionContext) {
 		initDatabase({
 			host: env.DATABASE_HOST,
 			username: env.DATABASE_USERNAME,
 			password: env.DATABASE_PASSWORD,
 		});
-		await runCalendarJob();
+		await runCalendarJob(new Date(), env, ctx);
 	},
 };
