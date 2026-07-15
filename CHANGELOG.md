@@ -1,3 +1,10 @@
+# [1.65.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.64.0...v1.65.0) (2026-07-15)
+
+
+### Features
+
+* **calendar:** triggers.crons w env production (F6) [[#87](https://github.com/CrystalGamesStudio/wspolniak/issues/87)] ([79f1035](https://github.com/CrystalGamesStudio/wspolniak/commit/79f1035cb3d0cc3e69442438306553ba3101dd4b))
+
 # [1.64.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.63.0...v1.64.0) (2026-07-15)
 
 
