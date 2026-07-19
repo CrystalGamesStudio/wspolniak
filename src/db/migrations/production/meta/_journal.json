@@ -50,6 +50,13 @@
       "when": 1783493226300,
       "tag": "0006_fantastic_namor",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1784461010135,
+      "tag": "0007_clumsy_eddie_brock",
+      "breakpoints": true
     }
   ]
 }
