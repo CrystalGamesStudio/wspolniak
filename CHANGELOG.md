@@ -1,3 +1,10 @@
+# [1.66.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.65.0...v1.66.0) (2026-07-23)
+
+
+### Features
+
+* **video:** połączenie YouTube — OAuth, szyfrowany refresh token, panel admina (F1) [[#103](https://github.com/CrystalGamesStudio/wspolniak/issues/103)] ([f2376cf](https://github.com/CrystalGamesStudio/wspolniak/commit/f2376cfae0ebc67115f658d555f1e1eea9b74c38)), closes [#102](https://github.com/CrystalGamesStudio/wspolniak/issues/102)
+
 # [1.65.0](https://github.com/CrystalGamesStudio/wspolniak/compare/v1.64.0...v1.65.0) (2026-07-15)
 
 
