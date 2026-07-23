@@ -90,3 +90,77 @@ export async function updateMaintenance(input: MaintenanceUpdate): Promise<void>
 	}
 	invalidateMaintenanceCache();
 }
+
+// --- YouTube connection (Wspólniak Wideo) ---------------------------------
+// Storage only. The refresh token is stored as an opaque encrypted blob and
+// never selected by these functions — only the `youtube` module decrypts it.
+
+export interface YoutubeConnection {
+	connected: boolean;
+	channelId: string | null;
+	channelTitle: string | null;
+	connectedAt: Date | null;
+	connectedBy: string | null;
+}
+
+export interface YoutubeConnectionInput {
+	channelId: string;
+	channelTitle: string;
+	encryptedRefreshToken: string;
+	connectedBy: string;
+}
+
+async function getInstanceConfigId(): Promise<string> {
+	const rows = await getDb().select({ id: instanceConfig.id }).from(instanceConfig).limit(1);
+	const row = rows[0];
+	if (!row) throw new Error("getInstanceConfigId: no instance_config row");
+	return row.id;
+}
+
+export async function getYoutubeConnection(): Promise<YoutubeConnection> {
+	const rows = await getDb()
+		.select({
+			channelId: instanceConfig.youtubeChannelId,
+			channelTitle: instanceConfig.youtubeChannelTitle,
+			connectedAt: instanceConfig.youtubeConnectedAt,
+			connectedBy: instanceConfig.youtubeConnectedBy,
+		})
+		.from(instanceConfig)
+		.limit(1);
+	const row = rows[0];
+	return {
+		connected: Boolean(row?.channelId),
+		channelId: row?.channelId ?? null,
+		channelTitle: row?.channelTitle ?? null,
+		connectedAt: row?.connectedAt ?? null,
+		connectedBy: row?.connectedBy ?? null,
+	};
+}
+
+export async function setYoutubeConnection(input: YoutubeConnectionInput): Promise<void> {
+	const id = await getInstanceConfigId();
+	await getDb()
+		.update(instanceConfig)
+		.set({
+			youtubeChannelId: input.channelId,
+			youtubeChannelTitle: input.channelTitle,
+			youtubeRefreshToken: input.encryptedRefreshToken,
+			youtubeConnectedAt: new Date(),
+			youtubeConnectedBy: input.connectedBy,
+		})
+		.where(eq(instanceConfig.id, id));
+}
+
+export async function clearYoutubeConnection(): Promise<void> {
+	const id = await getInstanceConfigId();
+	await getDb()
+		.update(instanceConfig)
+		.set({
+			youtubeChannelId: null,
+			youtubeChannelTitle: null,
+			youtubeRefreshToken: null,
+			youtubeConnectedAt: null,
+			youtubeConnectedBy: null,
+		})
+		.where(eq(instanceConfig.id, id));
+}

@@ -11,4 +11,11 @@ export const instanceConfig = pgTable("instance_config", {
 	maintenanceMessage: text("maintenance_message"),
 	maintenanceSubtitle: text("maintenance_subtitle"),
 	maintenanceIcon: text("maintenance_icon"),
+	// YouTube connection (Wspólniak Wideo). refresh token is an encrypted blob;
+	// decryption lives in the `youtube` module, never in this domain.
+	youtubeChannelId: text("youtube_channel_id"),
+	youtubeChannelTitle: text("youtube_channel_title"),
+	youtubeRefreshToken: text("youtube_refresh_token"),
+	youtubeConnectedAt: timestamp("youtube_connected_at"),
+	youtubeConnectedBy: text("youtube_connected_by"),
 });

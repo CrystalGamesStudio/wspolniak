@@ -21,6 +21,11 @@ describe("instance_config table", () => {
 				"maintenanceMessage",
 				"maintenanceSubtitle",
 				"maintenanceIcon",
+				"youtubeChannelId",
+				"youtubeChannelTitle",
+				"youtubeRefreshToken",
+				"youtubeConnectedAt",
+				"youtubeConnectedBy",
 			].sort(),
 		);
 	});
@@ -71,5 +76,30 @@ describe("instance_config table", () => {
 		expect(columns.createdAt.dataType).toBe("date");
 		expect(columns.createdAt.notNull).toBe(true);
 		expect(columns.createdAt.hasDefault).toBe(true);
+	});
+
+	it("youtube_channel_id is nullable text", () => {
+		expect(columns.youtubeChannelId.dataType).toBe("string");
+		expect(columns.youtubeChannelId.notNull).toBe(false);
+	});
+
+	it("youtube_channel_title is nullable text", () => {
+		expect(columns.youtubeChannelTitle.dataType).toBe("string");
+		expect(columns.youtubeChannelTitle.notNull).toBe(false);
+	});
+
+	it("youtube_refresh_token is nullable text (encrypted blob)", () => {
+		expect(columns.youtubeRefreshToken.dataType).toBe("string");
+		expect(columns.youtubeRefreshToken.notNull).toBe(false);
+	});
+
+	it("youtube_connected_at is nullable timestamp", () => {
+		expect(columns.youtubeConnectedAt.dataType).toBe("date");
+		expect(columns.youtubeConnectedAt.notNull).toBe(false);
+	});
+
+	it("youtube_connected_by is nullable text", () => {
+		expect(columns.youtubeConnectedBy.dataType).toBe("string");
+		expect(columns.youtubeConnectedBy.notNull).toBe(false);
 	});
 });

@@ -1,9 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
+import { eq } from "drizzle-orm";
 import {
+	clearYoutubeConnection,
 	completeSetup,
 	getMaintenanceConfig,
+	getYoutubeConnection,
 	invalidateMaintenanceCache,
 	isSetupCompleted,
+	setYoutubeConnection,
 	updateMaintenance,
 } from "./queries";
 import { instanceConfig } from "./table";
@@ -197,5 +201,135 @@ describe("updateMaintenance", () => {
 
 		const second = await getMaintenanceConfig();
 		expect(second.enabled).toBe(true);
+	});
+});
+
+describe("YouTube connection storage", () => {
+	function mockSelectRow(row: Record<string, unknown>) {
+		const limit = vi.fn().mockResolvedValue([row]);
+		const from = vi.fn().mockReturnValue({ limit });
+		const select = vi.fn().mockReturnValue({ from });
+		mockGetDb.mockReturnValue({ select } as never);
+		return { select };
+	}
+
+	describe("getYoutubeConnection", () => {
+		it("reports disconnected when no channel id is stored", async () => {
+			mockSelectRow({
+				channelId: null,
+				channelTitle: null,
+				connectedAt: null,
+				connectedBy: null,
+			});
+
+			const conn = await getYoutubeConnection();
+
+			expect(conn).toEqual({
+				connected: false,
+				channelId: null,
+				channelTitle: null,
+				connectedAt: null,
+				connectedBy: null,
+			});
+		});
+
+		it("reports connected with stored values", async () => {
+			const at = new Date("2026-07-23T10:00:00Z");
+			mockSelectRow({
+				channelId: "UC123",
+				channelTitle: "Wspólniak Wideo",
+				connectedAt: at,
+				connectedBy: "admin-1",
+			});
+
+			const conn = await getYoutubeConnection();
+
+			expect(conn.connected).toBe(true);
+			expect(conn.channelId).toBe("UC123");
+			expect(conn.channelTitle).toBe("Wspólniak Wideo");
+			expect(conn.connectedBy).toBe("admin-1");
+		});
+
+		it("never returns the refresh token (stays inside the youtube module)", async () => {
+			const { select } = mockSelectRow({ channelId: "UC123" });
+
+			await getYoutubeConnection();
+
+			// the select must not touch the refresh token column
+			expect(select).toHaveBeenCalledWith(
+				expect.not.objectContaining({ youtubeRefreshToken: expect.anything() }),
+			);
+		});
+	});
+
+	function mockUpdateById(rowId: string) {
+		const idLimit = vi.fn().mockResolvedValue([{ id: rowId }]);
+		const idFrom = vi.fn().mockReturnValue({ limit: idLimit });
+		const select = vi.fn().mockReturnValue({ from: idFrom });
+
+		const where = vi.fn().mockResolvedValue(undefined);
+		const set = vi.fn().mockReturnValue({ where });
+		const update = vi.fn().mockReturnValue({ set });
+
+		mockGetDb.mockReturnValue({ select, update } as never);
+		return { update, set, where };
+	}
+
+	describe("setYoutubeConnection", () => {
+		it("persists channel id, title, encrypted token, who and a timestamp", async () => {
+			const { update, set, where } = mockUpdateById("inst-1");
+
+			await setYoutubeConnection({
+				channelId: "UC1",
+				channelTitle: "Wspólniak Wideo",
+				encryptedRefreshToken: "enc-blob",
+				connectedBy: "admin-1",
+			});
+
+			expect(update).toHaveBeenCalledWith(instanceConfig);
+			expect(set).toHaveBeenCalledWith(
+				expect.objectContaining({
+					youtubeChannelId: "UC1",
+					youtubeChannelTitle: "Wspólniak Wideo",
+					youtubeRefreshToken: "enc-blob",
+					youtubeConnectedBy: "admin-1",
+					youtubeConnectedAt: expect.any(Date),
+				}),
+			);
+			expect(where).toHaveBeenCalledWith(eq(instanceConfig.id, "inst-1"));
+		});
+
+		it("throws when no instance_config row exists", async () => {
+			const idLimit = vi.fn().mockResolvedValue([]);
+			const idFrom = vi.fn().mockReturnValue({ limit: idLimit });
+			const select = vi.fn().mockReturnValue({ from: idFrom });
+			mockGetDb.mockReturnValue({ select, update: vi.fn() } as never);
+
+			await expect(
+				setYoutubeConnection({
+					channelId: "UC1",
+					channelTitle: "T",
+					encryptedRefreshToken: "enc",
+					connectedBy: "admin-1",
+				}),
+			).rejects.toThrow(/no instance_config row/i);
+		});
+	});
+
+	describe("clearYoutubeConnection", () => {
+		it("nulls every youtube field", async () => {
+			const { set, where } = mockUpdateById("inst-1");
+
+			await clearYoutubeConnection();
+
+			expect(set).toHaveBeenCalledWith({
+				youtubeChannelId: null,
+				youtubeChannelTitle: null,
+				youtubeRefreshToken: null,
+				youtubeConnectedAt: null,
+				youtubeConnectedBy: null,
+			});
+			expect(where).toHaveBeenCalledWith(eq(instanceConfig.id, "inst-1"));
+		});
 	});
 });

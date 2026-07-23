@@ -10,6 +10,7 @@ import reactionsEndpoint from "@/hono/api/post-reactions";
 import postsEndpoint, { publicPostsEndpoint } from "@/hono/api/posts";
 import pushEndpoint from "@/hono/api/push";
 import setupEndpoint from "@/hono/api/setup";
+import videoEndpoint from "@/hono/api/video";
 import { createHono } from "./factory";
 
 export const apiHono = createHono().basePath("/api");
@@ -25,4 +26,5 @@ apiHono.route("/app/push", pushEndpoint);
 apiHono.route("/app", appEndpoint);
 apiHono.route("/admin", adminEndpoint);
 apiHono.route("/admin/calendar", calendarEndpoint);
+apiHono.route("/video", videoEndpoint);
 apiHono.route("/public/posts", publicPostsEndpoint);

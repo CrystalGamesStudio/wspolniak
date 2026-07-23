@@ -1,9 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute, redirect, useSearch } from "@tanstack/react-router";
 import { AlertTriangle, ArrowLeft, Check, Copy, Link, Pencil, Plus, Trash2, X } from "lucide-react";
 import { useState } from "react";
 import { MaintenanceDialog } from "@/components/admin/maintenance-dialog";
+import {
+	YoutubeConnection,
+	type YoutubeConnectionStatus,
+} from "@/components/admin/youtube-connection";
 import { feedQueryKey } from "@/components/app/feed-query";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -143,6 +147,34 @@ function AdminPage() {
 			await queryClient.invalidateQueries({ queryKey: ["admin", "maintenance"] });
 		},
 	});
+
+	const youtubeConnectionQuery = useQuery({
+		queryKey: ["admin", "youtube-connection"],
+		queryFn: async () => {
+			const res = await fetch("/api/video/connection");
+			if (!res.ok) throw new Error("Nie udało się pobrać statusu YouTube");
+			const json = (await res.json()) as { data: YoutubeConnectionStatus };
+			return json.data;
+		},
+	});
+
+	const youtubeDisconnectMutation = useMutation({
+		mutationFn: async () => {
+			const res = await fetch("/api/video/connection", { method: "DELETE" });
+			if (!res.ok) throw new Error("Nie udało się rozłączyć YouTube");
+		},
+		onSuccess: async () => {
+			await queryClient.invalidateQueries({ queryKey: ["admin", "youtube-connection"] });
+		},
+	});
+
+	const youtubeSearch = useSearch({ strict: false }) as { youtube?: string };
+	const youtubeFlash =
+		youtubeSearch.youtube === "connected"
+			? "connected"
+			: youtubeSearch.youtube === "error"
+				? "error"
+				: null;
 
 	async function copyToClipboard(text: string) {
 		await navigator.clipboard.writeText(text);
@@ -288,6 +320,15 @@ function AdminPage() {
 					))}
 				</div>
 			)}
+
+			<div className="mt-6">
+				<YoutubeConnection
+					connection={youtubeConnectionQuery.data}
+					isDisconnecting={youtubeDisconnectMutation.isPending}
+					onDisconnect={() => youtubeDisconnectMutation.mutate()}
+					flash={youtubeFlash}
+				/>
+			</div>
 		</div>
 	);
 }
